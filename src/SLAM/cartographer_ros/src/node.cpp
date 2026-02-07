@@ -156,6 +156,15 @@ Node::Node(
       std::bind(
           &Node::handleReadMetrics, this, std::placeholders::_1, std::placeholders::_2));
 
+  if (node_options_.use_initialpose) {
+    initialpose_subscriber_ =
+        node_->create_subscription<geometry_msgs::msg::PoseWithCovarianceStamped>(
+            "initialpose", rclcpp::QoS(1),
+            [this](const geometry_msgs::msg::PoseWithCovarianceStamped::ConstSharedPtr& msg) {
+              HandleInitialPose(msg);
+            });
+    LOG(INFO) << "Subscribed to /initialpose for trajectory re-initialization.";
+  }
 
   submap_list_timer_ = node_->create_wall_timer(
     std::chrono::milliseconds(int(node_options_.submap_publish_period_sec * 1000)),
@@ -638,6 +647,7 @@ bool Node::handleStartTrajectory(
 void Node::StartTrajectoryWithDefaultTopics(const TrajectoryOptions& options) {
   absl::MutexLock lock(&mutex_);
   CHECK(ValidateTrajectoryOptions(options));
+  trajectory_options_ = options;
   AddTrajectory(options);
 }
 
@@ -882,6 +892,50 @@ void Node::LoadState(const std::string& state_filename,
                      const bool load_frozen_state) {
   absl::MutexLock lock(&mutex_);
   map_builder_bridge_->LoadState(state_filename, load_frozen_state);
+}
+
+void Node::HandleInitialPose(
+    const geometry_msgs::msg::PoseWithCovarianceStamped::ConstSharedPtr& msg) {
+  absl::MutexLock lock(&mutex_);
+
+  // Find the active trajectory to finish.
+  int active_trajectory_id = -1;
+  for (const auto& entry : map_builder_bridge_->GetTrajectoryStates()) {
+    if (entry.second == TrajectoryState::ACTIVE) {
+      active_trajectory_id = entry.first;
+      break;
+    }
+  }
+
+  if (active_trajectory_id < 0) {
+    LOG(WARNING) << "No active trajectory to restart with /initialpose.";
+    return;
+  }
+
+  LOG(INFO) << "Received /initialpose, restarting trajectory "
+            << active_trajectory_id << " at new pose.";
+
+  // Finish the current active trajectory.
+  FinishTrajectoryUnderLock(active_trajectory_id);
+
+  // Build InitialTrajectoryPose from the received pose.
+  const auto pose = ToRigid3d(msg->pose.pose);
+  ::cartographer::mapping::proto::InitialTrajectoryPose initial_trajectory_pose;
+  initial_trajectory_pose.set_to_trajectory_id(0);
+  *initial_trajectory_pose.mutable_relative_pose() =
+      cartographer::transform::ToProto(pose);
+  initial_trajectory_pose.set_timestamp(
+      cartographer::common::ToUniversal(
+          ::cartographer_ros::FromRos(rclcpp::Time(0))));
+
+  // Set the initial pose on the saved trajectory options and start a new
+  // trajectory.
+  TrajectoryOptions new_options = trajectory_options_;
+  *new_options.trajectory_builder_options.mutable_initial_trajectory_pose() =
+      initial_trajectory_pose;
+  AddTrajectory(new_options);
+
+  LOG(INFO) << "Started new trajectory with initial pose from /initialpose.";
 }
 
 // TODO: find ROS equivalent to ros::master::getTopics

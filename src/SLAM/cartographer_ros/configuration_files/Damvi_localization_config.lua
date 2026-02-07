@@ -29,6 +29,7 @@ options = {
   imu_sampling_ratio = 1.0,
   fixed_frame_pose_sampling_ratio = 1.0,
   landmarks_sampling_ratio = 1.0,
+  use_initialpose = true,
 }
 
 -- 2D Trajectory 설정

@@ -52,6 +52,10 @@ NodeOptions CreateNodeOptions(
     options.use_pose_extrapolator =
         lua_parameter_dictionary->GetBool("use_pose_extrapolator");
   }
+  if (lua_parameter_dictionary->HasKey("use_initialpose")) {
+    options.use_initialpose =
+        lua_parameter_dictionary->GetBool("use_initialpose");
+  }
   return options;
 }
 

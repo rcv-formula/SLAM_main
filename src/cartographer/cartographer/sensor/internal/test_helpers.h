@@ -29,6 +29,8 @@
 #include "cartographer/sensor/timed_point_cloud_data.h"
 #include "gmock/gmock.h"
 
+#include <Eigen/Core>
+
 namespace cartographer {
 namespace sensor {
 
@@ -47,7 +49,10 @@ struct CollatorInput {
                                      const std::string& sensor_id, int time) {
     return CollatorInput{
         trajectory_id,
-        MakeDispatchable(sensor_id, ImuData{common::FromUniversal(time)}),
+        MakeDispatchable(sensor_id,
+                 ImuData{common::FromUniversal(time),
+                         Eigen::Vector3d::Zero(),
+                         Eigen::Vector3d::Zero()}),
         CollatorOutput{trajectory_id, sensor_id, common::FromUniversal(time)}};
   }
   static CollatorInput CreateTimedPointCloudData(int trajectory_id,

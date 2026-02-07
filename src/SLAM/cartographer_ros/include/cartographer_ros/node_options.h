@@ -38,6 +38,7 @@ struct NodeOptions {
   bool publish_to_tf = true;
   bool publish_tracked_pose = true;
   bool use_pose_extrapolator = true;
+  bool use_initialpose = false;
 };
 
 NodeOptions CreateNodeOptions(
