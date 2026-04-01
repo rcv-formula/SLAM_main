@@ -169,7 +169,17 @@ install(DIRECTORY include/
   DESTINATION include/
 )
 
-install(DIRECTORY configuration_files urdf launch pbstream
+set(cartographer_ros_share_directories
+  configuration_files
+  urdf
+  launch
+)
+
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/pbstream")
+  list(APPEND cartographer_ros_share_directories pbstream)
+endif()
+
+install(DIRECTORY ${cartographer_ros_share_directories}
   DESTINATION share/${PROJECT_NAME}/
 )
 

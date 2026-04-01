@@ -1,4 +1,6 @@
-# Copyright 2022 The Cartographer Authors
+#!/bin/bash
+
+# Copyright 2016 The Cartographer Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,19 +14,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM debian:bullseye
+# Cache intermediate Docker layers. For a description of how this works, see:
+# https://giorgos.sealabs.net/docker-cache-on-travis-and-docker-112.html
 
-ARG cc
-ARG cxx
+set -o errexit
+set -o verbose
+set -o pipefail
 
-# Set the preferred C/C++ compiler toolchain, if given (otherwise default).
-ENV CC=$cc
-ENV CXX=$cxx
-
-# This base image doesn't ship with sudo.
-RUN apt-get update && apt-get install -y sudo && rm -rf /var/lib/apt/lists/*
-
-COPY scripts/install_debs_cmake.sh cartographer/scripts/
-RUN cartographer/scripts/install_debs_cmake.sh && rm -rf /var/lib/apt/lists/*
-COPY . cartographer
-RUN cartographer/scripts/install_cartographer_cmake.sh && rm -rf cartographer
+if [ -f ${DOCKER_CACHE_FILE} ]; then
+  gunzip -c ${DOCKER_CACHE_FILE} | docker load;
+fi
