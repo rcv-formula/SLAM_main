@@ -130,9 +130,49 @@ int MapBuilder::AddTrajectoryBuilder(
   } else {
     std::unique_ptr<LocalTrajectoryBuilder2D> local_trajectory_builder;
     if (trajectory_options.has_trajectory_builder_2d_options()) {
+      auto frozen_submap_data_provider =
+          [trajectory_id,
+           pose_graph = static_cast<PoseGraph2D*>(pose_graph_.get())]() {
+            scan_matching::FrozenSubmapQueryResult2D query_result;
+            query_result.local_to_map =
+                transform::Project2D(
+                    pose_graph->GetLocalToGlobalTransform(trajectory_id));
+            const auto trajectory_states = pose_graph->GetTrajectoryStates();
+            std::map<int, transform::Rigid2d> frozen_local_to_map_by_trajectory;
+            for (const auto& trajectory_state : trajectory_states) {
+              if (trajectory_state.second !=
+                  PoseGraphInterface::TrajectoryState::FROZEN) {
+                continue;
+              }
+              frozen_local_to_map_by_trajectory.emplace(
+                  trajectory_state.first,
+                  transform::Project2D(
+                      pose_graph->GetLocalToGlobalTransform(
+                          trajectory_state.first)));
+            }
+            for (const auto& submap_id_data : pose_graph->GetAllSubmapData()) {
+              const auto frozen_local_to_map_it =
+                  frozen_local_to_map_by_trajectory.find(
+                      submap_id_data.id.trajectory_id);
+              if (frozen_local_to_map_it ==
+                      frozen_local_to_map_by_trajectory.end() ||
+                  submap_id_data.data.submap == nullptr ||
+                  !submap_id_data.data.submap->insertion_finished()) {
+                continue;
+              }
+              query_result.submaps.push_back(scan_matching::FrozenSubmapSnapshot2D{
+                  submap_id_data.id,
+                  std::static_pointer_cast<const Submap2D>(
+                      submap_id_data.data.submap),
+                  frozen_local_to_map_it->second,
+                  transform::Project2D(submap_id_data.data.pose)});
+            }
+            return query_result;
+          };
       local_trajectory_builder = absl::make_unique<LocalTrajectoryBuilder2D>(
           trajectory_options.trajectory_builder_2d_options(),
-          SelectRangeSensorIds(expected_sensor_ids));
+          SelectRangeSensorIds(expected_sensor_ids),
+          frozen_submap_data_provider);
     }
     DCHECK(dynamic_cast<PoseGraph2D*>(pose_graph_.get()));
     trajectory_builders_.push_back(absl::make_unique<CollatedTrajectoryBuilder>(

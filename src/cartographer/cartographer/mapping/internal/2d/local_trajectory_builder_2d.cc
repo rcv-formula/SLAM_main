@@ -16,8 +16,11 @@
 
 #include "cartographer/mapping/internal/2d/local_trajectory_builder_2d.h"
 
+#include <cmath>
+#include <iomanip>
 #include <limits>
 #include <memory>
+#include <sstream>
 
 #include "absl/memory/memory.h"
 #include "cartographer/metrics/family_factory.h"
@@ -35,18 +38,256 @@ static auto* kCeresScanMatcherCostMetric = metrics::Histogram::Null();
 static auto* kScanMatcherResidualDistanceMetric = metrics::Histogram::Null();
 static auto* kScanMatcherResidualAngleMetric = metrics::Histogram::Null();
 
+namespace {
+
+double RadiansToDegrees(const double radians) {
+  return radians * 57.29577951308232;
+}
+
+const char* FrozenSubmapMatchStatusToString(
+    const scan_matching::FrozenSubmapMatchStatus2D status) {
+  switch (status) {
+    case scan_matching::FrozenSubmapMatchStatus2D::kNotAttempted:
+      return "not_attempted";
+    case scan_matching::FrozenSubmapMatchStatus2D::kAccepted:
+      return "accepted";
+    case scan_matching::FrozenSubmapMatchStatus2D::kRejectedNoCandidates:
+      return "rejected_no_candidates";
+    case scan_matching::FrozenSubmapMatchStatus2D::kRejectedLowScore:
+      return "rejected_low_score";
+    case scan_matching::FrozenSubmapMatchStatus2D::kRejectedLowMargin:
+      return "rejected_low_margin";
+    case scan_matching::FrozenSubmapMatchStatus2D::kRejectedLowVariance:
+      return "rejected_low_variance";
+    case scan_matching::FrozenSubmapMatchStatus2D::kRejectedTranslationCorrection:
+      return "rejected_translation_correction";
+    case scan_matching::FrozenSubmapMatchStatus2D::kRejectedRotationCorrection:
+      return "rejected_rotation_correction";
+    default:
+      return "unknown";
+  }
+}
+
+const char* FrozenApplyModeToString(
+    const scan_matching::proto::FrozenSubmapScanMatcherOptions2D::ApplyMode
+        apply_mode) {
+  switch (apply_mode) {
+    case scan_matching::proto::FrozenSubmapScanMatcherOptions2D::FULL_PIPELINE:
+      return "FULL_PIPELINE";
+    case scan_matching::proto::FrozenSubmapScanMatcherOptions2D::PUBLISH_ONLY:
+      return "PUBLISH_ONLY";
+    default:
+      return "UNKNOWN";
+  }
+}
+
+std::string FormatMatchedSubmap(
+    const absl::optional<SubmapId>& matched_submap_id) {
+  if (!matched_submap_id.has_value()) {
+    return "none";
+  }
+  std::ostringstream stream;
+  stream << matched_submap_id.value();
+  return stream.str();
+}
+
+std::string FormatTopFrozenCandidates(
+    const std::vector<scan_matching::FrozenSubmapCandidateDebugInfo2D>&
+        candidates) {
+  if (candidates.empty()) {
+    return "[]";
+  }
+  std::ostringstream stream;
+  stream << std::fixed << std::setprecision(3) << "[";
+  for (size_t i = 0; i < candidates.size(); ++i) {
+    if (i > 0) {
+      stream << "; ";
+    }
+    const auto& candidate = candidates[i];
+    stream << candidate.submap_id << " score=" << candidate.score
+           << " dist=" << candidate.distance_to_submap
+           << "m corr=" << candidate.translation_correction << "m/"
+           << RadiansToDegrees(candidate.rotation_correction) << "deg";
+  }
+  stream << "]";
+  return stream.str();
+}
+
+}  // namespace
+
 LocalTrajectoryBuilder2D::LocalTrajectoryBuilder2D(
     const proto::LocalTrajectoryBuilderOptions2D& options,
-    const std::vector<std::string>& expected_range_sensor_ids)
+    const std::vector<std::string>& expected_range_sensor_ids,
+    scan_matching::FrozenSubmapDataProvider frozen_submap_data_provider)
     : options_(options),
       active_submaps_(options.submaps_options()),
       motion_filter_(options_.motion_filter_options()),
       real_time_correlative_scan_matcher_(
           options_.real_time_correlative_scan_matcher_options()),
       ceres_scan_matcher_(options_.ceres_scan_matcher_options()),
+      frozen_submap_data_provider_(std::move(frozen_submap_data_provider)),
       range_data_collator_(expected_range_sensor_ids) {}
 
 LocalTrajectoryBuilder2D::~LocalTrajectoryBuilder2D() {}
+
+void LocalTrajectoryBuilder2D::AccumulateFrozenSubmapTuningStats(
+    const scan_matching::FrozenSubmapMatchResult2D& result) {
+  ++frozen_submap_match_attempt_count_;
+
+  auto& stats = frozen_submap_tuning_stats_;
+  ++stats.num_attempts;
+  if (result.accepted) {
+    ++stats.num_accepted;
+  }
+  ++stats.status_counts[static_cast<size_t>(result.status)];
+  stats.sum_candidates_in_search_radius += result.num_candidates_in_search_radius;
+  stats.sum_candidates_evaluated += result.num_candidates_evaluated;
+
+  if (result.matched_submap_id.has_value()) {
+    ++stats.num_correction_samples;
+    stats.sum_translation_correction += result.translation_correction;
+    stats.sum_rotation_correction += result.rotation_correction;
+  }
+
+  const auto& frozen_options = options_.frozen_submap_scan_matcher_options();
+  if (frozen_options.use_realtime_correlative_scan_matching()) {
+    ++stats.num_score_samples;
+    stats.sum_best_score += result.best_score;
+    if (result.num_candidates_evaluated > 1) {
+      ++stats.num_margin_samples;
+      stats.sum_score_margin += result.best_score - result.second_best_score;
+    }
+    if (std::min(frozen_options.score_variance_top_k(),
+                 result.num_candidates_evaluated) >= 2) {
+      ++stats.num_variance_samples;
+      stats.sum_score_variance += result.top_k_score_variance;
+    }
+  }
+}
+
+void LocalTrajectoryBuilder2D::MaybeLogFrozenSubmapTuningDetail(
+    const scan_matching::FrozenSubmapMatchResult2D& result) const {
+  const auto& frozen_options = options_.frozen_submap_scan_matcher_options();
+  const bool sampled_detail =
+      frozen_options.tuning_log_detail_every_n_scans() > 0 &&
+      frozen_submap_match_attempt_count_ %
+              frozen_options.tuning_log_detail_every_n_scans() ==
+          0;
+  const bool explicit_detail =
+      result.accepted ? frozen_options.tuning_log_log_acceptances()
+                      : frozen_options.tuning_log_log_rejections();
+  if (!sampled_detail && !explicit_detail) {
+    return;
+  }
+
+  std::ostringstream stream;
+  stream << std::fixed << std::setprecision(4);
+  stream << "[FrozenMatcherTune][scan " << frozen_submap_match_attempt_count_
+         << "] status=" << FrozenSubmapMatchStatusToString(result.status)
+         << " apply_mode="
+         << FrozenApplyModeToString(frozen_options.apply_mode())
+         << " candidates=" << result.num_candidates_in_search_radius << "/"
+         << result.num_candidates_evaluated
+         << " matched_submap=" << FormatMatchedSubmap(result.matched_submap_id)
+         << " submap_dist=" << result.selected_distance_to_submap
+         << "m corr=" << result.translation_correction << "m/"
+         << RadiansToDegrees(result.rotation_correction) << "deg";
+  if (frozen_options.use_realtime_correlative_scan_matching()) {
+    stream << " score=" << result.best_score;
+    if (result.num_candidates_evaluated > 1) {
+      stream << " second=" << result.second_best_score
+             << " margin="
+             << (result.best_score - result.second_best_score);
+    }
+    if (std::min(frozen_options.score_variance_top_k(),
+                 result.num_candidates_evaluated) >= 2) {
+      stream << " variance=" << result.top_k_score_variance;
+    }
+  }
+  stream << " top_candidates="
+         << FormatTopFrozenCandidates(result.candidate_debug_info);
+  LOG(INFO) << stream.str();
+}
+
+void LocalTrajectoryBuilder2D::MaybeLogFrozenSubmapTuningSummary() {
+  const auto& frozen_options = options_.frozen_submap_scan_matcher_options();
+  if (frozen_options.tuning_log_summary_every_n_scans() <= 0 ||
+      frozen_submap_match_attempt_count_ %
+              frozen_options.tuning_log_summary_every_n_scans() !=
+          0 ||
+      frozen_submap_tuning_stats_.num_attempts == 0) {
+    return;
+  }
+
+  const auto& stats = frozen_submap_tuning_stats_;
+  const auto average_or_na = [](const double sum, const int64_t count) {
+    std::ostringstream stream;
+    if (count <= 0) {
+      stream << "n/a";
+    } else {
+      stream << std::fixed << std::setprecision(4) << (sum / count);
+    }
+    return stream.str();
+  };
+  std::ostringstream status_stream;
+  bool first_status = true;
+  for (size_t i = 0; i < stats.status_counts.size(); ++i) {
+    if (stats.status_counts[i] == 0) {
+      continue;
+    }
+    if (!first_status) {
+      status_stream << ", ";
+    }
+    first_status = false;
+    status_stream << FrozenSubmapMatchStatusToString(
+                         static_cast<scan_matching::FrozenSubmapMatchStatus2D>(
+                             i))
+                  << "=" << stats.status_counts[i];
+  }
+  if (first_status) {
+    status_stream << "none";
+  }
+
+  std::ostringstream stream;
+  stream << std::fixed << std::setprecision(4);
+  stream << "[FrozenMatcherTune][summary scans "
+         << (frozen_submap_match_attempt_count_ - stats.num_attempts + 1)
+         << "-" << frozen_submap_match_attempt_count_
+         << "] apply_mode="
+         << FrozenApplyModeToString(frozen_options.apply_mode())
+         << " acceptance_rate=";
+  if (stats.num_attempts > 0) {
+    stream << (100. * static_cast<double>(stats.num_accepted) /
+               static_cast<double>(stats.num_attempts))
+           << "%";
+  } else {
+    stream << "n/a";
+  }
+  stream << " attempts=" << stats.num_attempts
+         << " accepted=" << stats.num_accepted
+         << " avg_candidates="
+         << average_or_na(stats.sum_candidates_in_search_radius,
+                          stats.num_attempts)
+         << "/"
+         << average_or_na(stats.sum_candidates_evaluated, stats.num_attempts)
+         << " avg_best_score="
+         << average_or_na(stats.sum_best_score, stats.num_score_samples)
+         << " avg_margin="
+         << average_or_na(stats.sum_score_margin, stats.num_margin_samples)
+         << " avg_variance="
+         << average_or_na(stats.sum_score_variance, stats.num_variance_samples)
+         << " avg_correction="
+         << average_or_na(stats.sum_translation_correction,
+                          stats.num_correction_samples)
+         << "m/"
+         << average_or_na(RadiansToDegrees(stats.sum_rotation_correction),
+                          stats.num_correction_samples)
+         << "deg"
+         << " status_counts={" << status_stream.str() << "}";
+  LOG(INFO) << stream.str();
+
+  frozen_submap_tuning_stats_ = FrozenSubmapTuningStats{};
+}
 
 sensor::RangeData
 LocalTrajectoryBuilder2D::TransformToGravityAlignedFrameAndFilter(
@@ -239,16 +480,47 @@ LocalTrajectoryBuilder2D::AddAccumulatedRangeData(
     LOG(WARNING) << "Scan matching failed.";
     return nullptr;
   }
-  const transform::Rigid3d pose_estimate =
-      transform::Embed3D(*pose_estimate_2d) * gravity_alignment;
-  extrapolator_->AddPose(time, pose_estimate);
+  transform::Rigid2d pipeline_pose_estimate_2d = *pose_estimate_2d;
+  transform::Rigid2d published_pose_estimate_2d = *pose_estimate_2d;
+  if (options_.frozen_submap_scan_matcher_options().enabled() &&
+      frozen_submap_data_provider_) {
+    if (frozen_submap_scan_matcher_ == nullptr) {
+      frozen_submap_scan_matcher_ =
+          absl::make_unique<scan_matching::FrozenSubmapScanMatcher2D>(
+              options_.frozen_submap_scan_matcher_options());
+    }
+    const auto frozen_match_result = frozen_submap_scan_matcher_->Match(
+        frozen_submap_data_provider_(), *pose_estimate_2d,
+        filtered_gravity_aligned_point_cloud);
+    if (options_.frozen_submap_scan_matcher_options().tuning_log_enabled() &&
+        frozen_match_result.attempted) {
+      AccumulateFrozenSubmapTuningStats(frozen_match_result);
+      MaybeLogFrozenSubmapTuningDetail(frozen_match_result);
+      MaybeLogFrozenSubmapTuningSummary();
+    }
+    if (frozen_match_result.accepted) {
+      published_pose_estimate_2d = frozen_match_result.filtered_tracking_to_local;
+      if (options_.frozen_submap_scan_matcher_options().apply_mode() ==
+          scan_matching::proto::FrozenSubmapScanMatcherOptions2D::
+              FULL_PIPELINE) {
+        pipeline_pose_estimate_2d =
+            frozen_match_result.filtered_tracking_to_local;
+      }
+    }
+  }
+  const transform::Rigid3d pipeline_pose_estimate =
+      transform::Embed3D(pipeline_pose_estimate_2d) * gravity_alignment;
+  const transform::Rigid3d published_pose_estimate =
+      transform::Embed3D(published_pose_estimate_2d) * gravity_alignment;
+  extrapolator_->AddPose(time, pipeline_pose_estimate);
 
   sensor::RangeData range_data_in_local =
       TransformRangeData(gravity_aligned_range_data,
-                         transform::Embed3D(pose_estimate_2d->cast<float>()));
+                         transform::Embed3D(
+                             pipeline_pose_estimate_2d.cast<float>()));
   std::unique_ptr<InsertionResult> insertion_result = InsertIntoSubmap(
       time, range_data_in_local, filtered_gravity_aligned_point_cloud,
-      pose_estimate, gravity_alignment.rotation());
+      pipeline_pose_estimate, gravity_alignment.rotation());
 
   const auto wall_time = std::chrono::steady_clock::now();
   if (last_wall_time_.has_value()) {
@@ -272,7 +544,8 @@ LocalTrajectoryBuilder2D::AddAccumulatedRangeData(
   last_wall_time_ = wall_time;
   last_thread_cpu_time_seconds_ = thread_cpu_time_seconds;
   return absl::make_unique<MatchingResult>(
-      MatchingResult{time, pose_estimate, std::move(range_data_in_local),
+      MatchingResult{time, pipeline_pose_estimate, published_pose_estimate,
+                     std::move(range_data_in_local),
                      std::move(insertion_result)});
 }
 

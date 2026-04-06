@@ -274,7 +274,8 @@ void Node::PublishLocalTrajectoryData() {
                 point_cloud, trajectory_data.local_to_map.cast<float>())));
       }
       extrapolator.AddPose(trajectory_data.local_slam_data->time,
-                           trajectory_data.local_slam_data->local_pose);
+                           trajectory_data.local_slam_data
+                               ->published_local_pose);
     }
 
     geometry_msgs::msg::TransformStamped stamped_transform;
@@ -297,20 +298,21 @@ void Node::PublishLocalTrajectoryData() {
       continue;
     last_published_tf_stamps_[entry.first] = stamped_transform.header.stamp;
 
-    const Rigid3d tracking_to_local_3d =
+    const Rigid3d published_tracking_to_local_3d =
         node_options_.use_pose_extrapolator
             ? extrapolator.ExtrapolatePose(now)
-            : trajectory_data.local_slam_data->local_pose;
-    const Rigid3d tracking_to_local = [&] {
+            : trajectory_data.local_slam_data->published_local_pose;
+    const Rigid3d published_tracking_to_local = [&] {
       if (trajectory_data.trajectory_options.publish_frame_projected_to_2d) {
         return carto::transform::Embed3D(
-            carto::transform::Project2D(tracking_to_local_3d));
+            carto::transform::Project2D(published_tracking_to_local_3d));
       }
-      return tracking_to_local_3d;
+      return published_tracking_to_local_3d;
     }();
 
+    const Rigid3d tracking_to_local = published_tracking_to_local;
     const Rigid3d tracking_to_map =
-        trajectory_data.local_to_map * tracking_to_local;
+        trajectory_data.local_to_map * published_tracking_to_local;
 
     if (trajectory_data.published_to_tracking != nullptr) {
       if (node_options_.publish_to_tf) {

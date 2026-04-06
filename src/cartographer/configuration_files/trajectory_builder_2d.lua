@@ -53,6 +53,43 @@ TRAJECTORY_BUILDER_2D = {
     },
   },
 
+  frozen_submap_scan_matcher = {
+    enabled = false,
+    apply_mode = "FULL_PIPELINE",
+    search_radius = 3.0,
+    max_submaps_to_match = 5,
+    use_realtime_correlative_scan_matching = true,
+    use_ceres_scan_matching = true,
+    min_realtime_correlative_score = 0.60,
+    min_score_margin = 0.03,
+    score_variance_top_k = 3,
+    min_score_variance = 0.0004,
+    max_translation_correction = 0.20,
+    max_rotation_correction = math.rad(3.0),
+    real_time_correlative_scan_matcher = {
+      linear_search_window = 0.15,
+      angular_search_window = math.rad(3.0),
+      translation_delta_cost_weight = 10.0,
+      rotation_delta_cost_weight = 10.0,
+    },
+    ceres_scan_matcher = {
+      occupied_space_weight = 15.0,
+      translation_weight = 30.0,
+      rotation_weight = 30.0,
+      ceres_solver_options = {
+        use_nonmonotonic_steps = false,
+        max_num_iterations = 20,
+        num_threads = 1,
+      },
+    },
+    tuning_log_enabled = false,
+    tuning_log_log_rejections = true,
+    tuning_log_log_acceptances = false,
+    tuning_log_detail_every_n_scans = 20,
+    tuning_log_summary_every_n_scans = 100,
+    tuning_log_top_candidates = 3,
+  },
+
   motion_filter = {
     max_time_seconds = 5.,
     max_distance_meters = 0.2,

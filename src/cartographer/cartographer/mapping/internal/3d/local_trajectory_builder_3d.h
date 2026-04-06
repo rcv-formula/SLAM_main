@@ -50,6 +50,7 @@ class LocalTrajectoryBuilder3D {
   struct MatchingResult {
     common::Time time;
     transform::Rigid3d local_pose;
+    transform::Rigid3d published_local_pose;
     sensor::RangeData range_data_in_local;
     // 'nullptr' if dropped by the motion filter.
     std::unique_ptr<const InsertionResult> insertion_result;

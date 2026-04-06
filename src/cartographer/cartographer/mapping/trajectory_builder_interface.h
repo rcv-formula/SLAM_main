@@ -58,7 +58,8 @@ class TrajectoryBuilderInterface {
   // assigned 'NodeId', otherwise 'nullptr' if the data was filtered out.
   using LocalSlamResultCallback =
       std::function<void(int /* trajectory ID */, common::Time,
-                         transform::Rigid3d /* local pose estimate */,
+                         transform::Rigid3d /* pipeline/local pose estimate */,
+                         transform::Rigid3d /* published/filtered pose estimate */,
                          sensor::RangeData /* in local frame */,
                          std::unique_ptr<const InsertionResult>)>;
 
