@@ -32,8 +32,6 @@ options = {
 
 MAP_BUILDER.use_trajectory_builder_2d = true
 TRAJECTORY_BUILDER_2D.use_imu_data = true
-TRAJECTORY_BUILDER_2D.num_accumulated_range_data = 15
-TRAJECTORY_BUILDER_2D.submaps.num_range_data = 60
 
 -- LiDAR settings
 TRAJECTORY_BUILDER_2D.min_range = 0.1
@@ -45,13 +43,13 @@ TRAJECTORY_BUILDER_2D.adaptive_voxel_filter.max_length = 5.0
 TRAJECTORY_BUILDER_2D.adaptive_voxel_filter.min_num_points = 200
 TRAJECTORY_BUILDER_2D.voxel_filter_size = 0.05
 
-TRAJECTORY_BUILDER_2D.real_time_correlative_scan_matcher.linear_search_window = 2.0
-TRAJECTORY_BUILDER_2D.real_time_correlative_scan_matcher.angular_search_window = math.rad(20.0)
+TRAJECTORY_BUILDER_2D.real_time_correlative_scan_matcher.linear_search_window = 1.0
+TRAJECTORY_BUILDER_2D.real_time_correlative_scan_matcher.angular_search_window = math.rad(10.0)
 TRAJECTORY_BUILDER_2D.real_time_correlative_scan_matcher.translation_delta_cost_weight = 5.0
 TRAJECTORY_BUILDER_2D.real_time_correlative_scan_matcher.rotation_delta_cost_weight = 5.0
 
 -- IMU settings
-TRAJECTORY_BUILDER_2D.imu_gravity_time_constant = 10.0
+TRAJECTORY_BUILDER_2D.imu_gravity_time_constant = 30.0
 TRAJECTORY_BUILDER_2D.ceres_scan_matcher.occupied_space_weight = 50.0
 TRAJECTORY_BUILDER_2D.ceres_scan_matcher.translation_weight = 20.0
 TRAJECTORY_BUILDER_2D.ceres_scan_matcher.rotation_weight = 20.0
@@ -59,16 +57,16 @@ TRAJECTORY_BUILDER_2D.ceres_scan_matcher.rotation_weight = 20.0
 -- Optimization and mapping settings
 MAP_BUILDER.num_background_threads = 4
 POSE_GRAPH.optimize_every_n_nodes = 2 -- Optimization cycle adjustment
-POSE_GRAPH.constraint_builder.min_score = 0.4
-POSE_GRAPH.constraint_builder.sampling_ratio = 0.005
-POSE_GRAPH.global_sampling_ratio = 0.02
-POSE_GRAPH.constraint_builder.max_constraint_distance = 25.0
+POSE_GRAPH.constraint_builder.min_score = 0.65
+POSE_GRAPH.constraint_builder.sampling_ratio = 0.0001
+POSE_GRAPH.global_sampling_ratio = 0.005
+POSE_GRAPH.constraint_builder.max_constraint_distance = 15.0
 
-POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher.linear_search_window = 2.0
-POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher.angular_search_window = math.rad(20.0)
+POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher.linear_search_window = 1.5
+POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher.angular_search_window = math.rad(10.0)
 
 -- Loop closure improvements
-POSE_GRAPH.constraint_builder.loop_closure_translation_weight = 1000.0
-POSE_GRAPH.constraint_builder.loop_closure_rotation_weight = 1000.0
+POSE_GRAPH.constraint_builder.loop_closure_translation_weight = 2000.0
+POSE_GRAPH.constraint_builder.loop_closure_rotation_weight = 2000.0
 
 return options
