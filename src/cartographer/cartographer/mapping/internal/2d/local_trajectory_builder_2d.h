@@ -51,6 +51,8 @@ class LocalTrajectoryBuilder2D {
     common::Time time;
     transform::Rigid3d local_pose;
     sensor::RangeData range_data_in_local;
+    double scan_match_score;
+    bool scan_match_score_valid;
     // 'nullptr' if dropped by the motion filter.
     std::unique_ptr<const InsertionResult> insertion_result;
   };
@@ -115,6 +117,8 @@ class LocalTrajectoryBuilder2D {
   absl::optional<std::chrono::steady_clock::time_point> last_wall_time_;
   absl::optional<double> last_thread_cpu_time_seconds_;
   absl::optional<common::Time> last_sensor_time_;
+  double latest_scan_match_score_ = 0.;
+  bool latest_scan_match_score_valid_ = false;
 
   RangeDataCollator range_data_collator_;
 };

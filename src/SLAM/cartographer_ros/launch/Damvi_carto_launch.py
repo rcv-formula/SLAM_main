@@ -9,6 +9,7 @@ def generate_launch_description():
     main_dir = os.path.dirname(script_path)
     package_dir = os.path.dirname(main_dir)
     config_dir = os.path.join(package_dir, 'configuration_files')
+
     return LaunchDescription([
         Node(
             package='cartographer_ros',

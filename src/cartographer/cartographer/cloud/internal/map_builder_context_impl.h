@@ -41,9 +41,12 @@ mapping::TrajectoryBuilderInterface::LocalSlamResultCallback
 MapBuilderContext<SubmapType>::GetLocalSlamResultCallbackForSubscriptions() {
   return [this](int trajectory_id, common::Time time,
                 transform::Rigid3d local_pose, sensor::RangeData range_data,
+                double scan_match_score, bool scan_match_score_valid,
                 std::unique_ptr<
                     const mapping::TrajectoryBuilderInterface::InsertionResult>
                     insertion_result) {
+    (void)scan_match_score;
+    (void)scan_match_score_valid;
     auto it = client_ids_.find(trajectory_id);
     if (it == client_ids_.end()) {
       LOG(ERROR) << "Unknown trajectory_id " << trajectory_id << ". Ignoring.";

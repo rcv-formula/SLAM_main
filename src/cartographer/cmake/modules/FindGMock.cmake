@@ -19,9 +19,6 @@ if(NOT GMock_FOUND)
     PATH_SUFFIXES include
     PATHS
       /usr
-      /usr/local
-      /usr/src/googletest/googlemock
-      /usr/src/googletest
   )
 
   # Find system-wide installed gmock.
@@ -60,9 +57,6 @@ if(NOT GMock_FOUND)
     PATH_SUFFIXES include
     PATHS
       /usr
-      /usr/local
-      /usr/src/googletest/googletest
-      /usr/src/googletest
   )
   list(APPEND GMOCK_INCLUDE_DIRS ${GTEST_INCLUDE_DIRS})
 

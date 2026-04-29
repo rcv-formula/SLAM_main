@@ -35,6 +35,7 @@
 #include "cartographer_ros/trajectory_options.h"
 #include "cartographer_ros_msgs/srv/finish_trajectory.hpp"
 #include "cartographer_ros_msgs/srv/get_trajectory_states.hpp"
+#include "cartographer_ros_msgs/msg/scan_match_score.hpp"
 #include "cartographer_ros_msgs/srv/read_metrics.hpp"
 #include "cartographer_ros_msgs/srv/start_trajectory.hpp"
 #include "cartographer_ros_msgs/msg/status_response.hpp"
@@ -192,6 +193,7 @@ class Node {
   ::rclcpp::Publisher<::visualization_msgs::msg::MarkerArray>::SharedPtr constraint_list_publisher_;
   ::rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr tracked_pose_publisher_;
   ::rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr scan_matched_point_cloud_publisher_;
+  ::rclcpp::Publisher<::cartographer_ros_msgs::msg::ScanMatchScore>::SharedPtr scan_match_score_publisher_;
   // These ros service servers need to live for the lifetime of the node.
   ::rclcpp::Service<cartographer_ros_msgs::srv::SubmapQuery>::SharedPtr submap_query_server_;
   ::rclcpp::Service<cartographer_ros_msgs::srv::TrajectoryQuery>::SharedPtr trajectory_query_server;

@@ -61,6 +61,12 @@ class PoseExtrapolator : public PoseExtrapolatorInterface {
   // Returns the current gravity alignment estimate as a rotation from
   // the tracking frame into a gravity aligned frame.
   Eigen::Quaterniond EstimateGravityOrientation(common::Time time) override;
+  //////////////////////reliability of sensor data ///////////////////
+  void ScanMatchScore(double score);
+  double scan_match_score = 1.0;
+  void Reliability_sensor();
+  double yaw_speed = 0.0;
+  ////////////////////////////////////////////////////
 
  private:
   void UpdateVelocitiesFromPoses();
@@ -70,6 +76,74 @@ class PoseExtrapolator : public PoseExtrapolatorInterface {
   Eigen::Quaterniond ExtrapolateRotation(common::Time time,
                                          ImuTracker* imu_tracker) const;
   Eigen::Vector3d ExtrapolateTranslation(common::Time time);
+
+  ///////////////////////////////////////////////////
+  // Fusion state for scan- and odom-derived planar velocities.
+  bool velocity_filter_initalized = false;
+  common::Time last_velocity_time = common::Time::min();
+  Eigen::Vector2d fusion_linear_velocity = Eigen::Vector2d::Zero();
+  Eigen::Matrix2d velocity_covariance =
+      Eigen::Matrix2d::Identity() * 1e-2;
+
+//setting Q = 1e-3
+//straight line: R_scan = 1.5e-6, R_odom = 1.0e-3
+//curve line: R_scan = 5.0e-7, R_odom = 1.0e-3
+  Eigen::Matrix2d process_noise = Eigen::Matrix2d::Identity() * 1e-3;
+  Eigen::Matrix2d measurement_noise_scan =
+      Eigen::Matrix2d::Identity() * 1.5e-6;
+  Eigen::Matrix2d measurement_noise_odom =
+      Eigen::Matrix2d::Identity() * 2.0e-4;
+
+  Eigen::Vector3d translation_fusion(
+      common::Time time, const Eigen::Vector3d* linear_velocity_scan,
+      const Eigen::Vector3d* linear_velocity_odom);
+
+
+// Q= 1e-3이면:
+
+// - q = 2e-5
+// - 5% 반영 -> R_odom ≈ 2.0e-4
+// - 10% 반영 -> R_odom ≈ 1.2e-4
+// - 1% 반영 -> R_odom ≈ 1.0e-3
+// - 평소 구간: scan **95% R_scan = 1.5e-6**
+// - 직선 구간: scan **80~85% R_scan = 5.5 e-6**
+// - 곡선 구간: scan **97~99% 5.0e-7**
+
+// Q = 2e-3이면:
+
+// - q = 4e-5
+// - 5% 반영 -> R_odom ≈ 4.0e-4
+// - 10% 반영 -> R_odom ≈ 2.5e-4
+// - 1% 반영 -> R_odom ≈ 2.0e-3
+// - 평소 구간: scan **95% R_scan = 2.5e-6**
+// - 직선 구간: scan **80~85% R_scan = 1.1 e-5**
+// - 곡선 구간: scan **97~99%  1.0e-6**
+
+
+//////////////////////////////////////////////////////////////////
+
+
+///////////////////////IMU condiser translation velocity //////////////////
+Eigen::Vector3d imu_delta_velocity = Eigen::Vector3d::Zero(); // imu 기반으로 계산한 속도 변화량을 저장
+Eigen::Vector3d prev_linear_acceleration = Eigen::Vector3d::Zero(); // 이전 가속도 값을 저장
+bool imu_velocity_initalized = false;
+common::Time last_imu_time = common::Time::min(); // imu가 이전에 측정한 시간을 뜻한다
+
+// 튜닝 완료
+// double imu_weight = 0.2;//예측 속도에 미칠 imu의 영향
+// // double imu_weight = 0.2;//예측 속도에 미칠 imu의 
+// // double imu_delta_clip = 0.2; // 너무 강한 보정이 들어갈 경우 clip 한다
+// double imu_delta_min = 0.3; // 너무 작은 보정이 들어갈 경우 제거할 임계값
+// 튜닝 중
+double imu_weight = 0.2;//예측 속도에 미칠 imu의 영향
+// double imu_weight = 0.2;//예측 속도에 미칠 imu의 
+// double imu_delta_clip = 0.2; // 너무 강한 보정이 들어갈 경우 clip 한다
+double imu_delta_min = 0.3; // 너무 작은 보정이 들어갈 경우 제거할 임계값
+double wheelodom_weight = 0.2;
+Eigen::Vector3d translation_imu_wheel(const Eigen::Vector3d* linear_velocity_scan, const Eigen::Vector3d* linear_velocity_odom);
+////////////////////////////////////////////////////////////////////////
+
+
 
   const common::Duration pose_queue_duration_;
   struct TimedPose {

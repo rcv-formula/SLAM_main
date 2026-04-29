@@ -65,6 +65,8 @@ LocalTrajectoryBuilder2D::TransformToGravityAlignedFrameAndFilter(
 std::unique_ptr<transform::Rigid2d> LocalTrajectoryBuilder2D::ScanMatch(
     const common::Time time, const transform::Rigid2d& pose_prediction,
     const sensor::PointCloud& filtered_gravity_aligned_point_cloud) {
+  latest_scan_match_score_valid_ = false;
+  latest_scan_match_score_ = 0.;
   if (active_submaps_.submaps().empty()) {
     return absl::make_unique<transform::Rigid2d>(pose_prediction);
   }
@@ -79,6 +81,12 @@ std::unique_ptr<transform::Rigid2d> LocalTrajectoryBuilder2D::ScanMatch(
         pose_prediction, filtered_gravity_aligned_point_cloud,
         *matching_submap->grid(), &initial_ceres_pose);
     kRealTimeCorrelativeScanMatcherScoreMetric->Observe(score);
+    latest_scan_match_score_ = score;
+    latest_scan_match_score_valid_ = true;
+    if (extrapolator_) {
+      extrapolator_->ScanMatchScore(score);
+    }
+
   }
 
   auto pose_observation = absl::make_unique<transform::Rigid2d>();
@@ -273,6 +281,7 @@ LocalTrajectoryBuilder2D::AddAccumulatedRangeData(
   last_thread_cpu_time_seconds_ = thread_cpu_time_seconds;
   return absl::make_unique<MatchingResult>(
       MatchingResult{time, pose_estimate, std::move(range_data_in_local),
+                     latest_scan_match_score_, latest_scan_match_score_valid_,
                      std::move(insertion_result)});
 }
 
