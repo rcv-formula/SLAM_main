@@ -3,5 +3,7 @@ log/
 install/
 
 *.pbstream
-
+*.pyc
+__pycache__/
 .vscode
+frozen_tuning_results/

@@ -35,6 +35,7 @@ constexpr char kOccupancyGridTopic[] = "map";
 constexpr char kScanMatchedPointCloudTopic[] = "scan_matched_points2";
 constexpr char kSubmapListTopic[] = "submap_list";
 constexpr char kTrackedPoseTopic[] = "tracked_pose";
+constexpr char kFilteredTrackedPoseTopic[] = "filtered_tracked_pose";
 constexpr char kSubmapQueryServiceName[] = "submap_query";
 constexpr char kTrajectoryQueryServiceName[] = "trajectory_query";
 constexpr char kStartTrajectoryServiceName[] = "start_trajectory";

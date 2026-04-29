@@ -128,6 +128,11 @@ TRAJECTORY_BUILDER_2D.frozen_submap_scan_matcher.use_realtime_correlative_scan_m
 -- RTC 결과를 Ceres로 한 번 더 refine할지 정합니다.
 TRAJECTORY_BUILDER_2D.frozen_submap_scan_matcher.use_ceres_scan_matching = true
 
+-- 비교용 test mode입니다.
+-- true면 frozen matcher는 내부적으로 항상 PUBLISH_ONLY처럼 동작하고,
+-- 기존 /odom 경로는 raw pose 기준으로 유지하면서 /filtered_odom 비교 경로를 따로 제공합니다.
+TRAJECTORY_BUILDER_2D.frozen_submap_scan_matcher.test_mode_publish_filtered_odom = false
+
 -- frozen matcher 튜닝용 로그 전체 on/off입니다.
 TRAJECTORY_BUILDER_2D.frozen_submap_scan_matcher.tuning_log_enabled = false
 

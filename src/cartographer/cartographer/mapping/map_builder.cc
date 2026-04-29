@@ -17,6 +17,7 @@
 #include "cartographer/mapping/map_builder.h"
 
 #include "absl/memory/memory.h"
+#include "absl/synchronization/mutex.h"
 #include "absl/types/optional.h"
 #include "cartographer/common/time.h"
 #include "cartographer/io/internal/mapping_state_serialization.h"
@@ -131,17 +132,27 @@ int MapBuilder::AddTrajectoryBuilder(
     std::unique_ptr<LocalTrajectoryBuilder2D> local_trajectory_builder;
     if (trajectory_options.has_trajectory_builder_2d_options()) {
       auto frozen_submap_data_provider =
-          [trajectory_id,
+          [this, trajectory_id,
            pose_graph = static_cast<PoseGraph2D*>(pose_graph_.get())]() {
             scan_matching::FrozenSubmapQueryResult2D query_result;
             query_result.local_to_map =
                 transform::Project2D(
                     pose_graph->GetLocalToGlobalTransform(trajectory_id));
+            std::set<int> loaded_state_trajectory_ids;
+            {
+              absl::MutexLock lock(&loaded_state_trajectory_ids_mutex_);
+              loaded_state_trajectory_ids = loaded_state_trajectory_ids_;
+            }
+            if (loaded_state_trajectory_ids.empty()) {
+              return query_result;
+            }
             const auto trajectory_states = pose_graph->GetTrajectoryStates();
             std::map<int, transform::Rigid2d> frozen_local_to_map_by_trajectory;
             for (const auto& trajectory_state : trajectory_states) {
               if (trajectory_state.second !=
-                  PoseGraphInterface::TrajectoryState::FROZEN) {
+                      PoseGraphInterface::TrajectoryState::FROZEN ||
+                  loaded_state_trajectory_ids.count(trajectory_state.first) ==
+                      0) {
                 continue;
               }
               frozen_local_to_map_by_trajectory.emplace(
@@ -264,6 +275,7 @@ std::map<int, int> MapBuilder::LoadState(
       deserializer.all_trajectory_builder_options();
 
   std::map<int, int> trajectory_remapping;
+  std::set<int> loaded_state_trajectory_ids;
   for (int i = 0; i < pose_graph_proto.trajectory_size(); ++i) {
     auto& trajectory_proto = *pose_graph_proto.mutable_trajectory(i);
     const auto& options_with_sensor_ids_proto =
@@ -275,9 +287,15 @@ std::map<int, int> MapBuilder::LoadState(
               .second)
         << "Duplicate trajectory ID: " << trajectory_proto.trajectory_id();
     trajectory_proto.set_trajectory_id(new_trajectory_id);
+    loaded_state_trajectory_ids.insert(new_trajectory_id);
     if (load_frozen_state) {
       pose_graph_->FreezeTrajectory(new_trajectory_id);
     }
+  }
+  {
+    absl::MutexLock lock(&loaded_state_trajectory_ids_mutex_);
+    loaded_state_trajectory_ids_.insert(loaded_state_trajectory_ids.begin(),
+                                        loaded_state_trajectory_ids.end());
   }
 
   // Apply the calculated remapping to constraints in the pose graph proto.
@@ -421,6 +439,44 @@ std::map<int, int> MapBuilder::LoadState(
   }
   CHECK(reader->eof());
   return trajectory_remapping;
+}
+
+std::set<int> MapBuilder::GetLoadedStateTrajectoryIdsForTesting() const {
+  absl::MutexLock lock(&loaded_state_trajectory_ids_mutex_);
+  return loaded_state_trajectory_ids_;
+}
+
+std::vector<SubmapId> MapBuilder::GetFrozenSubmapCandidateIdsForTesting()
+    const {
+  std::vector<SubmapId> candidate_ids;
+  if (!options_.use_trajectory_builder_2d()) {
+    return candidate_ids;
+  }
+
+  const auto* pose_graph = static_cast<const PoseGraph2D*>(pose_graph_.get());
+  const auto loaded_state_trajectory_ids = GetLoadedStateTrajectoryIdsForTesting();
+  if (loaded_state_trajectory_ids.empty()) {
+    return candidate_ids;
+  }
+
+  std::set<int> eligible_trajectory_ids;
+  for (const auto& trajectory_state : pose_graph->GetTrajectoryStates()) {
+    if (trajectory_state.second ==
+            PoseGraphInterface::TrajectoryState::FROZEN &&
+        loaded_state_trajectory_ids.count(trajectory_state.first) > 0) {
+      eligible_trajectory_ids.insert(trajectory_state.first);
+    }
+  }
+
+  for (const auto& submap_id_data : pose_graph->GetAllSubmapData()) {
+    if (eligible_trajectory_ids.count(submap_id_data.id.trajectory_id) == 0 ||
+        submap_id_data.data.submap == nullptr ||
+        !submap_id_data.data.submap->insertion_finished()) {
+      continue;
+    }
+    candidate_ids.push_back(submap_id_data.id);
+  }
+  return candidate_ids;
 }
 
 std::map<int, int> MapBuilder::LoadStateFromFile(

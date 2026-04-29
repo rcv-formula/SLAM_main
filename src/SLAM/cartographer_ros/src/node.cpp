@@ -121,6 +121,9 @@ Node::Node(
     tracked_pose_publisher_ =
         node_->create_publisher<::geometry_msgs::msg::PoseStamped>(
             kTrackedPoseTopic, 10);
+    filtered_tracked_pose_publisher_ =
+        node_->create_publisher<::geometry_msgs::msg::PoseStamped>(
+            kFilteredTrackedPoseTopic, 10);
   }
 
   scan_matched_point_cloud_publisher_ =
@@ -233,6 +236,18 @@ void Node::AddExtrapolator(const int trajectory_id,
       std::forward_as_tuple(
           ::cartographer::common::FromSeconds(kExtrapolationEstimationTimeSec),
           gravity_time_constant));
+  if (options.trajectory_builder_options.has_trajectory_builder_2d_options() &&
+      options.trajectory_builder_options.trajectory_builder_2d_options()
+          .frozen_submap_scan_matcher_options()
+          .test_mode_publish_filtered_odom()) {
+    CHECK(raw_extrapolators_.count(trajectory_id) == 0);
+    raw_extrapolators_.emplace(
+        std::piecewise_construct, std::forward_as_tuple(trajectory_id),
+        std::forward_as_tuple(
+            ::cartographer::common::FromSeconds(
+                kExtrapolationEstimationTimeSec),
+            gravity_time_constant));
+  }
 }
 
 void Node::AddSensorSamplers(const int trajectory_id,
@@ -252,6 +267,9 @@ void Node::PublishLocalTrajectoryData() {
     const auto& trajectory_data = entry.second;
 
     auto& extrapolator = extrapolators_.at(entry.first);
+    const bool filtered_odom_test_mode =
+        raw_extrapolators_.count(entry.first) > 0;
+    auto raw_extrapolator_it = raw_extrapolators_.find(entry.first);
     // We only publish a point cloud if it has changed. It is not needed at high
     // frequency, and republishing it would be computationally wasteful.
     if (trajectory_data.local_slam_data->time !=
@@ -276,6 +294,11 @@ void Node::PublishLocalTrajectoryData() {
       extrapolator.AddPose(trajectory_data.local_slam_data->time,
                            trajectory_data.local_slam_data
                                ->published_local_pose);
+      if (filtered_odom_test_mode) {
+        raw_extrapolator_it->second.AddPose(
+            trajectory_data.local_slam_data->time,
+            trajectory_data.local_slam_data->local_pose);
+      }
     }
 
     geometry_msgs::msg::TransformStamped stamped_transform;
@@ -310,8 +333,24 @@ void Node::PublishLocalTrajectoryData() {
       return published_tracking_to_local_3d;
     }();
 
-    const Rigid3d tracking_to_local = published_tracking_to_local;
-    const Rigid3d tracking_to_map =
+    Rigid3d tracking_to_local = published_tracking_to_local;
+    Rigid3d tracking_to_map =
+        trajectory_data.local_to_map * published_tracking_to_local;
+    if (filtered_odom_test_mode) {
+      const Rigid3d raw_tracking_to_local_3d =
+          node_options_.use_pose_extrapolator
+              ? raw_extrapolator_it->second.ExtrapolatePose(now)
+              : trajectory_data.local_slam_data->local_pose;
+      tracking_to_local = [&] {
+        if (trajectory_data.trajectory_options.publish_frame_projected_to_2d) {
+          return carto::transform::Embed3D(
+              carto::transform::Project2D(raw_tracking_to_local_3d));
+        }
+        return raw_tracking_to_local_3d;
+      }();
+      tracking_to_map = trajectory_data.local_to_map * tracking_to_local;
+    }
+    const Rigid3d filtered_tracking_to_map =
         trajectory_data.local_to_map * published_tracking_to_local;
 
     if (trajectory_data.published_to_tracking != nullptr) {
@@ -350,6 +389,12 @@ void Node::PublishLocalTrajectoryData() {
         pose_msg.header.stamp = stamped_transform.header.stamp;
         pose_msg.pose = ToGeometryMsgPose(tracking_to_map);
         tracked_pose_publisher_->publish(pose_msg);
+        if (filtered_odom_test_mode) {
+          ::geometry_msgs::msg::PoseStamped filtered_pose_msg;
+          filtered_pose_msg.header = pose_msg.header;
+          filtered_pose_msg.pose = ToGeometryMsgPose(filtered_tracking_to_map);
+          filtered_tracked_pose_publisher_->publish(filtered_pose_msg);
+        }
       }
     }
   }
@@ -798,6 +843,9 @@ void Node::HandleOdometryMessage(const int trajectory_id,
   auto odometry_data_ptr = sensor_bridge_ptr->ToOdometryData(msg);
   if (odometry_data_ptr != nullptr) {
     extrapolators_.at(trajectory_id).AddOdometryData(*odometry_data_ptr);
+    if (raw_extrapolators_.count(trajectory_id) > 0) {
+      raw_extrapolators_.at(trajectory_id).AddOdometryData(*odometry_data_ptr);
+    }
   }
   sensor_bridge_ptr->HandleOdometryMessage(sensor_id, msg);
 }
@@ -835,6 +883,9 @@ void Node::HandleImuMessage(const int trajectory_id,
   auto imu_data_ptr = sensor_bridge_ptr->ToImuData(msg);
   if (imu_data_ptr != nullptr) {
     extrapolators_.at(trajectory_id).AddImuData(*imu_data_ptr);
+    if (raw_extrapolators_.count(trajectory_id) > 0) {
+      raw_extrapolators_.at(trajectory_id).AddImuData(*imu_data_ptr);
+    }
   }
   sensor_bridge_ptr->HandleImuMessage(sensor_id, msg);
 }

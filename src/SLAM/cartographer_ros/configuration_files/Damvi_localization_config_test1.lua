@@ -1,0 +1,40 @@
+include "Damvi_localization_config.lua"
+
+-- Test 1: overall best repeated profile from the 2026-04-02 retuning pass.
+-- Runtime mode is publish-only, so internal local SLAM stays raw and only the
+-- published localization pose is corrected by the frozen matcher.
+TRAJECTORY_BUILDER_2D.frozen_submap_scan_matcher.enabled = true
+TRAJECTORY_BUILDER_2D.frozen_submap_scan_matcher.apply_mode = "PUBLISH_ONLY"
+TRAJECTORY_BUILDER_2D.frozen_submap_scan_matcher.search_radius = 1.60
+TRAJECTORY_BUILDER_2D.frozen_submap_scan_matcher.max_submaps_to_match = 100
+TRAJECTORY_BUILDER_2D.frozen_submap_scan_matcher.min_realtime_correlative_score = 0.35
+TRAJECTORY_BUILDER_2D.frozen_submap_scan_matcher.min_score_margin = 0.0040
+TRAJECTORY_BUILDER_2D.frozen_submap_scan_matcher.score_variance_top_k = 3
+TRAJECTORY_BUILDER_2D.frozen_submap_scan_matcher.min_score_variance = 0.000050
+TRAJECTORY_BUILDER_2D.frozen_submap_scan_matcher.max_translation_correction = 0.620
+TRAJECTORY_BUILDER_2D.frozen_submap_scan_matcher.max_rotation_correction = math.rad(0.90)
+TRAJECTORY_BUILDER_2D.frozen_submap_scan_matcher.use_realtime_correlative_scan_matching = true
+TRAJECTORY_BUILDER_2D.frozen_submap_scan_matcher.use_ceres_scan_matching = true
+TRAJECTORY_BUILDER_2D.frozen_submap_scan_matcher.test_mode_publish_filtered_odom = true
+
+-- Keep logs light during visual testing.
+TRAJECTORY_BUILDER_2D.frozen_submap_scan_matcher.tuning_log_enabled = true
+TRAJECTORY_BUILDER_2D.frozen_submap_scan_matcher.tuning_log_log_rejections = false
+TRAJECTORY_BUILDER_2D.frozen_submap_scan_matcher.tuning_log_log_acceptances = true
+TRAJECTORY_BUILDER_2D.frozen_submap_scan_matcher.tuning_log_detail_every_n_scans = 20
+TRAJECTORY_BUILDER_2D.frozen_submap_scan_matcher.tuning_log_summary_every_n_scans = 25
+TRAJECTORY_BUILDER_2D.frozen_submap_scan_matcher.tuning_log_top_candidates = 3
+
+TRAJECTORY_BUILDER_2D.frozen_submap_scan_matcher.real_time_correlative_scan_matcher.linear_search_window = 1.80
+TRAJECTORY_BUILDER_2D.frozen_submap_scan_matcher.real_time_correlative_scan_matcher.angular_search_window = math.rad(1.80)
+TRAJECTORY_BUILDER_2D.frozen_submap_scan_matcher.real_time_correlative_scan_matcher.translation_delta_cost_weight = 0.70
+TRAJECTORY_BUILDER_2D.frozen_submap_scan_matcher.real_time_correlative_scan_matcher.rotation_delta_cost_weight = 0.70
+
+TRAJECTORY_BUILDER_2D.frozen_submap_scan_matcher.ceres_scan_matcher.occupied_space_weight = 60.00
+TRAJECTORY_BUILDER_2D.frozen_submap_scan_matcher.ceres_scan_matcher.translation_weight = 16.00
+TRAJECTORY_BUILDER_2D.frozen_submap_scan_matcher.ceres_scan_matcher.rotation_weight = 16.00
+TRAJECTORY_BUILDER_2D.frozen_submap_scan_matcher.ceres_scan_matcher.ceres_solver_options.use_nonmonotonic_steps = true
+TRAJECTORY_BUILDER_2D.frozen_submap_scan_matcher.ceres_scan_matcher.ceres_solver_options.max_num_iterations = 150
+TRAJECTORY_BUILDER_2D.frozen_submap_scan_matcher.ceres_scan_matcher.ceres_solver_options.num_threads = 8
+
+return options

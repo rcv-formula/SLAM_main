@@ -88,6 +88,7 @@ TRAJECTORY_BUILDER_2D = {
     tuning_log_detail_every_n_scans = 20,
     tuning_log_summary_every_n_scans = 100,
     tuning_log_top_candidates = 3,
+    test_mode_publish_filtered_odom = false,
   },
 
   motion_filter = {

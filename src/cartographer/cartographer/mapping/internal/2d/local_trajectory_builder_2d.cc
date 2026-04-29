@@ -482,6 +482,9 @@ LocalTrajectoryBuilder2D::AddAccumulatedRangeData(
   }
   transform::Rigid2d pipeline_pose_estimate_2d = *pose_estimate_2d;
   transform::Rigid2d published_pose_estimate_2d = *pose_estimate_2d;
+  const bool publish_filtered_odom_test_mode =
+      options_.frozen_submap_scan_matcher_options()
+          .test_mode_publish_filtered_odom();
   if (options_.frozen_submap_scan_matcher_options().enabled() &&
       frozen_submap_data_provider_) {
     if (frozen_submap_scan_matcher_ == nullptr) {
@@ -500,7 +503,8 @@ LocalTrajectoryBuilder2D::AddAccumulatedRangeData(
     }
     if (frozen_match_result.accepted) {
       published_pose_estimate_2d = frozen_match_result.filtered_tracking_to_local;
-      if (options_.frozen_submap_scan_matcher_options().apply_mode() ==
+      if (!publish_filtered_odom_test_mode &&
+          options_.frozen_submap_scan_matcher_options().apply_mode() ==
           scan_matching::proto::FrozenSubmapScanMatcherOptions2D::
               FULL_PIPELINE) {
         pipeline_pose_estimate_2d =

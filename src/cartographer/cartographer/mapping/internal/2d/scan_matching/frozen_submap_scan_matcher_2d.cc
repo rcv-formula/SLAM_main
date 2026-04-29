@@ -107,7 +107,6 @@ void PopulateCandidateDebugInfo(
   }
 }
 
-
 }  // namespace
 
 proto::FrozenSubmapScanMatcherOptions2D CreateFrozenSubmapScanMatcherOptions2D(
@@ -169,6 +168,10 @@ proto::FrozenSubmapScanMatcherOptions2D CreateFrozenSubmapScanMatcherOptions2D(
       parameter_dictionary->HasKey("tuning_log_top_candidates")
           ? parameter_dictionary->GetNonNegativeInt("tuning_log_top_candidates")
           : 3);
+  options.set_test_mode_publish_filtered_odom(
+      parameter_dictionary->HasKey("test_mode_publish_filtered_odom")
+          ? parameter_dictionary->GetBool("test_mode_publish_filtered_odom")
+          : false);
 
   *options.mutable_real_time_correlative_scan_matcher_options() =
       mapping::scan_matching::CreateRealTimeCorrelativeScanMatcherOptions(

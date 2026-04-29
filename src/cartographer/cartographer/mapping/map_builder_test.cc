@@ -632,6 +632,62 @@ TEST_P(MapBuilderTestByGridType,
   EXPECT_GE(map_builder_->pose_graph()->constraints().size(), 50);
 }
 
+TEST_P(MapBuilderTestByGridType,
+       FrozenMatcherCandidatesUseOnlyLoadedPbstreamTrajectories) {
+  if (GetParam() == GridType::TSDF) SetOptionsToTSDF2D();
+  trajectory_builder_options_.mutable_trajectory_builder_2d_options()
+      ->mutable_motion_filter_options()
+      ->set_max_distance_meters(0.);
+  EnableFrozenSubmapScanMatcher(
+      scan_matching::proto::FrozenSubmapScanMatcherOptions2D::PUBLISH_ONLY);
+  BuildMapBuilder();
+  const int serialized_trajectory_id = CreateTrajectoryWithFakeData();
+  map_builder_->pose_graph()->RunFinalOptimization();
+  EXPECT_GT(
+      map_builder_->pose_graph()->GetAllSubmapData().SizeOfTrajectoryOrZero(
+          serialized_trajectory_id),
+      0);
+
+  const std::string filename =
+      "temp-FrozenMatcherCandidatesUseOnlyLoadedPbstreamTrajectories.pbstream";
+  io::ProtoStreamWriter writer(filename);
+  map_builder_->SerializeState(/*include_unfinished_submaps=*/false, &writer);
+  writer.Close();
+
+  EnableFrozenSubmapScanMatcher(
+      scan_matching::proto::FrozenSubmapScanMatcherOptions2D::PUBLISH_ONLY);
+  BuildMapBuilder();
+  io::ProtoStreamReader reader(filename);
+  const auto trajectory_remapping =
+      map_builder_->LoadState(&reader, true /* load_frozen_state */);
+  map_builder_->pose_graph()->RunFinalOptimization();
+
+  auto* concrete_map_builder = static_cast<MapBuilder*>(map_builder_.get());
+  const auto loaded_state_trajectory_ids =
+      concrete_map_builder->GetLoadedStateTrajectoryIdsForTesting();
+  EXPECT_FALSE(loaded_state_trajectory_ids.empty());
+  for (const auto& trajectory_id_pair : trajectory_remapping) {
+    EXPECT_THAT(loaded_state_trajectory_ids,
+                ::testing::Contains(trajectory_id_pair.second));
+  }
+
+  const int live_trajectory_id = CreateTrajectoryWithFakeData(100.);
+  map_builder_->pose_graph()->RunFinalOptimization();
+  auto* pose_graph = dynamic_cast<PoseGraph*>(map_builder_->pose_graph());
+  ASSERT_NE(pose_graph, nullptr);
+  pose_graph->FreezeTrajectory(live_trajectory_id);
+  map_builder_->pose_graph()->RunFinalOptimization();
+
+  const auto candidate_ids =
+      concrete_map_builder->GetFrozenSubmapCandidateIdsForTesting();
+  EXPECT_FALSE(candidate_ids.empty());
+  for (const auto& submap_id : candidate_ids) {
+    EXPECT_THAT(loaded_state_trajectory_ids,
+                ::testing::Contains(submap_id.trajectory_id));
+    EXPECT_NE(submap_id.trajectory_id, live_trajectory_id);
+  }
+}
+
 }  // namespace
 }  // namespace mapping
 }  // namespace cartographer
