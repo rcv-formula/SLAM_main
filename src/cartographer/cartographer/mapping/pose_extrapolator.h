@@ -134,12 +134,14 @@ common::Time last_imu_time = common::Time::min(); // imu가 이전에 측정한 
 // // double imu_weight = 0.2;//예측 속도에 미칠 imu의 
 // // double imu_delta_clip = 0.2; // 너무 강한 보정이 들어갈 경우 clip 한다
 // double imu_delta_min = 0.3; // 너무 작은 보정이 들어갈 경우 제거할 임계값
+//double wheelodom_weight = 0.2;
+
 // 튜닝 중
 double imu_weight = 0.2;//예측 속도에 미칠 imu의 영향
 // double imu_weight = 0.2;//예측 속도에 미칠 imu의 
 // double imu_delta_clip = 0.2; // 너무 강한 보정이 들어갈 경우 clip 한다
 double imu_delta_min = 0.3; // 너무 작은 보정이 들어갈 경우 제거할 임계값
-double wheelodom_weight = 0.2;
+double wheelodom_weight = 0.01;
 Eigen::Vector3d translation_imu_wheel(const Eigen::Vector3d* linear_velocity_scan, const Eigen::Vector3d* linear_velocity_odom);
 ////////////////////////////////////////////////////////////////////////
 

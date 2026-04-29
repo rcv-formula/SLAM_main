@@ -17,6 +17,7 @@ def generate_launch_description():
             name='cartographer_node',
             output='screen',
             arguments = [
+                '--collect_metrics',
                 '-configuration_directory', config_dir,
                 '-configuration_basename', 'Damvi_carto_config.lua'],
             remappings=[

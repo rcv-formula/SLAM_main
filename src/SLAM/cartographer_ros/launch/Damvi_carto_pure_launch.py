@@ -17,7 +17,7 @@ def generate_launch_description():
         
         DeclareLaunchArgument(
             'use_sim_time',
-            default_value='false',
+            default_value='true',
             description='Use simulation time if true'
         ),
         
@@ -27,6 +27,7 @@ def generate_launch_description():
             name='cartographer_node',
             output='screen',
             arguments=[
+                '--collect_metrics',
                 '-configuration_directory', config_dir,
                 '-configuration_basename', 'Damvi_localization_config.lua',
                 '-load_state_filename', pbstream_file  # Specify the map file for localization
