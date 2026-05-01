@@ -16,15 +16,64 @@ SLAM이 **실행 중일 때** Cartographer의 내장 메트릭을 실시간으�
 
 ### 실행 방법
 
-#### **방법 A: 실시간 모니터링** (권장)
+#### **0단계: Cartographer를 metric 모드로 실행**
 
 ```bash
-# 터미널 1: Cartographer 시작
-ros2 launch cartographer_ros Damvi_carto_pure_metric_launch.py
+# 터미널 1: wheel odometry 사용 버전
+ros2 launch cartographer_ros Damvi_carto_wheel_metric_launch.py
 
-# 터미널 2: 실시간 메트릭 모니터링
+# 또는 pure lidar/imu 버전
+ros2 launch cartographer_ros Damvi_carto_pure_metric_launch.py
+```
+
+위 launch 파일에는 `--collect_metrics` 옵션이 들어 있어야 합니다.
+현재 `Damvi_carto_wheel_metric_launch.py`와 `Damvi_carto_pure_metric_launch.py`는 metric 수집이 켜진 실행 파일입니다.
+
+서비스가 떠 있는지 확인하려면 다른 터미널에서 확인합니다.
+
+```bash
+ros2 service list | grep read_metrics
+```
+
+정상이라면 보통 아래처럼 나옵니다.
+
+```text
+/read_metrics
+```
+
+환경에 따라 `/cartographer_ros/read_metrics`로 보일 수도 있습니다.
+`monitor_metrics.py`와 `collect_metrics.py`는 두 이름을 자동으로 찾아서 연결합니다.
+
+#### **방법 A: 실시간 화면 모니터링** (권장)
+
+SLAM이 실행 중인 상태에서 다른 터미널을 열고 실행합니다.
+
+```bash
 python3 /home/symoon/SLAM_main/monitor_metrics.py
 ```
+
+이 방법은 화면에서 현재 상태를 계속 보는 용도입니다.
+파일 저장은 하지 않습니다.
+종료하려면 `Ctrl+C`를 누릅니다.
+
+실시간 확인만 할 때는 아래 두 터미널만 사용하면 됩니다.
+
+```bash
+# 터미널 1: SLAM 실행
+ros2 launch cartographer_ros Damvi_carto_wheel_metric_launch.py
+
+# 터미널 2: 메트릭 실시간 확인
+python3 /home/symoon/SLAM_main/monitor_metrics.py
+```
+
+화면에서 주로 볼 값은 아래 네 가지입니다.
+
+| 항목 | 보는 기준 |
+|------|-----------|
+| `Latency` | 낮을수록 좋음, 보통 0.05s 이하면 좋음 |
+| `Real-Time Ratio` | 1.0 이상이면 실시간 처리 가능 |
+| `Score` | 높을수록 scan matching 품질 좋음 |
+| `Residuals` | 낮을수록 정합 오차 작음 |
 
 **출력 예:**
 ```
@@ -39,21 +88,69 @@ python3 /home/symoon/SLAM_main/monitor_metrics.py
 ✅ 시스템이 실시간 처리 가능 (ratio: 1.23)
 ```
 
-#### **방법 B: 메트릭 한 번 읽기**
+#### **방법 B: 실시간 메트릭을 파일로 저장**
+
+SLAM이 실행 중인 상태에서 다른 터미널을 열고 실행합니다.
+
+```bash
+# 60초 동안 1초 간격으로 수집 후 CSV/JSON 저장
+python3 /home/symoon/SLAM_main/collect_metrics.py \
+  --duration 60 \
+  --interval 1 \
+  --output /home/symoon/SLAM_main/metrics_data
+```
+
+결과는 아래 위치에 저장됩니다.
+
+```text
+/home/symoon/SLAM_main/metrics_data/metrics_YYYYMMDD_HHMMSS.csv
+/home/symoon/SLAM_main/metrics_data/metrics_YYYYMMDD_HHMMSS.json
+```
+
+장시간 계속 저장하려면 `--duration`을 크게 잡습니다.
+
+```bash
+# 5분 저장
+python3 /home/symoon/SLAM_main/collect_metrics.py \
+  --duration 300 \
+  --interval 1 \
+  --output /home/symoon/SLAM_main/metrics_data
+
+# 1시간 저장
+python3 /home/symoon/SLAM_main/collect_metrics.py \
+  --duration 3600 \
+  --interval 1 \
+  --output /home/symoon/SLAM_main/metrics_data
+```
+
+주의: 수집 도중 `Ctrl+C`로 끊으면 저장 단계까지 가지 않을 수 있습니다.
+비교용 데이터는 필요한 시간만큼 `--duration`을 지정해서 끝까지 실행하는 것이 좋습니다.
+
+#### **방법 C: 메트릭 한 번 읽기**
 
 ```bash
 python3 /home/symoon/SLAM_main/read_metrics_example.py
 ```
 
-#### **방법 C: 긴 기간 데이터 수집**
+#### **전체 실행 예시**
 
 ```bash
-# 60초 동안 메트릭 수집 (1초 간격)
+# 터미널 1: SLAM 실행
+ros2 launch cartographer_ros Damvi_carto_wheel_metric_launch.py
+
+# 터미널 2: 실시간 화면 확인
+python3 /home/symoon/SLAM_main/monitor_metrics.py
+
+# 터미널 3: 60초 동안 파일 저장
 python3 /home/symoon/SLAM_main/collect_metrics.py \
   --duration 60 \
-  --interval 1
+  --interval 1 \
+  --output /home/symoon/SLAM_main/metrics_data
 
-# 결과: metrics_data/metrics_*.csv, metrics_*.json 생성
+# 터미널 4: 저장된 CSV 분석 및 그래프 생성
+python3 /home/symoon/SLAM_main/analyze_metrics.py \
+  /home/symoon/SLAM_main/metrics_data/metrics_*.csv \
+  --plot
 ```
 
 ### 수집되는 메트릭 정보
@@ -118,7 +215,7 @@ angle < 0.01 rad ✅ 매우 정확
 ```bash
 # 수집된 메트릭 분석
 python3 /home/symoon/SLAM_main/analyze_metrics.py \
-  metrics_data/metrics_*.csv \
+  /home/symoon/SLAM_main/metrics_data/metrics_*.csv \
   --plot
 
 # 출력: 통계, 그래프(CSV), 그래프 이미지(PNG)
@@ -276,21 +373,23 @@ Sqr rotational error: 2.34 +/- 0.89 deg^2
 
 ### 워크플로우 A: 시스템 성능 평가
 
-```
-1️⃣ Real-Time 모니터링 (SLAM 실행 중)
-   ├─ monitor_metrics.py 실행
-   ├─ real_time_ratio 확인
-   └─ latency 확인
+```bash
+# 1️⃣ SLAM 실행
+ros2 launch cartographer_ros Damvi_carto_wheel_metric_launch.py
 
-2️⃣ 데이터 수집 (장기간)
-   ├─ collect_metrics.py --duration 300 (5분)
-   └─ metrics_data/ 디렉토리에 저장
+# 2️⃣ 실시간 화면 확인
+python3 /home/symoon/SLAM_main/monitor_metrics.py
 
-3️⃣ 데이터 분석
-   ├─ analyze_metrics.py metrics_data/*.csv --plot
-   └─ 그래프 생성
+# 3️⃣ 장기간 저장
+python3 /home/symoon/SLAM_main/collect_metrics.py \
+  --duration 300 \
+  --interval 1 \
+  --output /home/symoon/SLAM_main/metrics_data
 
-결론: 실시간 성능 평가 완료
+# 4️⃣ 저장 데이터 분석
+python3 /home/symoon/SLAM_main/analyze_metrics.py \
+  /home/symoon/SLAM_main/metrics_data/metrics_*.csv \
+  --plot
 ```
 
 ### 워크플로우 B: 정확도 평가
@@ -382,13 +481,19 @@ done
 
 ```bash
 # 터미널 1: SLAM 실행
-ros2 launch cartographer_ros Damvi_carto_pure_metric_launch.py
+ros2 launch cartographer_ros Damvi_carto_wheel_metric_launch.py
 
 # 터미널 2: 실시간 모니터링
 python3 /home/symoon/SLAM_main/monitor_metrics.py
 
+# 터미널 3: 실행 중 메트릭을 CSV/JSON으로 저장
+python3 /home/symoon/SLAM_main/collect_metrics.py \
+  --duration 300 \
+  --interval 1 \
+  --output /home/symoon/SLAM_main/metrics_data
+
 # SLAM 완료 후
-# 터미널 3: pbstream 비교
+# 터미널 4: pbstream 비교
 ./build/cartographer/cartographer_autogenerate_ground_truth \
   --pose_graph_filename=result.pbstream \
   --output_filename=relations.pbstream
@@ -408,13 +513,16 @@ python3 /home/symoon/SLAM_main/monitor_metrics.py
 
 ```bash
 # 1️⃣ 실시간 메트릭 (CSV + JSON)
-python3 collect_metrics.py --duration 60
+python3 /home/symoon/SLAM_main/collect_metrics.py \
+  --duration 60 \
+  --interval 1 \
+  --output /home/symoon/SLAM_main/metrics_data
 
 # 2️⃣ pbstream 분석 (JSON)
-python3 analyze_pbstream.py
+python3 /home/symoon/SLAM_main/analyze_pbstream.py
 
 # 3️⃣ PGM 맵 분석 (CSV + JSON)
-python3 analyze_pgm.py
+python3 /home/symoon/SLAM_main/analyze_pgm.py
 
 # → metrics_data/ 디렉토리에 모든 결과 저장
 ```
@@ -422,7 +530,7 @@ python3 analyze_pgm.py
 ### 결과 파일 확인
 
 ```bash
-ls -lh metrics_data/
+ls -lh /home/symoon/SLAM_main/metrics_data/
 
 metrics_20260429_120000.csv       ← 실시간 메트릭
 metrics_20260429_120000.json      ← 메트릭 JSON
