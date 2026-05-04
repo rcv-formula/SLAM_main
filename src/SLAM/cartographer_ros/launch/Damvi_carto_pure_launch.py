@@ -1,7 +1,6 @@
 import os
-from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, ExecuteProcess
+from launch.actions import DeclareLaunchArgument, SetEnvironmentVariable
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 
@@ -10,8 +9,9 @@ def generate_launch_description():
     main_dir = os.path.dirname(script_path)
     package_dir = os.path.dirname(main_dir)
     config_dir = os.path.join(package_dir, 'configuration_files')
-    pbstream_file = os.path.join(package_dir, 'pbstream/0312.pbstream')   # .pbstream 파일이 있는 위치로 경로 수정
+    pbstream_file = os.path.join(package_dir, 'pbstream/0125_4.pbstream')   # .pbstream 파일이 있는 위치로 경로 수정
     use_sim_time = LaunchConfiguration('use_sim_time')
+    fusion_extrapolator = LaunchConfiguration('fusion_extrapolator')
 
     return LaunchDescription([
         
@@ -19,6 +19,16 @@ def generate_launch_description():
             'use_sim_time',
             default_value='true',
             description='Use simulation time if true'
+        ),
+        #true일 경우 scan imu fusion 기반 로직, false일 경우 원본 fusion 로직 
+        DeclareLaunchArgument(
+            'fusion_extrapolator',
+            default_value='true',
+            description='Enable fusion-based extrapolator when true'
+        ),
+        SetEnvironmentVariable(
+            name='FUSION_EXTRPOLATOR',
+            value=fusion_extrapolator,
         ),
         
         Node(

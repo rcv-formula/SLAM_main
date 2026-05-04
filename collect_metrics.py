@@ -16,7 +16,7 @@ import argparse
 
 
 class MetricsCollector(Node):
-    def __init__(self, output_dir='metrics_data', duration=60, interval=1.0):
+    def __init__(self, output_dir='/home/symoon/Desktop/metric_data', duration=60, interval=1.0):
         super().__init__('metrics_collector')
         
         self.output_dir = Path(output_dir)
@@ -242,7 +242,7 @@ def main():
     parser = argparse.ArgumentParser(description='Cartographer 메트릭 수집')
     parser.add_argument('--duration', type=int, default=60, help='수집 기간 (초)')
     parser.add_argument('--interval', type=float, default=1.0, help='수집 간격 (초)')
-    parser.add_argument('--output', type=str, default='metrics_data', help='출력 디렉토리')
+    parser.add_argument('--output', type=str, default='/home/symoon/Desktop/metric_data', help='출력 디렉토리')
     parser.add_argument('--csv-only', action='store_true', help='CSV만 저장')
     parser.add_argument('--json-only', action='store_true', help='JSON만 저장')
     
