@@ -16,6 +16,9 @@
 
 #include "cartographer/mapping/internal/2d/local_trajectory_builder_2d.h"
 
+#include <cmath>
+#include <fstream>
+#include <iomanip>
 #include <limits>
 #include <memory>
 
@@ -44,7 +47,9 @@ LocalTrajectoryBuilder2D::LocalTrajectoryBuilder2D(
       real_time_correlative_scan_matcher_(
           options_.real_time_correlative_scan_matcher_options()),
       ceres_scan_matcher_(options_.ceres_scan_matcher_options()),
-      range_data_collator_(expected_range_sensor_ids) {}
+      range_data_collator_(expected_range_sensor_ids) {
+  quality_metrics_csv_enabled_ = InitializeQualityMetricsCsvWriter();
+}
 
 LocalTrajectoryBuilder2D::~LocalTrajectoryBuilder2D() {}
 
@@ -64,8 +69,13 @@ LocalTrajectoryBuilder2D::TransformToGravityAlignedFrameAndFilter(
 
 std::unique_ptr<transform::Rigid2d> LocalTrajectoryBuilder2D::ScanMatch(
     const common::Time time, const transform::Rigid2d& pose_prediction,
-    const sensor::PointCloud& filtered_gravity_aligned_point_cloud) {
+    const sensor::PointCloud& filtered_gravity_aligned_point_cloud,
+    LocalSlamQualityMetrics* const quality_metrics) {
+  quality_metrics->num_filtered_points =
+      static_cast<int>(filtered_gravity_aligned_point_cloud.size());
   if (active_submaps_.submaps().empty()) {
+    quality_metrics->translation_residual = 0.;
+    quality_metrics->rotation_residual = 0.;
     return absl::make_unique<transform::Rigid2d>(pose_prediction);
   }
   std::shared_ptr<const Submap2D> matching_submap =
@@ -78,6 +88,7 @@ std::unique_ptr<transform::Rigid2d> LocalTrajectoryBuilder2D::ScanMatch(
     const double score = real_time_correlative_scan_matcher_.Match(
         pose_prediction, filtered_gravity_aligned_point_cloud,
         *matching_submap->grid(), &initial_ceres_pose);
+    quality_metrics->real_time_correlative_score = score;
     kRealTimeCorrelativeScanMatcherScoreMetric->Observe(score);
   }
 
@@ -88,17 +99,65 @@ std::unique_ptr<transform::Rigid2d> LocalTrajectoryBuilder2D::ScanMatch(
                             *matching_submap->grid(), pose_observation.get(),
                             &summary);
   if (pose_observation) {
+    quality_metrics->ceres_final_cost = summary.final_cost;
     kCeresScanMatcherCostMetric->Observe(summary.final_cost);
     const double residual_distance =
         (pose_observation->translation() - pose_prediction.translation())
             .norm();
+    quality_metrics->translation_residual = residual_distance;
     kScanMatcherResidualDistanceMetric->Observe(residual_distance);
     const double residual_angle =
         std::abs(pose_observation->rotation().angle() -
                  pose_prediction.rotation().angle());
+    quality_metrics->rotation_residual = residual_angle;
     kScanMatcherResidualAngleMetric->Observe(residual_angle);
   }
   return pose_observation;
+}
+
+bool LocalTrajectoryBuilder2D::IsLocalSlamOutlier(
+    LocalSlamQualityMetrics* const quality_metrics) {
+  if (!options_.skip_submap_insertion_for_outliers()) {
+    quality_metrics->medium_outlier_streak = 0;
+    return false;
+  }
+
+  int failure_count = 0;
+  if (!std::isnan(quality_metrics->translation_residual) &&
+      quality_metrics->translation_residual >
+          options_.outlier_max_translation_residual()) {
+    ++failure_count;
+  }
+  if (!std::isnan(quality_metrics->rotation_residual) &&
+      quality_metrics->rotation_residual >
+          options_.outlier_max_rotation_residual()) {
+    ++failure_count;
+  }
+
+  const bool medium_translation_outlier =
+      !std::isnan(quality_metrics->translation_residual) &&
+      quality_metrics->translation_residual >
+          options_.outlier_medium_translation_residual();
+  const bool medium_rotation_outlier =
+      !std::isnan(quality_metrics->rotation_residual) &&
+      quality_metrics->rotation_residual >
+          options_.outlier_medium_rotation_residual();
+  const bool medium_outlier = medium_translation_outlier || medium_rotation_outlier;
+
+  if (medium_outlier) {
+    ++consecutive_medium_outlier_count_;
+  } else {
+    consecutive_medium_outlier_count_ = 0;
+  }
+  quality_metrics->medium_outlier_streak = consecutive_medium_outlier_count_;
+
+  const bool hard_outlier =
+      failure_count >= options_.outlier_required_failures();
+  const bool sustained_medium_outlier =
+      options_.outlier_medium_required_consecutive() > 0 &&
+      consecutive_medium_outlier_count_ >=
+          options_.outlier_medium_required_consecutive();
+  return hard_outlier || sustained_medium_outlier;
 }
 
 std::unique_ptr<LocalTrajectoryBuilder2D::MatchingResult>
@@ -232,9 +291,11 @@ LocalTrajectoryBuilder2D::AddAccumulatedRangeData(
     return nullptr;
   }
 
+  LocalSlamQualityMetrics quality_metrics;
   // local map frame <- gravity-aligned frame
   std::unique_ptr<transform::Rigid2d> pose_estimate_2d =
-      ScanMatch(time, pose_prediction, filtered_gravity_aligned_point_cloud);
+      ScanMatch(time, pose_prediction, filtered_gravity_aligned_point_cloud,
+                &quality_metrics);
   if (pose_estimate_2d == nullptr) {
     LOG(WARNING) << "Scan matching failed.";
     return nullptr;
@@ -242,13 +303,30 @@ LocalTrajectoryBuilder2D::AddAccumulatedRangeData(
   const transform::Rigid3d pose_estimate =
       transform::Embed3D(*pose_estimate_2d) * gravity_alignment;
   extrapolator_->AddPose(time, pose_estimate);
+  quality_metrics.was_outlier = IsLocalSlamOutlier(&quality_metrics);
 
   sensor::RangeData range_data_in_local =
       TransformRangeData(gravity_aligned_range_data,
                          transform::Embed3D(pose_estimate_2d->cast<float>()));
-  std::unique_ptr<InsertionResult> insertion_result = InsertIntoSubmap(
-      time, range_data_in_local, filtered_gravity_aligned_point_cloud,
-      pose_estimate, gravity_alignment.rotation());
+  std::unique_ptr<InsertionResult> insertion_result;
+  if (quality_metrics.was_outlier) {
+    LOG_EVERY_N(WARNING, 20)
+        << "Suppressing submap insertion for local SLAM outlier. "
+        << "score=" << quality_metrics.real_time_correlative_score
+        << " translation_residual=" << quality_metrics.translation_residual
+        << " rotation_residual=" << quality_metrics.rotation_residual
+        << " num_filtered_points=" << quality_metrics.num_filtered_points
+        << " medium_outlier_streak=" << quality_metrics.medium_outlier_streak;
+  } else {
+    insertion_result = InsertIntoSubmap(
+        time, range_data_in_local, filtered_gravity_aligned_point_cloud,
+        pose_estimate, gravity_alignment.rotation());
+  }
+  MaybeWriteQualityMetricsCsv(
+      time, pose_prediction, *pose_estimate_2d, quality_metrics,
+      insertion_result != nullptr,
+      insertion_result != nullptr ? insertion_result->insertion_submaps.size()
+                                  : 0);
 
   const auto wall_time = std::chrono::steady_clock::now();
   if (last_wall_time_.has_value()) {
@@ -273,6 +351,7 @@ LocalTrajectoryBuilder2D::AddAccumulatedRangeData(
   last_thread_cpu_time_seconds_ = thread_cpu_time_seconds;
   return absl::make_unique<MatchingResult>(
       MatchingResult{time, pose_estimate, std::move(range_data_in_local),
+                     quality_metrics,
                      std::move(insertion_result)});
 }
 
@@ -297,6 +376,70 @@ LocalTrajectoryBuilder2D::InsertIntoSubmap(
           {},  // 'rotational_scan_matcher_histogram' is only used in 3D.
           pose_estimate}),
       std::move(insertion_submaps)});
+}
+
+bool LocalTrajectoryBuilder2D::InitializeQualityMetricsCsvWriter() {
+  if (!options_.log_local_quality_metrics_to_csv()) {
+    return false;
+  }
+  if (options_.local_quality_metrics_csv_path().empty()) {
+    LOG(WARNING) << "Local quality metrics CSV logging is enabled, but "
+                    "'local_quality_metrics_csv_path' is empty.";
+    return false;
+  }
+
+  const std::string& path = options_.local_quality_metrics_csv_path();
+  bool write_header = true;
+  {
+    std::ifstream existing_file(path);
+    write_header = !existing_file.good() ||
+                   existing_file.peek() == std::ifstream::traits_type::eof();
+  }
+
+  quality_metrics_csv_.open(path, std::ios::out | std::ios::app);
+  if (!quality_metrics_csv_.is_open()) {
+    LOG(ERROR) << "Failed to open local quality metrics CSV file: " << path;
+    return false;
+  }
+  quality_metrics_csv_ << std::setprecision(17);
+  if (write_header) {
+    quality_metrics_csv_
+        << "stamp,rt_correlative_score,ceres_final_cost,"
+           "translation_residual,rotation_residual,num_filtered_points,"
+           "was_outlier,medium_outlier_streak,inserted_to_submap,num_insertion_submaps,pose_prediction_x,"
+           "pose_prediction_y,pose_prediction_yaw,pose_estimate_x,"
+           "pose_estimate_y,pose_estimate_yaw\n";
+    quality_metrics_csv_.flush();
+  }
+  return true;
+}
+
+void LocalTrajectoryBuilder2D::MaybeWriteQualityMetricsCsv(
+    const common::Time time, const transform::Rigid2d& pose_prediction,
+    const transform::Rigid2d& pose_estimate,
+    const LocalSlamQualityMetrics& quality_metrics,
+    const bool inserted_to_submap, const int num_insertion_submaps) {
+  if (!quality_metrics_csv_enabled_) {
+    return;
+  }
+
+  quality_metrics_csv_
+      << common::ToUniversal(time) << ','
+      << quality_metrics.real_time_correlative_score << ','
+      << quality_metrics.ceres_final_cost << ','
+      << quality_metrics.translation_residual << ','
+      << quality_metrics.rotation_residual << ','
+      << quality_metrics.num_filtered_points << ','
+      << static_cast<int>(quality_metrics.was_outlier) << ','
+      << quality_metrics.medium_outlier_streak << ','
+      << static_cast<int>(inserted_to_submap) << ','
+      << num_insertion_submaps << ',' << pose_prediction.translation().x()
+      << ',' << pose_prediction.translation().y() << ','
+      << pose_prediction.rotation().angle() << ','
+      << pose_estimate.translation().x() << ','
+      << pose_estimate.translation().y() << ','
+      << pose_estimate.rotation().angle() << '\n';
+  quality_metrics_csv_.flush();
 }
 
 void LocalTrajectoryBuilder2D::AddImuData(const sensor::ImuData& imu_data) {

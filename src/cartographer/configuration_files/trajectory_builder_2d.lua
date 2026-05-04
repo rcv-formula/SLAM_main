@@ -35,6 +35,17 @@ TRAJECTORY_BUILDER_2D = {
   },
 
   use_online_correlative_scan_matching = false,
+  log_local_quality_metrics_to_csv = false,
+  local_quality_metrics_csv_path = "",
+  skip_submap_insertion_for_outliers = false,
+  outlier_min_correlative_score = 0.,
+  outlier_max_translation_residual = 1e9,
+  outlier_max_rotation_residual = 1e9,
+  outlier_min_num_filtered_points = 0,
+  outlier_required_failures = 2,
+  outlier_medium_translation_residual = 1e9,
+  outlier_medium_rotation_residual = 1e9,
+  outlier_medium_required_consecutive = 0,
   real_time_correlative_scan_matcher = {
     linear_search_window = 0.1,
     angular_search_window = math.rad(20.),

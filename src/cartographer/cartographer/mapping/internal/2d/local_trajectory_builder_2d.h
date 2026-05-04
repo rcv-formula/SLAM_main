@@ -18,7 +18,10 @@
 #define CARTOGRAPHER_MAPPING_INTERNAL_2D_LOCAL_TRAJECTORY_BUILDER_2D_H_
 
 #include <chrono>
+#include <fstream>
+#include <limits>
 #include <memory>
+#include <string>
 
 #include "cartographer/common/time.h"
 #include "cartographer/mapping/2d/submap_2d.h"
@@ -43,6 +46,18 @@ namespace mapping {
 // TODO(gaschler): Add test for this class similar to the 3D test.
 class LocalTrajectoryBuilder2D {
  public:
+  struct LocalSlamQualityMetrics {
+    double real_time_correlative_score =
+        std::numeric_limits<double>::quiet_NaN();
+    double ceres_final_cost = std::numeric_limits<double>::quiet_NaN();
+    double translation_residual =
+        std::numeric_limits<double>::quiet_NaN();
+    double rotation_residual = std::numeric_limits<double>::quiet_NaN();
+    int num_filtered_points = 0;
+    bool was_outlier = false;
+    int medium_outlier_streak = 0;
+  };
+
   struct InsertionResult {
     std::shared_ptr<const TrajectoryNode::Data> constant_data;
     std::vector<std::shared_ptr<const Submap2D>> insertion_submaps;
@@ -51,6 +66,7 @@ class LocalTrajectoryBuilder2D {
     common::Time time;
     transform::Rigid3d local_pose;
     sensor::RangeData range_data_in_local;
+    LocalSlamQualityMetrics quality_metrics;
     // 'nullptr' if dropped by the motion filter.
     std::unique_ptr<const InsertionResult> insertion_result;
   };
@@ -94,7 +110,16 @@ class LocalTrajectoryBuilder2D {
   // observed pose, or nullptr on failure.
   std::unique_ptr<transform::Rigid2d> ScanMatch(
       common::Time time, const transform::Rigid2d& pose_prediction,
-      const sensor::PointCloud& filtered_gravity_aligned_point_cloud);
+      const sensor::PointCloud& filtered_gravity_aligned_point_cloud,
+      LocalSlamQualityMetrics* quality_metrics);
+  bool IsLocalSlamOutlier(LocalSlamQualityMetrics* quality_metrics);
+
+  bool InitializeQualityMetricsCsvWriter();
+  void MaybeWriteQualityMetricsCsv(
+      common::Time time, const transform::Rigid2d& pose_prediction,
+      const transform::Rigid2d& pose_estimate,
+      const LocalSlamQualityMetrics& quality_metrics, bool inserted_to_submap,
+      int num_insertion_submaps);
 
   // Lazily constructs a PoseExtrapolator.
   void InitializeExtrapolator(common::Time time);
@@ -117,6 +142,9 @@ class LocalTrajectoryBuilder2D {
   absl::optional<common::Time> last_sensor_time_;
 
   RangeDataCollator range_data_collator_;
+  std::ofstream quality_metrics_csv_;
+  bool quality_metrics_csv_enabled_ = false;
+  int consecutive_medium_outlier_count_ = 0;
 };
 
 }  // namespace mapping

@@ -66,6 +66,28 @@ proto::LocalTrajectoryBuilderOptions2D CreateLocalTrajectoryBuilderOptions2D(
   *options.mutable_submaps_options() = CreateSubmapsOptions2D(
       parameter_dictionary->GetDictionary("submaps").get());
   options.set_use_imu_data(parameter_dictionary->GetBool("use_imu_data"));
+  options.set_log_local_quality_metrics_to_csv(
+      parameter_dictionary->GetBool("log_local_quality_metrics_to_csv"));
+  options.set_local_quality_metrics_csv_path(
+      parameter_dictionary->GetString("local_quality_metrics_csv_path"));
+  options.set_skip_submap_insertion_for_outliers(
+      parameter_dictionary->GetBool("skip_submap_insertion_for_outliers"));
+  options.set_outlier_min_correlative_score(
+      parameter_dictionary->GetDouble("outlier_min_correlative_score"));
+  options.set_outlier_max_translation_residual(
+      parameter_dictionary->GetDouble("outlier_max_translation_residual"));
+  options.set_outlier_max_rotation_residual(
+      parameter_dictionary->GetDouble("outlier_max_rotation_residual"));
+  options.set_outlier_min_num_filtered_points(
+      parameter_dictionary->GetInt("outlier_min_num_filtered_points"));
+  options.set_outlier_required_failures(
+      parameter_dictionary->GetInt("outlier_required_failures"));
+  options.set_outlier_medium_translation_residual(
+      parameter_dictionary->GetDouble("outlier_medium_translation_residual"));
+  options.set_outlier_medium_rotation_residual(
+      parameter_dictionary->GetDouble("outlier_medium_rotation_residual"));
+  options.set_outlier_medium_required_consecutive(
+      parameter_dictionary->GetInt("outlier_medium_required_consecutive"));
   return options;
 }
 

@@ -1,20 +1,30 @@
 import os
+from datetime import datetime
 
-from ament_index_python.packages import get_package_share_directory
+from ament_index_python.packages import get_package_prefix, get_package_share_directory
 from launch import LaunchDescription
 from launch_ros.actions import Node
 
 def generate_launch_description():
-    script_path = os.path.abspath(__file__)
-    main_dir = os.path.dirname(script_path)
-    package_dir = os.path.dirname(main_dir)
-    config_dir = os.path.join(package_dir, 'configuration_files')
+    package_share_dir = get_package_share_directory('cartographer_ros')
+    config_dir = os.path.join(package_share_dir, 'configuration_files')
+    package_prefix = get_package_prefix('cartographer_ros')
+    workspace_dir = os.path.dirname(os.path.dirname(package_prefix))
+    metrics_dir = os.path.join(workspace_dir, 'local_quality_metrics')
+    os.makedirs(metrics_dir, exist_ok=True)
+    metrics_csv_path = os.path.join(
+        metrics_dir,
+        f"local_quality_metrics_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+    )
     return LaunchDescription([
         Node(
             package='cartographer_ros',
             executable='cartographer_node',
             name='cartographer_node',
             output='screen',
+            additional_env={
+                'LOCAL_QUALITY_METRICS_CSV_PATH': metrics_csv_path,
+            },
             parameters=[{'use_sim_time': True}],
             arguments = [
                 '-configuration_directory', config_dir,
