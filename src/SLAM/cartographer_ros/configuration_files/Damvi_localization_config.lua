@@ -1,6 +1,11 @@
 include "map_builder.lua"
 include "trajectory_builder.lua"
 
+
+local fast_correlative_score_distribution_csv_path =
+    os.getenv("FAST_CORRELATIVE_SCORE_DISTRIBUTION_CSV_PATH") or
+    "/home/rcv/SLAM_local-loss/global_constraint_score_distributions/fast_correlative_score_distribution.csv"
+
 -- 기본 설정
 options = {
   map_builder = MAP_BUILDER,
@@ -48,6 +53,9 @@ TRAJECTORY_BUILDER_2D.num_accumulated_range_data = 1
 -- Pose graph constrained matcher 설정
 POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher.linear_search_window = 0.05
 POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher.angular_search_window = math.rad(1.0)
+POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher.log_score_distribution_to_csv = true
+POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher.score_distribution_csv_path =
+    fast_correlative_score_distribution_csv_path
 
 -- 실시간 local matcher 설정
 TRAJECTORY_BUILDER_2D.real_time_correlative_scan_matcher.linear_search_window = 0.05
@@ -76,6 +84,11 @@ MAP_BUILDER.num_background_threads = 8
 -- 기타 posegraph 관련
 POSE_GRAPH.optimize_every_n_nodes = 1
 POSE_GRAPH.constraint_builder.max_constraint_distance = 15.0
+POSE_GRAPH.constraint_builder.use_prior_based_ambiguity_filter = true
+POSE_GRAPH.constraint_builder.ambiguity_top2_margin = 0.015
+POSE_GRAPH.constraint_builder.ambiguity_max_near_top_0p02_candidates = 4
+POSE_GRAPH.constraint_builder.ambiguity_max_prior_translation = 0.15
+POSE_GRAPH.constraint_builder.ambiguity_max_prior_rotation = math.rad(3.0)
 POSE_GRAPH.constraint_builder.loop_closure_translation_weight = 100.0
 POSE_GRAPH.constraint_builder.loop_closure_rotation_weight = 100.0
 POSE_GRAPH.constraint_builder.sampling_ratio = 0.78

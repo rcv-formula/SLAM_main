@@ -17,10 +17,16 @@
 #include "cartographer/mapping/internal/2d/scan_matching/fast_correlative_scan_matcher_2d.h"
 
 #include <algorithm>
+#include <atomic>
 #include <cmath>
+#include <cstdint>
 #include <deque>
+#include <fstream>
 #include <functional>
+#include <iomanip>
 #include <limits>
+#include <mutex>
+#include <string>
 
 #include "Eigen/Geometry"
 #include "absl/memory/memory.h"
@@ -34,6 +40,8 @@ namespace cartographer {
 namespace mapping {
 namespace scan_matching {
 namespace {
+
+std::atomic<int64_t> g_score_distribution_match_id{0};
 
 // A collection of values which can be added and later removed, and the maximum
 // of the current values in the collection can be retrieved.
@@ -85,6 +93,10 @@ CreateFastCorrelativeScanMatcherOptions2D(
       parameter_dictionary->GetDouble("angular_search_window"));
   options.set_branch_and_bound_depth(
       parameter_dictionary->GetInt("branch_and_bound_depth"));
+  options.set_log_score_distribution_to_csv(
+      parameter_dictionary->GetBool("log_score_distribution_to_csv"));
+  options.set_score_distribution_csv_path(
+      parameter_dictionary->GetString("score_distribution_csv_path"));
   return options;
 }
 
@@ -191,25 +203,30 @@ FastCorrelativeScanMatcher2D::FastCorrelativeScanMatcher2D(
     : options_(options),
       limits_(grid.limits()),
       precomputation_grid_stack_(
-          absl::make_unique<PrecomputationGridStack2D>(grid, options)) {}
+          absl::make_unique<PrecomputationGridStack2D>(grid, options)) {
+  score_distribution_csv_enabled_ = InitializeScoreDistributionCsvWriter();
+}
 
 FastCorrelativeScanMatcher2D::~FastCorrelativeScanMatcher2D() {}
 
 bool FastCorrelativeScanMatcher2D::Match(
     const transform::Rigid2d& initial_pose_estimate,
     const sensor::PointCloud& point_cloud, const float min_score, float* score,
-    transform::Rigid2d* pose_estimate) const {
+    transform::Rigid2d* pose_estimate,
+    ScoreDistributionSummary* score_distribution_summary) const {
   const SearchParameters search_parameters(options_.linear_search_window(),
                                            options_.angular_search_window(),
                                            point_cloud, limits_.resolution());
   return MatchWithSearchParameters(search_parameters, initial_pose_estimate,
                                    point_cloud, min_score, score,
-                                   pose_estimate);
+                                   pose_estimate, "local_window",
+                                   score_distribution_summary);
 }
 
 bool FastCorrelativeScanMatcher2D::MatchFullSubmap(
     const sensor::PointCloud& point_cloud, float min_score, float* score,
-    transform::Rigid2d* pose_estimate) const {
+    transform::Rigid2d* pose_estimate,
+    ScoreDistributionSummary* score_distribution_summary) const {
   // Compute a search window around the center of the submap that includes it
   // fully.
   const SearchParameters search_parameters(
@@ -221,14 +238,16 @@ bool FastCorrelativeScanMatcher2D::MatchFullSubmap(
                           Eigen::Vector2d(limits_.cell_limits().num_y_cells,
                                           limits_.cell_limits().num_x_cells));
   return MatchWithSearchParameters(search_parameters, center, point_cloud,
-                                   min_score, score, pose_estimate);
+                                   min_score, score, pose_estimate,
+                                   "full_submap", score_distribution_summary);
 }
 
 bool FastCorrelativeScanMatcher2D::MatchWithSearchParameters(
     SearchParameters search_parameters,
     const transform::Rigid2d& initial_pose_estimate,
     const sensor::PointCloud& point_cloud, float min_score, float* score,
-    transform::Rigid2d* pose_estimate) const {
+    transform::Rigid2d* pose_estimate, const char* const match_type,
+    ScoreDistributionSummary* score_distribution_summary) const {
   CHECK(score != nullptr);
   CHECK(pose_estimate != nullptr);
 
@@ -247,10 +266,44 @@ bool FastCorrelativeScanMatcher2D::MatchWithSearchParameters(
 
   const std::vector<Candidate2D> lowest_resolution_candidates =
       ComputeLowestResolutionCandidates(discrete_scans, search_parameters);
+  if (lowest_resolution_candidates.empty()) {
+    if (score_distribution_summary != nullptr) {
+      *score_distribution_summary = ScoreDistributionSummary{};
+    }
+    return false;
+  }
   const Candidate2D best_candidate = BranchAndBound(
       discrete_scans, search_parameters, lowest_resolution_candidates,
       precomputation_grid_stack_->max_depth(), min_score);
-  if (best_candidate.score > min_score) {
+  const bool accepted = best_candidate.score > min_score;
+  if (score_distribution_summary != nullptr) {
+    const float top1 = lowest_resolution_candidates.front().score;
+    int near_top_count_0p02 = 0;
+    for (const Candidate2D& candidate : lowest_resolution_candidates) {
+      if (candidate.score < top1 - 0.02f) {
+        break;
+      }
+      ++near_top_count_0p02;
+    }
+    score_distribution_summary->candidate_count =
+        static_cast<int>(lowest_resolution_candidates.size());
+    score_distribution_summary->top1_score = top1;
+    score_distribution_summary->top2_score =
+        lowest_resolution_candidates.size() > 1
+            ? lowest_resolution_candidates[1].score
+            : std::numeric_limits<float>::quiet_NaN();
+    score_distribution_summary->top3_score =
+        lowest_resolution_candidates.size() > 2
+            ? lowest_resolution_candidates[2].score
+            : std::numeric_limits<float>::quiet_NaN();
+    score_distribution_summary->near_top_count_0p02 = near_top_count_0p02;
+    score_distribution_summary->accepted = accepted;
+    score_distribution_summary->final_best_score = best_candidate.score;
+  }
+  MaybeWriteScoreDistributionCsv(match_type, min_score,
+                                 lowest_resolution_candidates,
+                                 best_candidate.score, accepted);
+  if (accepted) {
     *score = best_candidate.score;
     *pose_estimate = transform::Rigid2d(
         {initial_pose_estimate.translation().x() + best_candidate.x,
@@ -259,6 +312,102 @@ bool FastCorrelativeScanMatcher2D::MatchWithSearchParameters(
     return true;
   }
   return false;
+}
+
+bool FastCorrelativeScanMatcher2D::InitializeScoreDistributionCsvWriter() {
+  if (!options_.log_score_distribution_to_csv()) {
+    return false;
+  }
+  if (options_.score_distribution_csv_path().empty()) {
+    LOG(WARNING) << "Fast correlative score distribution CSV logging is "
+                    "enabled, but 'score_distribution_csv_path' is empty.";
+    return false;
+  }
+
+  const std::string& path = options_.score_distribution_csv_path();
+  bool write_header = true;
+  {
+    std::ifstream existing_file(path);
+    write_header = !existing_file.good() ||
+                   existing_file.peek() == std::ifstream::traits_type::eof();
+  }
+
+  score_distribution_csv_.open(path, std::ios::out | std::ios::app);
+  if (!score_distribution_csv_.is_open()) {
+    LOG(ERROR) << "Failed to open fast correlative score distribution CSV "
+               << "file: " << path;
+    return false;
+  }
+  score_distribution_csv_ << std::setprecision(17);
+  if (write_header) {
+    score_distribution_csv_
+        << "match_id,match_type,min_score,accepted,final_best_score,"
+           "candidate_count,score_min,score_max,score_mean,score_stddev,"
+           "score_p50,score_p90,score_p95,score_p99,top1,top2,top3,"
+           "top1_top2_margin,top1_top3_margin,near_top_0p01,"
+           "near_top_0p02,near_top_0p05\n";
+    score_distribution_csv_.flush();
+  }
+  return true;
+}
+
+void FastCorrelativeScanMatcher2D::MaybeWriteScoreDistributionCsv(
+    const char* const match_type, const float min_score,
+    const std::vector<Candidate2D>& candidates, const float final_best_score,
+    const bool accepted) const {
+  if (!score_distribution_csv_enabled_ || candidates.empty()) {
+    return;
+  }
+
+  const auto score_at_percentile = [&candidates](const double percentile) {
+    const double clamped_percentile = std::min(1., std::max(0., percentile));
+    const int index = common::RoundToInt(
+        (1. - clamped_percentile) * (candidates.size() - 1));
+    return candidates[index].score;
+  };
+  const float top1 = candidates[0].score;
+  const float top2 =
+      candidates.size() > 1 ? candidates[1].score
+                            : std::numeric_limits<float>::quiet_NaN();
+  const float top3 =
+      candidates.size() > 2 ? candidates[2].score
+                            : std::numeric_limits<float>::quiet_NaN();
+  double sum = 0.;
+  for (const Candidate2D& candidate : candidates) {
+    sum += candidate.score;
+  }
+  const double mean = sum / candidates.size();
+  double squared_error_sum = 0.;
+  for (const Candidate2D& candidate : candidates) {
+    const double error = candidate.score - mean;
+    squared_error_sum += error * error;
+  }
+  const double stddev = std::sqrt(squared_error_sum / candidates.size());
+
+  const auto count_near_top = [&candidates, top1](const float delta) {
+    int count = 0;
+    for (const Candidate2D& candidate : candidates) {
+      if (candidate.score < top1 - delta) {
+        break;
+      }
+      ++count;
+    }
+    return count;
+  };
+
+  std::lock_guard<std::mutex> lock(score_distribution_csv_mutex_);
+  score_distribution_csv_
+      << g_score_distribution_match_id.fetch_add(1) << ',' << match_type << ','
+      << min_score << ',' << static_cast<int>(accepted) << ','
+      << final_best_score << ',' << candidates.size() << ','
+      << candidates.back().score << ',' << top1 << ',' << mean << ','
+      << stddev << ',' << score_at_percentile(0.50) << ','
+      << score_at_percentile(0.90) << ',' << score_at_percentile(0.95) << ','
+      << score_at_percentile(0.99) << ',' << top1 << ',' << top2 << ','
+      << top3 << ',' << top1 - top2 << ',' << top1 - top3 << ','
+      << count_near_top(0.01f) << ',' << count_near_top(0.02f) << ','
+      << count_near_top(0.05f) << '\n';
+  score_distribution_csv_.flush();
 }
 
 std::vector<Candidate2D>

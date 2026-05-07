@@ -27,4 +27,11 @@ message FastCorrelativeScanMatcherOptions2D {
 
   // Number of precomputed grids to use.
   int32 branch_and_bound_depth = 2;
+
+  // If enabled, writes summary statistics of the lowest-resolution candidate
+  // score distribution for each 2D fast correlative scan match.
+  bool log_score_distribution_to_csv = 5;
+
+  // CSV output path used when 'log_score_distribution_to_csv' is true.
+  string score_distribution_csv_path = 6;
 }

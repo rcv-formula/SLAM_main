@@ -16,6 +16,13 @@ def generate_launch_description():
         metrics_dir,
         f"local_quality_metrics_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
     )
+    score_distribution_dir = os.path.join(
+        workspace_dir, 'global_constraint_score_distributions')
+    os.makedirs(score_distribution_dir, exist_ok=True)
+    score_distribution_csv_path = os.path.join(
+        score_distribution_dir,
+        f"fast_correlative_score_distribution_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+    )
     return LaunchDescription([
         Node(
             package='cartographer_ros',
@@ -24,6 +31,8 @@ def generate_launch_description():
             output='screen',
             additional_env={
                 'LOCAL_QUALITY_METRICS_CSV_PATH': metrics_csv_path,
+                'FAST_CORRELATIVE_SCORE_DISTRIBUTION_CSV_PATH':
+                    score_distribution_csv_path,
             },
             parameters=[{'use_sim_time': True}],
             arguments = [

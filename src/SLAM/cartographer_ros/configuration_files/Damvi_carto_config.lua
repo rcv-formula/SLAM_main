@@ -4,6 +4,9 @@ include "trajectory_builder.lua"
 local local_quality_metrics_csv_path =
     os.getenv("LOCAL_QUALITY_METRICS_CSV_PATH") or
     "/home/rcv/SLAM_local-loss/local_quality_metrics/local_quality_metrics.csv"
+local fast_correlative_score_distribution_csv_path =
+    os.getenv("FAST_CORRELATIVE_SCORE_DISTRIBUTION_CSV_PATH") or
+    "/home/rcv/SLAM_local-loss/global_constraint_score_distributions/fast_correlative_score_distribution.csv"
 
 options = {
   map_builder = MAP_BUILDER,
@@ -78,9 +81,17 @@ POSE_GRAPH.constraint_builder.min_score = 0.65
 POSE_GRAPH.constraint_builder.sampling_ratio = 0.01
 POSE_GRAPH.global_sampling_ratio = 0.005
 POSE_GRAPH.constraint_builder.max_constraint_distance = 15.0
+POSE_GRAPH.constraint_builder.use_prior_based_ambiguity_filter = true
+POSE_GRAPH.constraint_builder.ambiguity_top2_margin = 0.015
+POSE_GRAPH.constraint_builder.ambiguity_max_near_top_0p02_candidates = 4
+POSE_GRAPH.constraint_builder.ambiguity_max_prior_translation = 0.15
+POSE_GRAPH.constraint_builder.ambiguity_max_prior_rotation = math.rad(3.0)
 
 POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher.linear_search_window = 1.5
 POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher.angular_search_window = math.rad(10.0)
+POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher.log_score_distribution_to_csv = true
+POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher.score_distribution_csv_path =
+    fast_correlative_score_distribution_csv_path
 
 -- Loop closure improvements
 POSE_GRAPH.constraint_builder.loop_closure_translation_weight = 2000.0

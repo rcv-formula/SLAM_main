@@ -22,10 +22,17 @@ POSE_GRAPH = {
     loop_closure_translation_weight = 1.1e4,
     loop_closure_rotation_weight = 1e5,
     log_matches = true,
+    use_prior_based_ambiguity_filter = false,
+    ambiguity_top2_margin = 0.015,
+    ambiguity_max_near_top_0p02_candidates = 0,
+    ambiguity_max_prior_translation = 0.15,
+    ambiguity_max_prior_rotation = math.rad(3.),
     fast_correlative_scan_matcher = {
       linear_search_window = 7.,
       angular_search_window = math.rad(30.),
       branch_and_bound_depth = 7,
+      log_score_distribution_to_csv = false,
+      score_distribution_csv_path = "",
     },
     ceres_scan_matcher = {
       occupied_space_weight = 20.,

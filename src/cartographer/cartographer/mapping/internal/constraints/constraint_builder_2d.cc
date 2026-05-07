@@ -227,11 +227,18 @@ void ConstraintBuilder2D::ComputeConstraint(
     }
   } else {
     kConstraintsSearchedMetric->Increment();
+    scan_matching::FastCorrelativeScanMatcher2D::ScoreDistributionSummary
+        score_distribution_summary;
     if (submap_scan_matcher.fast_correlative_scan_matcher->Match(
             initial_pose, constant_data->filtered_gravity_aligned_point_cloud,
-            options_.min_score(), &score, &pose_estimate)) {
+            options_.min_score(), &score, &pose_estimate,
+            &score_distribution_summary)) {
       // We've reported a successful local match.
       CHECK_GT(score, options_.min_score());
+      if (!PassesPriorBasedAmbiguityFilter(initial_pose, pose_estimate,
+                                           score_distribution_summary)) {
+        return;
+      }
       kConstraintsFoundMetric->Increment();
       kConstraintScoresMetric->Observe(score);
     } else {
@@ -278,6 +285,51 @@ void ConstraintBuilder2D::ComputeConstraint(
     info << " with score " << std::setprecision(1) << 100. * score << "%.";
     LOG(INFO) << info.str();
   }
+}
+
+bool ConstraintBuilder2D::PassesPriorBasedAmbiguityFilter(
+    const transform::Rigid2d& initial_pose,
+    const transform::Rigid2d& pose_estimate,
+    const scan_matching::FastCorrelativeScanMatcher2D::ScoreDistributionSummary&
+        score_distribution_summary) const {
+  if (!options_.use_prior_based_ambiguity_filter()) {
+    return true;
+  }
+
+  bool ambiguous = false;
+  if (!std::isnan(score_distribution_summary.top2_score) &&
+      score_distribution_summary.top1_score -
+              score_distribution_summary.top2_score <
+          options_.ambiguity_top2_margin()) {
+    ambiguous = true;
+  }
+  if (options_.ambiguity_max_near_top_0p02_candidates() > 0 &&
+      score_distribution_summary.near_top_count_0p02 >
+          options_.ambiguity_max_near_top_0p02_candidates()) {
+    ambiguous = true;
+  }
+  if (!ambiguous) {
+    return true;
+  }
+
+  const transform::Rigid2d difference = initial_pose.inverse() * pose_estimate;
+  const double translation_delta = difference.translation().norm();
+  const double rotation_delta = std::abs(difference.normalized_angle());
+  const bool prior_supports_match =
+      translation_delta <= options_.ambiguity_max_prior_translation() &&
+      rotation_delta <= options_.ambiguity_max_prior_rotation();
+  if (!prior_supports_match) {
+    LOG_EVERY_N(WARNING, 20)
+        << "Rejecting ambiguous local inter-submap constraint. "
+        << "best_score=" << score_distribution_summary.final_best_score
+        << " top1=" << score_distribution_summary.top1_score
+        << " top2=" << score_distribution_summary.top2_score
+        << " near_top_0p02="
+        << score_distribution_summary.near_top_count_0p02
+        << " prior_translation_delta=" << translation_delta
+        << " prior_rotation_delta=" << rotation_delta;
+  }
+  return prior_supports_match;
 }
 
 void ConstraintBuilder2D::RunWhenDoneCallback() {
