@@ -97,6 +97,8 @@ CreateFastCorrelativeScanMatcherOptions2D(
       parameter_dictionary->GetBool("log_score_distribution_to_csv"));
   options.set_score_distribution_csv_path(
       parameter_dictionary->GetString("score_distribution_csv_path"));
+  options.set_min_score_distribution_margin(
+      parameter_dictionary->GetDouble("min_score_distribution_margin"));
   return options;
 }
 
@@ -275,7 +277,27 @@ bool FastCorrelativeScanMatcher2D::MatchWithSearchParameters(
   const Candidate2D best_candidate = BranchAndBound(
       discrete_scans, search_parameters, lowest_resolution_candidates,
       precomputation_grid_stack_->max_depth(), min_score);
-  const bool accepted = best_candidate.score > min_score;
+  const bool score_accepted = best_candidate.score > min_score;
+
+  // Distribution-based ambiguity filter: reject matches where the top-1 and
+  // top-2 lowest-resolution candidates are too close in score, indicating
+  // perceptual aliasing (e.g., repetitive straight-track sections).
+  bool distribution_accepted = true;
+  if (score_accepted && options_.min_score_distribution_margin() > 0.0 &&
+      lowest_resolution_candidates.size() >= 2) {
+    const float margin = lowest_resolution_candidates[0].score -
+                         lowest_resolution_candidates[1].score;
+    if (margin < static_cast<float>(options_.min_score_distribution_margin())) {
+      distribution_accepted = false;
+      LOG_EVERY_N(INFO, 50) << "[" << match_type << "] Rejected by distribution filter: "
+                << "top1=" << lowest_resolution_candidates[0].score
+                << " top2=" << lowest_resolution_candidates[1].score
+                << " margin=" << margin
+                << " threshold=" << options_.min_score_distribution_margin();
+    }
+  }
+  const bool accepted = score_accepted && distribution_accepted;
+
   if (score_distribution_summary != nullptr) {
     const float top1 = lowest_resolution_candidates.front().score;
     int near_top_count_0p02 = 0;

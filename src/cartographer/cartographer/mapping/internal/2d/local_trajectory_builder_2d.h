@@ -106,7 +106,8 @@ class LocalTrajectoryBuilder2D {
       common::Time time, const sensor::RangeData& range_data_in_local,
       const sensor::PointCloud& filtered_gravity_aligned_point_cloud,
       const transform::Rigid3d& pose_estimate,
-      const Eigen::Quaterniond& gravity_alignment);
+      const Eigen::Quaterniond& gravity_alignment,
+      bool is_outlier);
 
   // Scan matches 'filtered_gravity_aligned_point_cloud' and returns the
   // observed pose, or nullptr on failure.

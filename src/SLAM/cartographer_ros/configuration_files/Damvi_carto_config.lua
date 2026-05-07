@@ -89,9 +89,6 @@ POSE_GRAPH.constraint_builder.ambiguity_top2_margin = 0.015
 POSE_GRAPH.constraint_builder.ambiguity_max_near_top_0p02_candidates = 4
 POSE_GRAPH.constraint_builder.ambiguity_max_prior_translation = 0.15
 POSE_GRAPH.constraint_builder.ambiguity_max_prior_rotation = math.rad(3.0)
-POSE_GRAPH.constraint_builder.use_global_distribution_filter = true
-POSE_GRAPH.constraint_builder.global_ambiguity_top2_margin = 0.02
-POSE_GRAPH.constraint_builder.global_ambiguity_max_near_top_0p02_candidates = 4
 
 POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher.linear_search_window = 1.5
 POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher.angular_search_window = math.rad(10.0)
@@ -100,7 +97,7 @@ POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher.score_distribution_c
     fast_correlative_score_distribution_csv_path
 
 -- Loop closure improvements
-POSE_GRAPH.constraint_builder.loop_closure_translation_weight = 2000.0
-POSE_GRAPH.constraint_builder.loop_closure_rotation_weight = 2000.0
+POSE_GRAPH.constraint_builder.loop_closure_translation_weight = 1e4 -- 2000.0
+POSE_GRAPH.constraint_builder.loop_closure_rotation_weight = 1e4 --2000.0
 
 return options

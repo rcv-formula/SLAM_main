@@ -34,4 +34,10 @@ message FastCorrelativeScanMatcherOptions2D {
 
   // CSV output path used when 'log_score_distribution_to_csv' is true.
   string score_distribution_csv_path = 6;
+
+  // Minimum required score margin between the top-1 and top-2 lowest-resolution
+  // candidates. If the margin is below this threshold the match is considered
+  // ambiguous (perceptual aliasing) and is rejected even if the score itself
+  // passes min_score. Set to 0.0 to disable (default, backward-compatible).
+  double min_score_distribution_margin = 7;
 }

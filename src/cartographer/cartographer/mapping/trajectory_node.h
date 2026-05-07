@@ -60,6 +60,10 @@ struct TrajectoryNode {
 
     // The node pose in the local SLAM frame.
     transform::Rigid3d local_pose;
+
+    // Set to true when local SLAM classified this node as a scan-match outlier.
+    // Constraints from outlier nodes are created with reduced weight.
+    bool is_outlier = false;
   };
 
   common::Time time() const { return constant_data->time; }

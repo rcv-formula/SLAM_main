@@ -39,23 +39,38 @@ MAP_BUILDER.use_trajectory_builder_2d = true
 TRAJECTORY_BUILDER_2D.use_imu_data = true
 TRAJECTORY_BUILDER_2D.submaps.grid_options_2d.resolution = 0.05
 
-POSE_GRAPH.constraint_builder.global_localization_min_score = 0.62
-POSE_GRAPH.constraint_builder.min_score = 0.95
-POSE_GRAPH.global_constraint_search_after_n_seconds = 0
+POSE_GRAPH.constraint_builder.global_localization_min_score = 0.62 -- 0.95
+POSE_GRAPH.constraint_builder.min_score = 0.65
+POSE_GRAPH.global_constraint_search_after_n_seconds = 2 --0
 TRAJECTORY_BUILDER.pure_localization_trimmer = {
   max_submaps_to_keep = 5,
 }
 TRAJECTORY_BUILDER_2D.num_accumulated_range_data = 1
 
-POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher.linear_search_window = 0.05
-POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher.angular_search_window = math.rad(1.0)
+-- Outlier filter: localization mode용으로 threshold를 mapping보다 넉넉하게 설정
+TRAJECTORY_BUILDER_2D.skip_submap_insertion_for_outliers = true
+TRAJECTORY_BUILDER_2D.outlier_max_translation_residual = 0.15
+TRAJECTORY_BUILDER_2D.outlier_max_rotation_residual = 0.03
+TRAJECTORY_BUILDER_2D.outlier_required_failures = 2
+TRAJECTORY_BUILDER_2D.outlier_medium_translation_residual = 0.10
+TRAJECTORY_BUILDER_2D.outlier_medium_rotation_residual = 0.02
+TRAJECTORY_BUILDER_2D.outlier_medium_required_consecutive = 8
+TRAJECTORY_BUILDER_2D.outlier_min_correlative_score = 0.0
+TRAJECTORY_BUILDER_2D.outlier_min_num_filtered_points = 0
+
+POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher.linear_search_window = 0.20 --0.05
+POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher.angular_search_window = math.rad(5.0)
 POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher.log_score_distribution_to_csv = true
 POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher.score_distribution_csv_path =
     fast_correlative_score_distribution_csv_path
-POSE_GRAPH.global_sampling_ratio = 0.0055
 
-TRAJECTORY_BUILDER_2D.real_time_correlative_scan_matcher.linear_search_window = 0.05
-TRAJECTORY_BUILDER_2D.real_time_correlative_scan_matcher.angular_search_window = math.rad(1.0)
+POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher.min_score_distribution_margin = 0.0 --0.05
+
+POSE_GRAPH.global_sampling_ratio = 0.02 -- 0.0055
+
+-- 고속 주행에서 pose prediction 오차 수용 + 진동으로 인한 active submap 오차 허용
+TRAJECTORY_BUILDER_2D.real_time_correlative_scan_matcher.linear_search_window = 0.15
+TRAJECTORY_BUILDER_2D.real_time_correlative_scan_matcher.angular_search_window = math.rad(5.0)
 TRAJECTORY_BUILDER_2D.real_time_correlative_scan_matcher.translation_delta_cost_weight = 25.0
 TRAJECTORY_BUILDER_2D.real_time_correlative_scan_matcher.rotation_delta_cost_weight = 25.0
 
@@ -74,16 +89,9 @@ TRAJECTORY_BUILDER_2D.imu_gravity_time_constant = 12.0
 MAP_BUILDER.num_background_threads = 4
 POSE_GRAPH.optimize_every_n_nodes = 1
 POSE_GRAPH.constraint_builder.max_constraint_distance = 15.0
-POSE_GRAPH.constraint_builder.use_prior_based_ambiguity_filter = true
-POSE_GRAPH.constraint_builder.ambiguity_top2_margin = 0.015
-POSE_GRAPH.constraint_builder.ambiguity_max_near_top_0p02_candidates = 4
-POSE_GRAPH.constraint_builder.ambiguity_max_prior_translation = 0.15
-POSE_GRAPH.constraint_builder.ambiguity_max_prior_rotation = math.rad(3.0)
-POSE_GRAPH.constraint_builder.use_global_distribution_filter = true
-POSE_GRAPH.constraint_builder.global_ambiguity_top2_margin = 0.02
-POSE_GRAPH.constraint_builder.global_ambiguity_max_near_top_0p02_candidates = 4
-POSE_GRAPH.constraint_builder.loop_closure_translation_weight = 100.0
-POSE_GRAPH.constraint_builder.loop_closure_rotation_weight = 100.0
+
+POSE_GRAPH.constraint_builder.loop_closure_translation_weight = 2e4
+POSE_GRAPH.constraint_builder.loop_closure_rotation_weight = 2e4
 POSE_GRAPH.constraint_builder.sampling_ratio = 0.78
 
 return options

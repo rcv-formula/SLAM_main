@@ -134,15 +134,6 @@ class ConstraintBuilder2D {
       LOCKS_EXCLUDED(mutex_);
 
   void RunWhenDoneCallback() LOCKS_EXCLUDED(mutex_);
-  bool PassesPriorBasedAmbiguityFilter(
-      const transform::Rigid2d& initial_pose,
-      const transform::Rigid2d& pose_estimate,
-      const scan_matching::FastCorrelativeScanMatcher2D::ScoreDistributionSummary&
-          score_distribution_summary) const;
-  bool PassesGlobalDistributionFilter(
-      const scan_matching::FastCorrelativeScanMatcher2D::ScoreDistributionSummary&
-          score_distribution_summary) const;
-
   const constraints::proto::ConstraintBuilderOptions options_;
   common::ThreadPoolInterface* thread_pool_;
   absl::Mutex mutex_;
