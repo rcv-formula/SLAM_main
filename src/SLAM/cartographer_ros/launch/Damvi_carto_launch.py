@@ -5,6 +5,7 @@ from ament_index_python.packages import get_package_prefix, get_package_share_di
 from launch import LaunchDescription
 from launch_ros.actions import Node
 
+
 def generate_launch_description():
     package_share_dir = get_package_share_directory('cartographer_ros')
     config_dir = os.path.join(package_share_dir, 'configuration_files')
@@ -35,9 +36,11 @@ def generate_launch_description():
                     score_distribution_csv_path,
             },
             parameters=[{'use_sim_time': True}],
-            arguments = [
+            arguments=[
+                '--collect_metrics',
                 '-configuration_directory', config_dir,
-                '-configuration_basename', 'Damvi_carto_config.lua'],
+                '-configuration_basename', 'Damvi_carto_config.lua',
+            ],
             remappings=[
                 ('scan', 'scan'),
                 ('imu', 'imu/data'),
@@ -45,7 +48,6 @@ def generate_launch_description():
                 ('tf_static', 'tf_static'),
             ],
         ),
-
         Node(
             package='cartographer_ros',
             executable='cartographer_occupancy_grid_node',
@@ -57,12 +59,11 @@ def generate_launch_description():
                 ('occupancy_grid', 'map'),
             ],
         ),
-
         Node(
             package='cartographer_ros',
             executable='trajectory_to_odom',
             name='trajectory_to_odom',
             output='screen',
             parameters=[{'use_sim_time': True}],
-        )
+        ),
     ])

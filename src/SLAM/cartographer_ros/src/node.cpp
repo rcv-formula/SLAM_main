@@ -37,6 +37,7 @@
 #include "cartographer_ros/sensor_bridge.h"
 #include "cartographer_ros/tf_bridge.h"
 #include "cartographer_ros/time_conversion.h"
+#include "cartographer_ros_msgs/msg/scan_match_score.hpp"
 #include "cartographer_ros_msgs/msg/status_code.hpp"
 #include "cartographer_ros_msgs/msg/status_response.hpp"
 #include "geometry_msgs/msg/point_stamped.hpp"
@@ -126,6 +127,9 @@ Node::Node(
   scan_matched_point_cloud_publisher_ =
       node_->create_publisher<sensor_msgs::msg::PointCloud2>(
         kScanMatchedPointCloudTopic, 10);
+  scan_match_score_publisher_ =
+      node_->create_publisher<cartographer_ros_msgs::msg::ScanMatchScore>(
+          kScanMatchScoreTopic, 10);
 
   submap_query_server_ = node_->create_service<cartographer_ros_msgs::srv::SubmapQuery>(
       kSubmapQueryServiceName,
@@ -256,6 +260,16 @@ void Node::PublishLocalTrajectoryData() {
     // frequency, and republishing it would be computationally wasteful.
     if (trajectory_data.local_slam_data->time !=
         extrapolator.GetLastPoseTime()) {
+      if (scan_match_score_publisher_->get_subscription_count() > 0) {
+        cartographer_ros_msgs::msg::ScanMatchScore score_msg;
+        score_msg.header.frame_id = node_options_.map_frame;
+        score_msg.header.stamp = ToRos(trajectory_data.local_slam_data->time);
+        score_msg.trajectory_id = entry.first;
+        score_msg.score = trajectory_data.local_slam_data->scan_match_score;
+        score_msg.valid =
+            trajectory_data.local_slam_data->scan_match_score_valid;
+        scan_match_score_publisher_->publish(score_msg);
+      }
       if (scan_matched_point_cloud_publisher_->get_subscription_count() > 0) {
         // TODO(gaschler): Consider using other message without time
         // information.

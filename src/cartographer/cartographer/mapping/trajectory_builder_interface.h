@@ -60,6 +60,8 @@ class TrajectoryBuilderInterface {
       std::function<void(int /* trajectory ID */, common::Time,
                          transform::Rigid3d /* local pose estimate */,
                          sensor::RangeData /* in local frame */,
+                         double /* real-time correlative score */,
+                         bool /* score valid */,
                          std::unique_ptr<const InsertionResult>)>;
 
   struct SensorId {

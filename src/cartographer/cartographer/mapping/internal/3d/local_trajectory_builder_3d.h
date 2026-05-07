@@ -51,6 +51,8 @@ class LocalTrajectoryBuilder3D {
     common::Time time;
     transform::Rigid3d local_pose;
     sensor::RangeData range_data_in_local;
+    double scan_match_score;
+    bool scan_match_score_valid;
     // 'nullptr' if dropped by the motion filter.
     std::unique_ptr<const InsertionResult> insertion_result;
   };

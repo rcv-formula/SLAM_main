@@ -37,6 +37,9 @@ options = {
   landmarks_sampling_ratio = 1.0,
 }
 
+-- online correlative scan matcher
+TRAJECTORY_BUILDER_2D.use_online_correlative_scan_matching = false
+
 MAP_BUILDER.use_trajectory_builder_2d = true
 TRAJECTORY_BUILDER_2D.use_imu_data = true
 TRAJECTORY_BUILDER_2D.log_local_quality_metrics_to_csv = true

@@ -4,6 +4,7 @@ from launch.actions import DeclareLaunchArgument, SetEnvironmentVariable
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 
+
 def generate_launch_description():
     script_path = os.path.abspath(__file__)
     main_dir = os.path.dirname(script_path)
@@ -20,7 +21,7 @@ def generate_launch_description():
             default_value='true',
             description='Use simulation time if true'
         ),
-        #true일 경우 scan imu fusion 사용, false일 경우 원본 
+        #true일 경우 scan imu fusion 기반 로직, false일 경우 원본 fusion 로직
         DeclareLaunchArgument(
             'fusion_extrapolator',
             default_value='true',
@@ -39,7 +40,7 @@ def generate_launch_description():
             arguments=[
                 '--collect_metrics',
                 '-configuration_directory', config_dir,
-                '-configuration_basename', 'Damvi_localization_config_wheel.lua',
+                '-configuration_basename', 'Damvi_localization_config.lua',
                 '-load_state_filename', pbstream_file  # Specify the map file for localization
             ],
             remappings=[
@@ -51,7 +52,7 @@ def generate_launch_description():
             parameters=[
                 {"use_sim_time": use_sim_time},
                 {"provide_odom_frame": True},
-                {"use_odometry": True},
+                {"use_odometry": False},
                 {"publish_frame_projected_to_2d": True}
             ],
         ),
@@ -79,4 +80,4 @@ def generate_launch_description():
                {"use_sim_time": use_sim_time},
             ]
         ),
-    ])
+    ])#

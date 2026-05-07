@@ -34,7 +34,7 @@ TRAJECTORY_BUILDER_2D = {
     max_range = 50.,
   },
 
-  use_online_correlative_scan_matching = false,
+  use_online_correlative_scan_matching = true,
   log_local_quality_metrics_to_csv = false,
   local_quality_metrics_csv_path = "",
   skip_submap_insertion_for_outliers = false,
@@ -46,6 +46,7 @@ TRAJECTORY_BUILDER_2D = {
   outlier_medium_translation_residual = 1e9,
   outlier_medium_rotation_residual = 1e9,
   outlier_medium_required_consecutive = 0,
+
   real_time_correlative_scan_matcher = {
     linear_search_window = 0.1,
     angular_search_window = math.rad(20.),
@@ -70,7 +71,6 @@ TRAJECTORY_BUILDER_2D = {
     max_angle_radians = math.rad(1.),
   },
 
-  -- TODO(schwoere,wohe): Remove this constant. This is only kept for ROS.
   imu_gravity_time_constant = 10.,
   pose_extrapolator = {
     use_imu_based = false,

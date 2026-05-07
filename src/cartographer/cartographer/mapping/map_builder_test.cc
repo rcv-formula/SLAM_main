@@ -103,9 +103,16 @@ class MapBuilderTestBase : public T {
     return [=](const int trajectory_id, const ::cartographer::common::Time time,
                const ::cartographer::transform::Rigid3d local_pose,
                ::cartographer::sensor::RangeData range_data_in_local,
+               const double scan_match_score,
+               const bool scan_match_score_valid,
                const std::unique_ptr<
                    const cartographer::mapping::TrajectoryBuilderInterface::
                        InsertionResult>) {
+      (void)trajectory_id;
+      (void)time;
+      (void)range_data_in_local;
+      (void)scan_match_score;
+      (void)scan_match_score_valid;
       local_slam_result_poses_.push_back(local_pose);
     };
   }

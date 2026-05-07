@@ -42,6 +42,7 @@ set(msg_files
   "msg/MetricFamily.msg"
   "msg/MetricLabel.msg"
   "msg/Metric.msg"
+  "msg/ScanMatchScore.msg"
   "msg/StatusCode.msg"
   "msg/StatusResponse.msg"
   "msg/SubmapEntry.msg"

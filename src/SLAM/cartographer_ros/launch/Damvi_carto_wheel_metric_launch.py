@@ -4,6 +4,7 @@ from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch_ros.actions import Node
 
+
 def generate_launch_description():
     script_path = os.path.abspath(__file__)
     main_dir = os.path.dirname(script_path)
@@ -15,7 +16,7 @@ def generate_launch_description():
             executable='cartographer_node',
             name='cartographer_node',
             output='screen',
-            arguments = [
+            arguments=[
                 '--collect_metrics',
                 '-configuration_directory', config_dir,
                 '-configuration_basename', 'Damvi_carto_config_wheel.lua'],
