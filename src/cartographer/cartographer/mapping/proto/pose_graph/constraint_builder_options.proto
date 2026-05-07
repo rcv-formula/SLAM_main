@@ -64,6 +64,17 @@ message ConstraintBuilderOptions {
   // Maximum rotation delta from the prior allowed for ambiguous matches.
   double ambiguity_max_prior_rotation = 19;
 
+  // If enabled, full-submap constraints with ambiguous fast correlative score
+  // distributions are rejected based on the distribution alone.
+  bool use_global_distribution_filter = 20;
+
+  // Minimum top1-top2 margin required for full-submap constraints.
+  double global_ambiguity_top2_margin = 21;
+
+  // Maximum number of candidates within 0.02 of the top score allowed for
+  // full-submap constraints.
+  int32 global_ambiguity_max_near_top_0p02_candidates = 22;
+
   // Options for the internally used scan matchers.
   mapping.scan_matching.proto.FastCorrelativeScanMatcherOptions2D
       fast_correlative_scan_matcher_options = 9;

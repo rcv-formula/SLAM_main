@@ -214,12 +214,18 @@ void ConstraintBuilder2D::ComputeConstraint(
   // 3. Refine.
   if (match_full_submap) {
     kGlobalConstraintsSearchedMetric->Increment();
+    scan_matching::FastCorrelativeScanMatcher2D::ScoreDistributionSummary
+        score_distribution_summary;
     if (submap_scan_matcher.fast_correlative_scan_matcher->MatchFullSubmap(
             constant_data->filtered_gravity_aligned_point_cloud,
-            global_localization_min_score, &score, &pose_estimate)) {
+            global_localization_min_score, &score, &pose_estimate,
+            &score_distribution_summary)) {
       CHECK_GT(score, global_localization_min_score);
       CHECK_GE(node_id.trajectory_id, 0);
       CHECK_GE(submap_id.trajectory_id, 0);
+      if (!PassesGlobalDistributionFilter(score_distribution_summary)) {
+        return;
+      }
       kGlobalConstraintsFoundMetric->Increment();
       kGlobalConstraintScoresMetric->Observe(score);
     } else {
@@ -285,6 +291,40 @@ void ConstraintBuilder2D::ComputeConstraint(
     info << " with score " << std::setprecision(1) << 100. * score << "%.";
     LOG(INFO) << info.str();
   }
+}
+
+bool ConstraintBuilder2D::PassesGlobalDistributionFilter(
+    const scan_matching::FastCorrelativeScanMatcher2D::ScoreDistributionSummary&
+        score_distribution_summary) const {
+  if (!options_.use_global_distribution_filter()) {
+    return true;
+  }
+
+  bool ambiguous = false;
+  if (!std::isnan(score_distribution_summary.top2_score) &&
+      score_distribution_summary.top1_score -
+              score_distribution_summary.top2_score <
+          options_.global_ambiguity_top2_margin()) {
+    ambiguous = true;
+  }
+  if (options_.global_ambiguity_max_near_top_0p02_candidates() > 0 &&
+      score_distribution_summary.near_top_count_0p02 >
+          options_.global_ambiguity_max_near_top_0p02_candidates()) {
+    ambiguous = true;
+  }
+  if (!ambiguous) {
+    return true;
+  }
+
+  LOG_EVERY_N(WARNING, 20)
+      << "Rejecting ambiguous full-submap constraint. "
+      << "best_score=" << score_distribution_summary.final_best_score
+      << " top1=" << score_distribution_summary.top1_score
+      << " top2=" << score_distribution_summary.top2_score
+      << " near_top_0p02="
+      << score_distribution_summary.near_top_count_0p02
+      << " candidate_count=" << score_distribution_summary.candidate_count;
+  return false;
 }
 
 bool ConstraintBuilder2D::PassesPriorBasedAmbiguityFilter(

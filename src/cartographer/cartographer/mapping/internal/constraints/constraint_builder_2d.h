@@ -139,6 +139,9 @@ class ConstraintBuilder2D {
       const transform::Rigid2d& pose_estimate,
       const scan_matching::FastCorrelativeScanMatcher2D::ScoreDistributionSummary&
           score_distribution_summary) const;
+  bool PassesGlobalDistributionFilter(
+      const scan_matching::FastCorrelativeScanMatcher2D::ScoreDistributionSummary&
+          score_distribution_summary) const;
 
   const constraints::proto::ConstraintBuilderOptions options_;
   common::ThreadPoolInterface* thread_pool_;

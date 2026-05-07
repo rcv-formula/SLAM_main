@@ -50,6 +50,13 @@ proto::ConstraintBuilderOptions CreateConstraintBuilderOptions(
       parameter_dictionary->GetDouble("ambiguity_max_prior_translation"));
   options.set_ambiguity_max_prior_rotation(
       parameter_dictionary->GetDouble("ambiguity_max_prior_rotation"));
+  options.set_use_global_distribution_filter(
+      parameter_dictionary->GetBool("use_global_distribution_filter"));
+  options.set_global_ambiguity_top2_margin(
+      parameter_dictionary->GetDouble("global_ambiguity_top2_margin"));
+  options.set_global_ambiguity_max_near_top_0p02_candidates(
+      parameter_dictionary->GetInt(
+          "global_ambiguity_max_near_top_0p02_candidates"));
   *options.mutable_fast_correlative_scan_matcher_options() =
       scan_matching::CreateFastCorrelativeScanMatcherOptions2D(
           parameter_dictionary->GetDictionary("fast_correlative_scan_matcher")
