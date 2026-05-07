@@ -115,6 +115,9 @@ Eigen::Vector3d translation_imu_wheel(
 ```
 
 
+### 파라미터 수정 경로
+/src/cartographer/cartographer/mapping/pose_extrapolator.h
+
 ### 기본 tunning parameter
 기본 파라미터 설정
 imu_weight 0.2
