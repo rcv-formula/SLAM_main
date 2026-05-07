@@ -2,6 +2,8 @@ import os
 
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
+from launch.actions import DeclareLaunchArgument, SetEnvironmentVariable
+from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 
 def generate_launch_description():
@@ -10,7 +12,11 @@ def generate_launch_description():
     package_dir = os.path.dirname(main_dir)
     config_dir = os.path.join(package_dir, 'configuration_files')
 
+    fusion_extrapolator = LaunchConfiguration('fusion_extrapolator')
+
     return LaunchDescription([
+        DeclareLaunchArgument('fusion_extrapolator', default_value='true', description='Enable fusion-based extrapolator when true'),
+        SetEnvironmentVariable(name='FUSION_EXTRPOLATOR', value=fusion_extrapolator),
         Node(
             package='cartographer_ros',
             executable='cartographer_node',

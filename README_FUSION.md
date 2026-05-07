@@ -114,6 +114,19 @@ Eigen::Vector3d translation_imu_wheel(
     const Eigen::Vector3d* linear_velocity_odom);
 ```
 
+
+### 기본 tunning parameter
+기본 파라미터 설정
+imu_weight 0.2
+delta_min 0.4
+
+### 흔들릴 경우
+imu_weight 0.2
+delta_min 0.3
+
+imut_weight 0.15
+delta_min 0.3
+
 ### `imu_weight = 0.2`
 - IMU 기반 속도 변화량을 얼마나 반영할지 정하는 가중치
 - 값이 커질수록 IMU 영향을 크게 받음
