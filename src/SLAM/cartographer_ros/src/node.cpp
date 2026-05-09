@@ -40,6 +40,7 @@
 #include "cartographer_ros_msgs/msg/scan_match_score.hpp"
 #include "cartographer_ros_msgs/msg/status_code.hpp"
 #include "cartographer_ros_msgs/msg/status_response.hpp"
+#include "std_msgs/msg/bool.hpp"
 #include "geometry_msgs/msg/point_stamped.hpp"
 #include "glog/logging.h"
 #include "nav_msgs/msg/odometry.hpp"
@@ -130,6 +131,15 @@ Node::Node(
   scan_match_score_publisher_ =
       node_->create_publisher<cartographer_ros_msgs::msg::ScanMatchScore>(
           kScanMatchScoreTopic, 10);
+  localization_status_publisher_ =
+      node_->create_publisher<std_msgs::msg::Bool>(
+          kLocalizationStatusTopic, rclcpp::QoS(1).transient_local());
+
+  // Wire localization status callback from pose graph
+  map_builder_bridge_->GetPoseGraph()->SetLocalizationStatusCallback(
+      [this](carto::mapping::PoseGraphInterface::LocalizationStatus status) {
+        OnLocalizationStatusChanged(status);
+      });
 
   submap_query_server_ = node_->create_service<cartographer_ros_msgs::srv::SubmapQuery>(
       kSubmapQueryServiceName,
@@ -927,6 +937,16 @@ void Node::MaybeWarnAboutTopicMismatch() {
 //    LOG(WARNING) << "Currently available topics are: "
 //                 << published_topics_string.str();
 //  }
+}
+
+void Node::OnLocalizationStatusChanged(
+    carto::mapping::PoseGraphInterface::LocalizationStatus status) {
+  const bool lost =
+      (status == carto::mapping::PoseGraphInterface::LocalizationStatus::kLost);
+  LOG(WARNING) << "Localization status: " << (lost ? "LOST" : "GOOD");
+  std_msgs::msg::Bool msg;
+  msg.data = lost;
+  localization_status_publisher_->publish(msg);
 }
 
 }  // namespace cartographer_ros

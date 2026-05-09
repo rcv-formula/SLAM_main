@@ -84,11 +84,6 @@ POSE_GRAPH.constraint_builder.min_score = 0.65
 POSE_GRAPH.constraint_builder.sampling_ratio = 0.01
 POSE_GRAPH.global_sampling_ratio = 0.005
 POSE_GRAPH.constraint_builder.max_constraint_distance = 15.0
-POSE_GRAPH.constraint_builder.use_prior_based_ambiguity_filter = true
-POSE_GRAPH.constraint_builder.ambiguity_top2_margin = 0.015
-POSE_GRAPH.constraint_builder.ambiguity_max_near_top_0p02_candidates = 4
-POSE_GRAPH.constraint_builder.ambiguity_max_prior_translation = 0.15
-POSE_GRAPH.constraint_builder.ambiguity_max_prior_rotation = math.rad(3.0)
 
 POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher.linear_search_window = 1.5
 POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher.angular_search_window = math.rad(10.0)

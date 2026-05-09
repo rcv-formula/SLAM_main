@@ -67,6 +67,10 @@ POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher.score_distribution_c
 POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher.min_score_distribution_margin = 0.0 --0.05
 
 POSE_GRAPH.global_sampling_ratio = 0.02 -- 0.0055
+POSE_GRAPH.initial_global_sampling_ratio = 1.0
+POSE_GRAPH.initial_global_constraint_search_after_n_seconds = 0.0
+POSE_GRAPH.initial_global_localization_min_score =
+    POSE_GRAPH.constraint_builder.global_localization_min_score
 
 -- 고속 주행에서 pose prediction 오차 수용 + 진동으로 인한 active submap 오차 허용
 TRAJECTORY_BUILDER_2D.real_time_correlative_scan_matcher.linear_search_window = 0.15
@@ -89,6 +93,7 @@ TRAJECTORY_BUILDER_2D.imu_gravity_time_constant = 12.0
 MAP_BUILDER.num_background_threads = 4
 POSE_GRAPH.optimize_every_n_nodes = 1
 POSE_GRAPH.constraint_builder.max_constraint_distance = 15.0
+POSE_GRAPH.relocalization_trigger_sec = 5.0
 
 POSE_GRAPH.constraint_builder.loop_closure_translation_weight = 2e4
 POSE_GRAPH.constraint_builder.loop_closure_rotation_weight = 2e4

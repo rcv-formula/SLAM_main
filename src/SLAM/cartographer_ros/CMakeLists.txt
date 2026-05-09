@@ -169,7 +169,7 @@ install(DIRECTORY include/
   DESTINATION include/
 )
 
-install(DIRECTORY configuration_files urdf launch pbstream
+install(DIRECTORY configuration_files urdf launch pbstream scripts
   DESTINATION share/${PROJECT_NAME}/
 )
 

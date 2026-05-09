@@ -17,7 +17,7 @@ def generate_launch_description():
         score_distribution_dir,
         f"fast_correlative_score_distribution_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
     )
-    pbstream_file = os.path.join(package_dir, 'pbstream', '/rosbag/0930.pbstream')   # .pbstream 파일이 있는 위치로 경로 수정
+    pbstream_file = '/home/cartographer/SLAM_local-loss/src/SLAM/cartographer_ros/pbstream/0508.pbstream'
     rosbag_file = LaunchConfiguration('bagfiles')
     use_sim_time = LaunchConfiguration('use_sim_time')
 
@@ -25,7 +25,7 @@ def generate_launch_description():
         
         DeclareLaunchArgument(
             'bagfiles',
-            default_value='/rosbag/4f_2/4f_2_0.db3',    # rosbag 파일이 있는 위치로 경로 수정
+            default_value='/home/cartographer/SLAM_local-loss/0507_sensor.bag_0.db3',
             description='Path to the rosbag file'
         ),
         DeclareLaunchArgument(

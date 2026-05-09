@@ -153,6 +153,8 @@ class PoseGraph2D : public PoseGraph {
       LOCKS_EXCLUDED(mutex_);
   void SetGlobalSlamOptimizationCallback(
       PoseGraphInterface::GlobalSlamOptimizationCallback callback) override;
+  void SetLocalizationStatusCallback(
+      PoseGraphInterface::LocalizationStatusCallback callback) override;
   transform::Rigid3d GetInterpolatedGlobalTrajectoryPose(
       int trajectory_id, const common::Time time) const
       EXCLUSIVE_LOCKS_REQUIRED(mutex_);
@@ -243,6 +245,15 @@ class PoseGraph2D : public PoseGraph {
 
   const proto::PoseGraphOptions options_;
   GlobalSlamOptimizationCallback global_slam_optimization_callback_;
+  PoseGraphInterface::LocalizationStatusCallback localization_status_callback_;
+
+  // Relocalization state machine (pure localization mode only)
+  enum class LocalizationStatus { kGood, kLost };
+  LocalizationStatus localization_status_ GUARDED_BY(mutex_) =
+      LocalizationStatus::kLost;
+  common::Time last_frozen_constraint_time_ GUARDED_BY(mutex_) =
+      common::Time::min();
+
   mutable absl::Mutex mutex_;
   absl::Mutex work_queue_mutex_;
 

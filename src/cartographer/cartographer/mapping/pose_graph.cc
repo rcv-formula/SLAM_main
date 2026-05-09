@@ -126,6 +126,10 @@ proto::PoseGraphOptions CreatePoseGraphOptions(
           ? parameter_dictionary->GetDouble(
                 "initial_global_localization_min_score")
           : constraint_builder_options.global_localization_min_score());
+  options.set_relocalization_trigger_sec(
+      parameter_dictionary->HasKey("relocalization_trigger_sec")
+          ? parameter_dictionary->GetDouble("relocalization_trigger_sec")
+          : 0.0);
   PopulateOverlappingSubmapsTrimmerOptions2D(&options, parameter_dictionary);
   return options;
 }
