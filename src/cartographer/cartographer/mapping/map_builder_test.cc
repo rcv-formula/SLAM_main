@@ -99,9 +99,53 @@ class MapBuilderTestBase : public T {
         ->set_max_distance_meters(0);
   }
 
+  void EnableFrozenSubmapScanMatcher(
+      const scan_matching::proto::FrozenSubmapScanMatcherOptions2D::ApplyMode
+          apply_mode) {
+    auto* frozen_matcher_options =
+        trajectory_builder_options_.mutable_trajectory_builder_2d_options()
+            ->mutable_frozen_submap_scan_matcher_options();
+    frozen_matcher_options->set_enabled(true);
+    frozen_matcher_options->set_apply_mode(apply_mode);
+    frozen_matcher_options->set_search_radius(3.);
+    frozen_matcher_options->set_max_submaps_to_match(5);
+    frozen_matcher_options->set_use_realtime_correlative_scan_matching(true);
+    frozen_matcher_options->set_use_ceres_scan_matching(true);
+    frozen_matcher_options->set_min_realtime_correlative_score(0.6);
+    frozen_matcher_options->set_min_score_margin(0.03);
+    frozen_matcher_options->set_score_variance_top_k(3);
+    frozen_matcher_options->set_min_score_variance(0.);
+    frozen_matcher_options->set_max_translation_correction(0.3);
+    frozen_matcher_options->set_max_rotation_correction(0.2);
+    frozen_matcher_options->mutable_real_time_correlative_scan_matcher_options()
+        ->set_linear_search_window(0.15);
+    frozen_matcher_options->mutable_real_time_correlative_scan_matcher_options()
+        ->set_angular_search_window(0.15);
+    frozen_matcher_options->mutable_real_time_correlative_scan_matcher_options()
+        ->set_translation_delta_cost_weight(0.);
+    frozen_matcher_options->mutable_real_time_correlative_scan_matcher_options()
+        ->set_rotation_delta_cost_weight(0.);
+    frozen_matcher_options->mutable_ceres_scan_matcher_options()
+        ->set_occupied_space_weight(1.);
+    frozen_matcher_options->mutable_ceres_scan_matcher_options()
+        ->set_translation_weight(0.1);
+    frozen_matcher_options->mutable_ceres_scan_matcher_options()
+        ->set_rotation_weight(1.);
+    frozen_matcher_options->mutable_ceres_scan_matcher_options()
+        ->mutable_ceres_solver_options()
+        ->set_use_nonmonotonic_steps(false);
+    frozen_matcher_options->mutable_ceres_scan_matcher_options()
+        ->mutable_ceres_solver_options()
+        ->set_max_num_iterations(20);
+    frozen_matcher_options->mutable_ceres_scan_matcher_options()
+        ->mutable_ceres_solver_options()
+        ->set_num_threads(1);
+  }
+
   MapBuilderInterface::LocalSlamResultCallback GetLocalSlamResultCallback() {
     return [=](const int trajectory_id, const ::cartographer::common::Time time,
                const ::cartographer::transform::Rigid3d local_pose,
+               const ::cartographer::transform::Rigid3d published_local_pose,
                ::cartographer::sensor::RangeData range_data_in_local,
                const double scan_match_score,
                const bool scan_match_score_valid,
@@ -479,6 +523,176 @@ TEST_P(MapBuilderTestByGridType, LocalizationOnFrozenTrajectory2D) {
       0.3)
       << "global_pose: " << global_pose
       << "expected_global_pose: " << expected_global_pose;
+}
+
+TEST_P(MapBuilderTestByGridType,
+       LocalizationOnFrozenTrajectory2DWithFullPipelineFrozenMatcher) {
+  if (GetParam() == GridType::TSDF) {
+    GTEST_SKIP()
+        << "FULL_PIPELINE frozen matcher is currently validated for "
+           "PROBABILITY_GRID only. TSDF needs separate stabilization.";
+  }
+  EnableFrozenSubmapScanMatcher(
+      scan_matching::proto::FrozenSubmapScanMatcherOptions2D::FULL_PIPELINE);
+  BuildMapBuilder();
+  int temp_trajectory_id = CreateTrajectoryWithFakeData();
+  map_builder_->pose_graph()->RunFinalOptimization();
+  EXPECT_GT(map_builder_->pose_graph()->constraints().size(), 0);
+  EXPECT_GT(
+      map_builder_->pose_graph()->GetTrajectoryNodes().SizeOfTrajectoryOrZero(
+          temp_trajectory_id),
+      0);
+  const std::string filename =
+      "temp-LocalizationOnFrozenTrajectory2DFullPipeline.pbstream";
+  io::ProtoStreamWriter writer(filename);
+  map_builder_->SerializeState(/*include_unfinished_submaps=*/true, &writer);
+  writer.Close();
+
+  local_slam_result_poses_.clear();
+  SetOptionsEnableGlobalOptimization();
+  EnableFrozenSubmapScanMatcher(
+      scan_matching::proto::FrozenSubmapScanMatcherOptions2D::FULL_PIPELINE);
+  BuildMapBuilder();
+  io::ProtoStreamReader reader(filename);
+  map_builder_->LoadState(&reader, true /* load_frozen_state */);
+  map_builder_->pose_graph()->RunFinalOptimization();
+  int trajectory_id = map_builder_->AddTrajectoryBuilder(
+      {kRangeSensorId}, trajectory_builder_options_,
+      GetLocalSlamResultCallback());
+  TrajectoryBuilderInterface* trajectory_builder =
+      map_builder_->GetTrajectoryBuilder(trajectory_id);
+  transform::Rigid3d frozen_trajectory_to_global(
+      Eigen::Vector3d(0.5, 0.4, 0),
+      Eigen::Quaterniond(Eigen::AngleAxisd(1.2, Eigen::Vector3d::UnitZ())));
+  Eigen::Vector3d travel_translation =
+      Eigen::Vector3d(2., 1., 0.).normalized() * kTravelDistance;
+  auto measurements = testing::GenerateFakeRangeMeasurements(
+      travel_translation.cast<float>(), kDuration, kTimeStep,
+      frozen_trajectory_to_global.cast<float>());
+  for (auto& measurement : measurements) {
+    measurement.time += common::FromSeconds(100.);
+    trajectory_builder->AddSensorData(kRangeSensorId.id, measurement);
+  }
+  map_builder_->FinishTrajectory(trajectory_id);
+  map_builder_->pose_graph()->RunFinalOptimization();
+  EXPECT_EQ(local_slam_result_poses_.size(), measurements.size());
+  EXPECT_NEAR(kTravelDistance,
+              (local_slam_result_poses_.back().translation() -
+               local_slam_result_poses_.front().translation())
+                  .norm(),
+              0.3 * kTravelDistance);
+  EXPECT_GE(map_builder_->pose_graph()->constraints().size(), 50);
+}
+
+TEST_P(MapBuilderTestByGridType,
+       LocalizationOnFrozenTrajectory2DWithPublishOnlyFrozenMatcher) {
+  if (GetParam() == GridType::TSDF) SetOptionsToTSDF2D();
+  EnableFrozenSubmapScanMatcher(
+      scan_matching::proto::FrozenSubmapScanMatcherOptions2D::PUBLISH_ONLY);
+  BuildMapBuilder();
+  int temp_trajectory_id = CreateTrajectoryWithFakeData();
+  map_builder_->pose_graph()->RunFinalOptimization();
+  EXPECT_GT(map_builder_->pose_graph()->constraints().size(), 0);
+  EXPECT_GT(
+      map_builder_->pose_graph()->GetTrajectoryNodes().SizeOfTrajectoryOrZero(
+          temp_trajectory_id),
+      0);
+  const std::string filename =
+      "temp-LocalizationOnFrozenTrajectory2DPublishOnly.pbstream";
+  io::ProtoStreamWriter writer(filename);
+  map_builder_->SerializeState(/*include_unfinished_submaps=*/true, &writer);
+  writer.Close();
+
+  local_slam_result_poses_.clear();
+  SetOptionsEnableGlobalOptimization();
+  EnableFrozenSubmapScanMatcher(
+      scan_matching::proto::FrozenSubmapScanMatcherOptions2D::PUBLISH_ONLY);
+  BuildMapBuilder();
+  io::ProtoStreamReader reader(filename);
+  map_builder_->LoadState(&reader, true /* load_frozen_state */);
+  map_builder_->pose_graph()->RunFinalOptimization();
+  int trajectory_id = map_builder_->AddTrajectoryBuilder(
+      {kRangeSensorId}, trajectory_builder_options_,
+      GetLocalSlamResultCallback());
+  TrajectoryBuilderInterface* trajectory_builder =
+      map_builder_->GetTrajectoryBuilder(trajectory_id);
+  transform::Rigid3d frozen_trajectory_to_global(
+      Eigen::Vector3d(0.5, 0.4, 0),
+      Eigen::Quaterniond(Eigen::AngleAxisd(1.2, Eigen::Vector3d::UnitZ())));
+  Eigen::Vector3d travel_translation =
+      Eigen::Vector3d(2., 1., 0.).normalized() * kTravelDistance;
+  auto measurements = testing::GenerateFakeRangeMeasurements(
+      travel_translation.cast<float>(), kDuration, kTimeStep,
+      frozen_trajectory_to_global.cast<float>());
+  for (auto& measurement : measurements) {
+    measurement.time += common::FromSeconds(100.);
+    trajectory_builder->AddSensorData(kRangeSensorId.id, measurement);
+  }
+  map_builder_->FinishTrajectory(trajectory_id);
+  map_builder_->pose_graph()->RunFinalOptimization();
+  EXPECT_EQ(local_slam_result_poses_.size(), measurements.size());
+  EXPECT_NEAR(kTravelDistance,
+              (local_slam_result_poses_.back().translation() -
+               local_slam_result_poses_.front().translation())
+                  .norm(),
+              0.3 * kTravelDistance);
+  EXPECT_GE(map_builder_->pose_graph()->constraints().size(), 50);
+}
+
+TEST_P(MapBuilderTestByGridType,
+       FrozenMatcherCandidatesUseOnlyLoadedPbstreamTrajectories) {
+  if (GetParam() == GridType::TSDF) SetOptionsToTSDF2D();
+  trajectory_builder_options_.mutable_trajectory_builder_2d_options()
+      ->mutable_motion_filter_options()
+      ->set_max_distance_meters(0.);
+  EnableFrozenSubmapScanMatcher(
+      scan_matching::proto::FrozenSubmapScanMatcherOptions2D::PUBLISH_ONLY);
+  BuildMapBuilder();
+  const int serialized_trajectory_id = CreateTrajectoryWithFakeData();
+  map_builder_->pose_graph()->RunFinalOptimization();
+  EXPECT_GT(
+      map_builder_->pose_graph()->GetAllSubmapData().SizeOfTrajectoryOrZero(
+          serialized_trajectory_id),
+      0);
+
+  const std::string filename =
+      "temp-FrozenMatcherCandidatesUseOnlyLoadedPbstreamTrajectories.pbstream";
+  io::ProtoStreamWriter writer(filename);
+  map_builder_->SerializeState(/*include_unfinished_submaps=*/false, &writer);
+  writer.Close();
+
+  EnableFrozenSubmapScanMatcher(
+      scan_matching::proto::FrozenSubmapScanMatcherOptions2D::PUBLISH_ONLY);
+  BuildMapBuilder();
+  io::ProtoStreamReader reader(filename);
+  const auto trajectory_remapping =
+      map_builder_->LoadState(&reader, true /* load_frozen_state */);
+  map_builder_->pose_graph()->RunFinalOptimization();
+
+  auto* concrete_map_builder = static_cast<MapBuilder*>(map_builder_.get());
+  const auto loaded_state_trajectory_ids =
+      concrete_map_builder->GetLoadedStateTrajectoryIdsForTesting();
+  EXPECT_FALSE(loaded_state_trajectory_ids.empty());
+  for (const auto& trajectory_id_pair : trajectory_remapping) {
+    EXPECT_THAT(loaded_state_trajectory_ids,
+                ::testing::Contains(trajectory_id_pair.second));
+  }
+
+  const int live_trajectory_id = CreateTrajectoryWithFakeData(100.);
+  map_builder_->pose_graph()->RunFinalOptimization();
+  auto* pose_graph = dynamic_cast<PoseGraph*>(map_builder_->pose_graph());
+  ASSERT_NE(pose_graph, nullptr);
+  pose_graph->FreezeTrajectory(live_trajectory_id);
+  map_builder_->pose_graph()->RunFinalOptimization();
+
+  const auto candidate_ids =
+      concrete_map_builder->GetFrozenSubmapCandidateIdsForTesting();
+  EXPECT_FALSE(candidate_ids.empty());
+  for (const auto& submap_id : candidate_ids) {
+    EXPECT_THAT(loaded_state_trajectory_ids,
+                ::testing::Contains(submap_id.trajectory_id));
+    EXPECT_NE(submap_id.trajectory_id, live_trajectory_id);
+  }
 }
 
 }  // namespace

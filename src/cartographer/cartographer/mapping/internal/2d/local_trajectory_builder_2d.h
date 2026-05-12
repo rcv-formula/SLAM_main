@@ -17,8 +17,11 @@
 #ifndef CARTOGRAPHER_MAPPING_INTERNAL_2D_LOCAL_TRAJECTORY_BUILDER_2D_H_
 #define CARTOGRAPHER_MAPPING_INTERNAL_2D_LOCAL_TRAJECTORY_BUILDER_2D_H_
 
+#include <array>
+#include <cstdint>
 #include <chrono>
 #include <fstream>
+#include <functional>
 #include <limits>
 #include <memory>
 #include <string>
@@ -26,6 +29,7 @@
 #include "cartographer/common/time.h"
 #include "cartographer/mapping/2d/submap_2d.h"
 #include "cartographer/mapping/internal/2d/scan_matching/ceres_scan_matcher_2d.h"
+#include "cartographer/mapping/internal/2d/scan_matching/frozen_submap_scan_matcher_2d.h"
 #include "cartographer/mapping/internal/2d/scan_matching/real_time_correlative_scan_matcher_2d.h"
 #include "cartographer/mapping/internal/motion_filter.h"
 #include "cartographer/mapping/internal/range_data_collator.h"
@@ -65,6 +69,7 @@ class LocalTrajectoryBuilder2D {
   struct MatchingResult {
     common::Time time;
     transform::Rigid3d local_pose;
+    transform::Rigid3d published_local_pose;
     sensor::RangeData range_data_in_local;
     LocalSlamQualityMetrics quality_metrics;
     double scan_match_score;
@@ -73,9 +78,10 @@ class LocalTrajectoryBuilder2D {
     std::unique_ptr<const InsertionResult> insertion_result;
   };
 
-  explicit LocalTrajectoryBuilder2D(
+  LocalTrajectoryBuilder2D(
       const proto::LocalTrajectoryBuilderOptions2D& options,
-      const std::vector<std::string>& expected_range_sensor_ids);
+      const std::vector<std::string>& expected_range_sensor_ids,
+      scan_matching::FrozenSubmapDataProvider frozen_submap_data_provider = {});
   ~LocalTrajectoryBuilder2D();
 
   LocalTrajectoryBuilder2D(const LocalTrajectoryBuilder2D&) = delete;
@@ -127,6 +133,35 @@ class LocalTrajectoryBuilder2D {
   // Lazily constructs a PoseExtrapolator.
   void InitializeExtrapolator(common::Time time);
 
+  static constexpr size_t kFrozenSubmapMatchStatusCount =
+      static_cast<size_t>(
+          scan_matching::FrozenSubmapMatchStatus2D::
+              kRejectedRotationCorrection) +
+      1;
+
+  struct FrozenSubmapTuningStats {
+    int64_t num_attempts = 0;
+    int64_t num_accepted = 0;
+    int64_t num_score_samples = 0;
+    int64_t num_margin_samples = 0;
+    int64_t num_variance_samples = 0;
+    int64_t num_correction_samples = 0;
+    int64_t sum_candidates_in_search_radius = 0;
+    int64_t sum_candidates_evaluated = 0;
+    double sum_best_score = 0.;
+    double sum_score_margin = 0.;
+    double sum_score_variance = 0.;
+    double sum_translation_correction = 0.;
+    double sum_rotation_correction = 0.;
+    std::array<int64_t, kFrozenSubmapMatchStatusCount> status_counts = {};
+  };
+
+  void AccumulateFrozenSubmapTuningStats(
+      const scan_matching::FrozenSubmapMatchResult2D& result);
+  void MaybeLogFrozenSubmapTuningDetail(
+      const scan_matching::FrozenSubmapMatchResult2D& result) const;
+  void MaybeLogFrozenSubmapTuningSummary();
+
   const proto::LocalTrajectoryBuilderOptions2D options_;
   ActiveSubmaps2D active_submaps_;
 
@@ -134,6 +169,9 @@ class LocalTrajectoryBuilder2D {
   scan_matching::RealTimeCorrelativeScanMatcher2D
       real_time_correlative_scan_matcher_;
   scan_matching::CeresScanMatcher2D ceres_scan_matcher_;
+  scan_matching::FrozenSubmapDataProvider frozen_submap_data_provider_;
+  std::unique_ptr<scan_matching::FrozenSubmapScanMatcher2D>
+      frozen_submap_scan_matcher_;
 
   std::unique_ptr<PoseExtrapolator> extrapolator_;
 
@@ -145,6 +183,9 @@ class LocalTrajectoryBuilder2D {
   absl::optional<common::Time> last_sensor_time_;
   double latest_scan_match_score_ = 0.;
   bool latest_scan_match_score_valid_ = false;
+
+  int64_t frozen_submap_match_attempt_count_ = 0;
+  FrozenSubmapTuningStats frozen_submap_tuning_stats_;
 
   RangeDataCollator range_data_collator_;
   std::ofstream quality_metrics_csv_;

@@ -50,6 +50,7 @@ class LocalTrajectoryBuilder3D {
   struct MatchingResult {
     common::Time time;
     transform::Rigid3d local_pose;
+    transform::Rigid3d published_local_pose;
     sensor::RangeData range_data_in_local;
     double scan_match_score;
     bool scan_match_score_valid;

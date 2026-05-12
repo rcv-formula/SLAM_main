@@ -196,6 +196,7 @@ class Node {
   ::rclcpp::Publisher<::visualization_msgs::msg::MarkerArray>::SharedPtr landmark_poses_list_publisher_;
   ::rclcpp::Publisher<::visualization_msgs::msg::MarkerArray>::SharedPtr constraint_list_publisher_;
   ::rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr tracked_pose_publisher_;
+  ::rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr filtered_tracked_pose_publisher_;
   ::rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr scan_matched_point_cloud_publisher_;
   ::rclcpp::Publisher<::cartographer_ros_msgs::msg::ScanMatchScore>::SharedPtr scan_match_score_publisher_;
   ::rclcpp::Publisher<::std_msgs::msg::Bool>::SharedPtr localization_status_publisher_;
@@ -230,6 +231,7 @@ class Node {
 
   // These are keyed with 'trajectory_id'.
   std::map<int, ::cartographer::mapping::PoseExtrapolator> extrapolators_;
+  std::map<int, ::cartographer::mapping::PoseExtrapolator> raw_extrapolators_;
   std::map<int, builtin_interfaces::msg::Time> last_published_tf_stamps_;
   std::unordered_map<int, TrajectorySensorSamplers> sensor_samplers_;
   std::unordered_map<int, std::vector<Subscriber>> subscribers_;

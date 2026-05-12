@@ -18,7 +18,9 @@
 #define CARTOGRAPHER_MAPPING_MAP_BUILDER_H_
 
 #include <memory>
+#include <set>
 
+#include "absl/synchronization/mutex.h"
 #include "cartographer/common/thread_pool.h"
 #include "cartographer/mapping/map_builder_interface.h"
 #include "cartographer/mapping/pose_graph.h"
@@ -82,6 +84,9 @@ class MapBuilder : public MapBuilderInterface {
     return all_trajectory_builder_options_;
   }
 
+  std::set<int> GetLoadedStateTrajectoryIdsForTesting() const;
+  std::vector<SubmapId> GetFrozenSubmapCandidateIdsForTesting() const;
+
  private:
   const proto::MapBuilderOptions options_;
   common::ThreadPool thread_pool_;
@@ -93,6 +98,9 @@ class MapBuilder : public MapBuilderInterface {
       trajectory_builders_;
   std::vector<proto::TrajectoryBuilderOptionsWithSensorIds>
       all_trajectory_builder_options_;
+  mutable absl::Mutex loaded_state_trajectory_ids_mutex_;
+  std::set<int> loaded_state_trajectory_ids_
+      GUARDED_BY(loaded_state_trajectory_ids_mutex_);
 };
 
 std::unique_ptr<MapBuilderInterface> CreateMapBuilder(

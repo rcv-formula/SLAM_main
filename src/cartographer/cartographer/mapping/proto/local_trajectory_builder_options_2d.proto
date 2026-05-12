@@ -18,12 +18,13 @@ package cartographer.mapping.proto;
 
 import "cartographer/mapping/proto/motion_filter_options.proto";
 import "cartographer/mapping/proto/pose_extrapolator_options.proto";
+import "cartographer/mapping/proto/scan_matching/frozen_submap_scan_matcher_options_2d.proto";
 import "cartographer/sensor/proto/adaptive_voxel_filter_options.proto";
 import "cartographer/mapping/proto/scan_matching/ceres_scan_matcher_options_2d.proto";
 import "cartographer/mapping/proto/scan_matching/real_time_correlative_scan_matcher_options.proto";
 import "cartographer/mapping/proto/submaps_options_2d.proto";
 
-// NEXT ID: 33
+// NEXT ID: 34
 message LocalTrajectoryBuilderOptions2D {
   // Rangefinder points outside these ranges will be dropped.
   float min_range = 14;
@@ -109,4 +110,7 @@ message LocalTrajectoryBuilderOptions2D {
 
   // Number of consecutive medium outliers required to suppress insertion.
   int32 outlier_medium_required_consecutive = 32;
+
+  cartographer.mapping.scan_matching.proto.FrozenSubmapScanMatcherOptions2D
+      frozen_submap_scan_matcher_options = 33;
 }

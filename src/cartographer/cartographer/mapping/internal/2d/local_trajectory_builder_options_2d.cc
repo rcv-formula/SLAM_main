@@ -17,6 +17,7 @@
 #include "cartographer/mapping/internal/2d/local_trajectory_builder_options_2d.h"
 
 #include "cartographer/mapping/2d/submap_2d.h"
+#include "cartographer/mapping/internal/2d/scan_matching/frozen_submap_scan_matcher_2d.h"
 #include "cartographer/mapping/internal/2d/scan_matching/ceres_scan_matcher_2d.h"
 #include "cartographer/mapping/internal/motion_filter.h"
 #include "cartographer/mapping/internal/scan_matching/real_time_correlative_scan_matcher.h"
@@ -57,6 +58,10 @@ proto::LocalTrajectoryBuilderOptions2D CreateLocalTrajectoryBuilderOptions2D(
   *options.mutable_ceres_scan_matcher_options() =
       mapping::scan_matching::CreateCeresScanMatcherOptions2D(
           parameter_dictionary->GetDictionary("ceres_scan_matcher").get());
+  *options.mutable_frozen_submap_scan_matcher_options() =
+      mapping::scan_matching::CreateFrozenSubmapScanMatcherOptions2D(
+          parameter_dictionary->GetDictionary("frozen_submap_scan_matcher")
+              .get());
   *options.mutable_motion_filter_options() = mapping::CreateMotionFilterOptions(
       parameter_dictionary->GetDictionary("motion_filter").get());
   *options.mutable_pose_extrapolator_options() = CreatePoseExtrapolatorOptions(

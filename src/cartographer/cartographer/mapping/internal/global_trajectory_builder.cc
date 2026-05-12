@@ -82,6 +82,7 @@ class GlobalTrajectoryBuilder : public mapping::TrajectoryBuilderInterface {
     if (local_slam_result_callback_) {
       local_slam_result_callback_(
           trajectory_id_, matching_result->time, matching_result->local_pose,
+          matching_result->published_local_pose,
           std::move(matching_result->range_data_in_local),
           matching_result->scan_match_score,
           matching_result->scan_match_score_valid,

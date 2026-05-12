@@ -56,6 +56,7 @@ class MapBuilderBridge {
     struct LocalSlamData {
       ::cartographer::common::Time time;
       ::cartographer::transform::Rigid3d local_pose;
+      ::cartographer::transform::Rigid3d published_local_pose;
       ::cartographer::sensor::RangeData range_data_in_local;
       double scan_match_score;
       bool scan_match_score_valid;
@@ -112,6 +113,8 @@ class MapBuilderBridge {
   void OnLocalSlamResult(const int trajectory_id,
                          const ::cartographer::common::Time time,
                          const ::cartographer::transform::Rigid3d local_pose,
+                         const ::cartographer::transform::Rigid3d
+                             published_local_pose,
                          ::cartographer::sensor::RangeData range_data_in_local,
                          double scan_match_score,
                          bool scan_match_score_valid)

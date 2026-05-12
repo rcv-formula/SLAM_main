@@ -1,8 +1,6 @@
 import os
-from datetime import datetime
-
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, SetEnvironmentVariable
+from launch.actions import DeclareLaunchArgument
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 
@@ -12,32 +10,15 @@ def generate_launch_description():
     main_dir = os.path.dirname(script_path)
     package_dir = os.path.dirname(main_dir)
     config_dir = os.path.join(package_dir, 'configuration_files')
-    score_distribution_dir = os.path.join(
-        package_dir, 'global_constraint_score_distributions')
-    os.makedirs(score_distribution_dir, exist_ok=True)
-    score_distribution_csv_path = os.path.join(
-        score_distribution_dir,
-        f"fast_correlative_score_distribution_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
-    )
-    default_pbstream_file = os.path.join(package_dir, 'pbstream', '0125_4.pbstream')
+    default_pbstream_file = os.path.join(package_dir, 'pbstream', '0125_1.pbstream')
     pbstream_file = LaunchConfiguration('pbstream_file')
     use_sim_time = LaunchConfiguration('use_sim_time')
-    fusion_extrapolator = LaunchConfiguration('fusion_extrapolator')
 
     return LaunchDescription([
         DeclareLaunchArgument(
             'use_sim_time',
             default_value='true',
-            description='Use simulation time if true',
-        ),
-        DeclareLaunchArgument(
-            'fusion_extrapolator',
-            default_value='true',
-            description='Enable fusion-based extrapolator when true',
-        ),
-        SetEnvironmentVariable(
-            name='FUSION_EXTRPOLATOR',
-            value=fusion_extrapolator,
+            description='Use simulation time if true'
         ),
         DeclareLaunchArgument(
             'pbstream_file',
@@ -49,15 +30,10 @@ def generate_launch_description():
             executable='cartographer_node',
             name='cartographer_node',
             output='screen',
-            additional_env={
-                'FAST_CORRELATIVE_SCORE_DISTRIBUTION_CSV_PATH':
-                    score_distribution_csv_path,
-            },
             arguments=[
-                '--collect_metrics',
                 '-configuration_directory', config_dir,
-                '-configuration_basename', 'Damvi_localization_config.lua',
-                '-load_state_filename', pbstream_file,
+                '-configuration_basename', 'Damvi_localization_config_test1.lua',
+                '-load_state_filename', pbstream_file
             ],
             remappings=[
                 ('scan', 'scan'),
@@ -69,7 +45,7 @@ def generate_launch_description():
                 {'use_sim_time': use_sim_time},
                 {'provide_odom_frame': True},
                 {'use_odometry': False},
-                {'publish_frame_projected_to_2d': True},
+                {'publish_frame_projected_to_2d': True}
             ],
         ),
         Node(
@@ -90,6 +66,6 @@ def generate_launch_description():
             output='screen',
             parameters=[
                 {'use_sim_time': use_sim_time},
-            ],
+            ]
         ),
     ])
