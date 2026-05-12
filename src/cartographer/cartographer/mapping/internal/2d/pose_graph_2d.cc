@@ -546,15 +546,33 @@ void PoseGraph2D::HandleWorkQueue(
         if (got_frozen_constraint) {
           last_frozen_constraint_time_ = latest_constraint_time;
           if (localization_status_ == LocalizationStatus::kLost) {
-            next = LocalizationStatus::kGood;
-            LOG(INFO) << "Relocalization recovered: cross-trajectory constraint formed.";
+            ++relocalization_recovery_success_count_;
+            if (relocalization_recovery_success_count_ >=
+                std::max(1, options_
+                                .relocalization_recovery_required_successes())) {
+              next = LocalizationStatus::kGood;
+              relocalization_recovery_success_count_ = 0;
+              relocalization_recovery_grace_until_ =
+                  latest_constraint_time +
+                  common::FromSeconds(
+                      options_.relocalization_recovery_grace_sec());
+              LOG(INFO)
+                  << "Relocalization recovered after "
+                  << options_.relocalization_recovery_required_successes()
+                  << " successful frozen-map constraint batches.";
+            }
           }
+        } else if (localization_status_ == LocalizationStatus::kLost) {
+          relocalization_recovery_success_count_ = 0;
         } else if (localization_status_ == LocalizationStatus::kGood &&
-                   last_frozen_constraint_time_ != common::Time::min()) {
+                   last_frozen_constraint_time_ != common::Time::min() &&
+                   latest_node_time > relocalization_recovery_grace_until_) {
           const double elapsed = common::ToSeconds(
               latest_node_time - last_frozen_constraint_time_);
           if (elapsed > trigger_sec) {
             next = LocalizationStatus::kLost;
+            relocalization_recovery_success_count_ = 0;
+            relocalization_recovery_grace_until_ = common::Time::min();
             LOG(WARNING) << "Localization LOST: no frozen-map constraint for "
                          << elapsed << "s (threshold=" << trigger_sec << "s).";
           }

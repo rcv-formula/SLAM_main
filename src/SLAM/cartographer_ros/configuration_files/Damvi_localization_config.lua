@@ -40,9 +40,9 @@ TRAJECTORY_BUILDER_2D.use_imu_data = true
 TRAJECTORY_BUILDER_2D.submaps.grid_options_2d.resolution = 0.05
 TRAJECTORY_BUILDER_2D.submaps.num_range_data = 45
 
-POSE_GRAPH.constraint_builder.global_localization_min_score = 0.62 -- 0.95
+POSE_GRAPH.constraint_builder.global_localization_min_score = 0.60
 POSE_GRAPH.constraint_builder.min_score = 0.65
-POSE_GRAPH.global_constraint_search_after_n_seconds = 2 --0
+POSE_GRAPH.global_constraint_search_after_n_seconds = 5.0
 TRAJECTORY_BUILDER.pure_localization_trimmer = {
   max_submaps_to_keep = 5,
 }
@@ -56,7 +56,7 @@ TRAJECTORY_BUILDER_2D.outlier_max_rotation_residual = 0.03
 TRAJECTORY_BUILDER_2D.outlier_required_failures = 2
 TRAJECTORY_BUILDER_2D.outlier_medium_translation_residual = 0.10
 TRAJECTORY_BUILDER_2D.outlier_medium_rotation_residual = 0.02
-TRAJECTORY_BUILDER_2D.outlier_medium_required_consecutive = 8
+TRAJECTORY_BUILDER_2D.outlier_medium_required_consecutive = 4
 TRAJECTORY_BUILDER_2D.outlier_min_correlative_score = 0.0
 TRAJECTORY_BUILDER_2D.outlier_min_num_filtered_points = 0
 
@@ -68,8 +68,8 @@ POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher.score_distribution_c
 
 POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher.min_score_distribution_margin = 0.0 --0.05
 
-POSE_GRAPH.global_sampling_ratio = 0.02 -- 0.0055
-POSE_GRAPH.initial_global_sampling_ratio = 1.0
+POSE_GRAPH.global_sampling_ratio = 0.006
+POSE_GRAPH.initial_global_sampling_ratio = 0.05
 POSE_GRAPH.initial_global_constraint_search_after_n_seconds = 0.0
 POSE_GRAPH.initial_global_localization_min_score = 0.5
 
@@ -91,10 +91,12 @@ TRAJECTORY_BUILDER_2D.ceres_scan_matcher.translation_weight = 30.0
 TRAJECTORY_BUILDER_2D.ceres_scan_matcher.rotation_weight = 30.0
 TRAJECTORY_BUILDER_2D.imu_gravity_time_constant = 12.0
 
-MAP_BUILDER.num_background_threads = 4
+MAP_BUILDER.num_background_threads = 8
 POSE_GRAPH.optimize_every_n_nodes = 1
 POSE_GRAPH.constraint_builder.max_constraint_distance = 15.0
-POSE_GRAPH.relocalization_trigger_sec = 5.0
+POSE_GRAPH.relocalization_trigger_sec = 6.0
+POSE_GRAPH.relocalization_recovery_required_successes = 3
+POSE_GRAPH.relocalization_recovery_grace_sec = 4.0
 
 POSE_GRAPH.constraint_builder.loop_closure_translation_weight = 2e4
 POSE_GRAPH.constraint_builder.loop_closure_rotation_weight = 2e4

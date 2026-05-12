@@ -130,6 +130,17 @@ proto::PoseGraphOptions CreatePoseGraphOptions(
       parameter_dictionary->HasKey("relocalization_trigger_sec")
           ? parameter_dictionary->GetDouble("relocalization_trigger_sec")
           : 0.0);
+  options.set_relocalization_recovery_required_successes(
+      parameter_dictionary->HasKey(
+          "relocalization_recovery_required_successes")
+          ? parameter_dictionary->GetInt(
+                "relocalization_recovery_required_successes")
+          : 2);
+  options.set_relocalization_recovery_grace_sec(
+      parameter_dictionary->HasKey("relocalization_recovery_grace_sec")
+          ? parameter_dictionary->GetDouble(
+                "relocalization_recovery_grace_sec")
+          : 0.0);
   PopulateOverlappingSubmapsTrimmerOptions2D(&options, parameter_dictionary);
   return options;
 }

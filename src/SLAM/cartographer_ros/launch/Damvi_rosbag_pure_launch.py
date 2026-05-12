@@ -17,7 +17,7 @@ def generate_launch_description():
         score_distribution_dir,
         f"fast_correlative_score_distribution_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
     )
-    pbstream_file = '/home/cartographer/SLAM_local-loss/src/SLAM/cartographer_ros/pbstream/0508.pbstream'
+    pbstream_file = LaunchConfiguration('pbstream_file')
     rosbag_file = LaunchConfiguration('bagfiles')
     use_sim_time = LaunchConfiguration('use_sim_time')
 
@@ -25,8 +25,13 @@ def generate_launch_description():
         
         DeclareLaunchArgument(
             'bagfiles',
-            default_value='/home/cartographer/SLAM_local-loss/0507_sensor.bag_0.db3',
+            default_value='/home/rcv/Documents/SLAM_main/0507_sensor.bag_0.db3',
             description='Path to the rosbag file'
+        ),
+        DeclareLaunchArgument(
+            'pbstream_file',
+            default_value='/home/rcv/Documents/SLAM_main/src/SLAM/cartographer_ros/pbstream/0501.pbstream',
+            description='Path to the pbstream file'
         ),
         DeclareLaunchArgument(
             'use_sim_time',

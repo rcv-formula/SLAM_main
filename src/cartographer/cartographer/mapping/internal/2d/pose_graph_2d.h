@@ -253,6 +253,9 @@ class PoseGraph2D : public PoseGraph {
       LocalizationStatus::kLost;
   common::Time last_frozen_constraint_time_ GUARDED_BY(mutex_) =
       common::Time::min();
+  int relocalization_recovery_success_count_ GUARDED_BY(mutex_) = 0;
+  common::Time relocalization_recovery_grace_until_ GUARDED_BY(mutex_) =
+      common::Time::min();
 
   mutable absl::Mutex mutex_;
   absl::Mutex work_queue_mutex_;

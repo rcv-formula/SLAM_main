@@ -68,6 +68,8 @@ message PoseGraphOptions {
   // relocalization search until recovery.  Set to 0 to disable (default).
   // Only meaningful in pure localization mode.
   double relocalization_trigger_sec = 15;
+  int32 relocalization_recovery_required_successes = 16;
+  double relocalization_recovery_grace_sec = 17;
 
   message OverlappingSubmapsTrimmerOptions2D {
     int32 fresh_submaps_count = 1;
