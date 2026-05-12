@@ -38,6 +38,7 @@ options = {
 MAP_BUILDER.use_trajectory_builder_2d = true
 TRAJECTORY_BUILDER_2D.use_imu_data = true
 TRAJECTORY_BUILDER_2D.submaps.grid_options_2d.resolution = 0.05
+TRAJECTORY_BUILDER_2D.submaps.num_range_data = 45
 
 POSE_GRAPH.constraint_builder.global_localization_min_score = 0.62 -- 0.95
 POSE_GRAPH.constraint_builder.min_score = 0.65
@@ -46,6 +47,7 @@ TRAJECTORY_BUILDER.pure_localization_trimmer = {
   max_submaps_to_keep = 5,
 }
 TRAJECTORY_BUILDER_2D.num_accumulated_range_data = 1
+TRAJECTORY_BUILDER_2D.use_online_correlative_scan_matching = false
 
 -- Outlier filter: localization mode용으로 threshold를 mapping보다 넉넉하게 설정
 TRAJECTORY_BUILDER_2D.skip_submap_insertion_for_outliers = true
@@ -69,8 +71,7 @@ POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher.min_score_distributi
 POSE_GRAPH.global_sampling_ratio = 0.02 -- 0.0055
 POSE_GRAPH.initial_global_sampling_ratio = 1.0
 POSE_GRAPH.initial_global_constraint_search_after_n_seconds = 0.0
-POSE_GRAPH.initial_global_localization_min_score =
-    POSE_GRAPH.constraint_builder.global_localization_min_score
+POSE_GRAPH.initial_global_localization_min_score = 0.5
 
 -- 고속 주행에서 pose prediction 오차 수용 + 진동으로 인한 active submap 오차 허용
 TRAJECTORY_BUILDER_2D.real_time_correlative_scan_matcher.linear_search_window = 0.15
