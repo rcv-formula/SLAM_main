@@ -50,6 +50,17 @@ TRAJECTORY_BUILDER.pure_localization_trimmer = {
 }
 TRAJECTORY_BUILDER_2D.num_accumulated_range_data = 1
 
+-- Outlier filter: localization mode용으로 threshold를 mapping보다 넉넉하게 설정
+TRAJECTORY_BUILDER_2D.skip_submap_insertion_for_outliers = true
+TRAJECTORY_BUILDER_2D.outlier_max_translation_residual = 0.15
+TRAJECTORY_BUILDER_2D.outlier_max_rotation_residual = 0.03
+TRAJECTORY_BUILDER_2D.outlier_required_failures = 2
+TRAJECTORY_BUILDER_2D.outlier_medium_translation_residual = 0.10
+TRAJECTORY_BUILDER_2D.outlier_medium_rotation_residual = 0.02
+TRAJECTORY_BUILDER_2D.outlier_medium_required_consecutive = 4
+TRAJECTORY_BUILDER_2D.outlier_min_correlative_score = 0.0
+TRAJECTORY_BUILDER_2D.outlier_min_num_filtered_points = 0
+
 -- ◆ [GLOBAL]
 -- 초기 위치에 대한 설정. 아래 두 값은 초기 위치가 크게 벗어날 가능성이 높으면 큰 값을 지정
   -- [2]global Fast Correlative 매칭에서 x-y 평면상 탐색 범위 (m), 고정. 작을수록 좋음

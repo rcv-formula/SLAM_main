@@ -1,0 +1,6 @@
+# Increase local wheel velocity correction.
+imu_weight: 0.2
+imu_delta_min: 0.3
+wheelodom_weight: 0.02
+odometry_translation_weight: 3000.0
+odometry_rotation_weight: 0.0

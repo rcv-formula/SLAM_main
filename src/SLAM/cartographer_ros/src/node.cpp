@@ -233,8 +233,8 @@ void Node::AddExtrapolator(const int trajectory_id,
           : options.trajectory_builder_options.trajectory_builder_2d_options()
                 .imu_gravity_time_constant();
   extrapolators_.emplace(
-      std::piecewise_construct, std::forward_as_tuple(trajectory_id),
-      std::forward_as_tuple(
+      trajectory_id,
+      absl::make_unique<::cartographer::mapping::PoseExtrapolator>(
           ::cartographer::common::FromSeconds(kExtrapolationEstimationTimeSec),
           gravity_time_constant));
 }
@@ -255,7 +255,7 @@ void Node::PublishLocalTrajectoryData() {
   for (const auto& entry : map_builder_bridge_->GetLocalTrajectoryData()) {
     const auto& trajectory_data = entry.second;
 
-    auto& extrapolator = extrapolators_.at(entry.first);
+    auto& extrapolator = *extrapolators_.at(entry.first);
     // We only publish a point cloud if it has changed. It is not needed at high
     // frequency, and republishing it would be computationally wasteful.
     if (trajectory_data.local_slam_data->time !=
@@ -809,7 +809,7 @@ void Node::HandleOdometryMessage(const int trajectory_id,
   auto sensor_bridge_ptr = map_builder_bridge_->sensor_bridge(trajectory_id);
   auto odometry_data_ptr = sensor_bridge_ptr->ToOdometryData(msg);
   if (odometry_data_ptr != nullptr) {
-    extrapolators_.at(trajectory_id).AddOdometryData(*odometry_data_ptr);
+    extrapolators_.at(trajectory_id)->AddOdometryData(*odometry_data_ptr);
   }
   sensor_bridge_ptr->HandleOdometryMessage(sensor_id, msg);
 }
@@ -846,7 +846,7 @@ void Node::HandleImuMessage(const int trajectory_id,
   auto sensor_bridge_ptr = map_builder_bridge_->sensor_bridge(trajectory_id);
   auto imu_data_ptr = sensor_bridge_ptr->ToImuData(msg);
   if (imu_data_ptr != nullptr) {
-    extrapolators_.at(trajectory_id).AddImuData(*imu_data_ptr);
+    extrapolators_.at(trajectory_id)->AddImuData(*imu_data_ptr);
   }
   sensor_bridge_ptr->HandleImuMessage(sensor_id, msg);
 }

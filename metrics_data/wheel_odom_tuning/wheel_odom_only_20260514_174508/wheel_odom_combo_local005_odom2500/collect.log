@@ -1,0 +1,413 @@
+[INFO] [1778750208.409903635] [metrics_collector]: Using ReadMetrics service: /read_metrics
+
+📊 메트릭 수집 시작
+   기간: 30초
+   간격: 1.0초
+   출력: metrics_data/wheel_odom_tuning/wheel_odom_only_20260514_174508/wheel_odom_combo_local005_odom2500
+------------------------------------------------------------
+[  0.2%] 반복 #  1 - 수집된 항목: 56[  3.6%] 반복 #  2 - 수집된 항목: 56[  7.1%] 반복 #  3 - 수집된 항목: 56[ 10.5%] 반복 #  4 - 수집된 항목: 61[ 13.9%] 반복 #  5 - 수집된 항목: 61[ 17.4%] 반복 #  6 - 수집된 항목: 61[ 20.9%] 반복 #  7 - 수집된 항목: 61[ 24.4%] 반복 #  8 - 수집된 항목: 61[ 27.9%] 반복 #  9 - 수집된 항목: 66[ 31.4%] 반복 # 10 - 수집된 항목: 66[ 34.8%] 반복 # 11 - 수집된 항목: 66[ 38.3%] 반복 # 12 - 수집된 항목: 66[ 41.8%] 반복 # 13 - 수집된 항목: 66[ 45.2%] 반복 # 14 - 수집된 항목: 66[ 48.7%] 반복 # 15 - 수집된 항목: 66[ 52.2%] 반복 # 16 - 수집된 항목: 66[ 55.7%] 반복 # 17 - 수집된 항목: 66[ 59.2%] 반복 # 18 - 수집된 항목: 66[ 62.7%] 반복 # 19 - 수집된 항목: 66[ 66.1%] 반복 # 20 - 수집된 항목: 66[ 69.5%] 반복 # 21 - 수집된 항목: 66[ 73.0%] 반복 # 22 - 수집된 항목: 66[ 76.5%] 반복 # 23 - 수집된 항목: 66[ 80.0%] 반복 # 24 - 수집된 항목: 66[ 83.4%] 반복 # 25 - 수집된 항목: 66[ 86.8%] 반복 # 26 - 수집된 항목: 66[ 90.3%] 반복 # 27 - 수집된 항목: 66[ 93.8%] 반복 # 28 - 수집된 항목: 66[ 97.2%] 반복 # 29 - 수집된 항목: 66[100.7%] 반복 # 30 - 수집된 항목: 66
+✅ 수집 완료: 30회, 66개 메트릭
+💾 CSV 저장: metrics_data/wheel_odom_tuning/wheel_odom_only_20260514_174508/wheel_odom_combo_local005_odom2500/metrics_20260514_181719.csv
+   행: 30
+   열: 69
+💾 JSON 저장: metrics_data/wheel_odom_tuning/wheel_odom_only_20260514_174508/wheel_odom_combo_local005_odom2500/metrics_20260514_181719.json
+
+============================================================
+📈 통계
+============================================================
+
+📊 mapping_2d_local_trajectory_builder_costs[scan_matcher=ceres].n
+   평균: 633.733333
+   최소: 32.000000
+   최대: 1236.000000
+   데이터 포인트: 30
+
+📊 mapping_2d_local_trajectory_builder_costs[scan_matcher=ceres].p50
+   평균: inf
+   최소: 81.920000
+   최대: inf
+   데이터 포인트: 30
+
+📊 mapping_2d_local_trajectory_builder_costs[scan_matcher=ceres].p90
+   평균: inf
+   최소: inf
+   최대: inf
+   데이터 포인트: 30
+
+📊 mapping_2d_local_trajectory_builder_costs[scan_matcher=ceres].p95
+   평균: inf
+   최소: inf
+   최대: inf
+   데이터 포인트: 30
+
+📊 mapping_2d_local_trajectory_builder_costs[scan_matcher=ceres].peak_boundary
+   평균: inf
+   최소: 81.920000
+   최대: inf
+   데이터 포인트: 30
+
+📊 mapping_2d_local_trajectory_builder_costs[scan_matcher=ceres].peak_count
+   평균: 303.200000
+   최소: 32.000000
+   최대: 541.000000
+   데이터 포인트: 30
+
+📊 mapping_2d_local_trajectory_builder_cpu_real_time_ratio
+   평균: 3.389316
+   최소: 0.855309
+   최대: 19.988872
+   데이터 포인트: 30
+
+📊 mapping_2d_local_trajectory_builder_latency
+   평균: 0.024450
+   최소: 0.001000
+   최대: 0.050686
+   데이터 포인트: 30
+
+📊 mapping_2d_local_trajectory_builder_real_time_ratio
+   평균: 2.214006
+   최소: 0.591436
+   최대: 19.973023
+   데이터 포인트: 30
+
+📊 mapping_2d_local_trajectory_builder_residuals[component=angle].n
+   평균: 633.733333
+   최소: 32.000000
+   최대: 1236.000000
+   데이터 포인트: 30
+
+📊 mapping_2d_local_trajectory_builder_residuals[component=angle].p50
+   평균: 0.010000
+   최소: 0.010000
+   최대: 0.010000
+   데이터 포인트: 30
+
+📊 mapping_2d_local_trajectory_builder_residuals[component=angle].p90
+   평균: 0.010000
+   최소: 0.010000
+   최대: 0.010000
+   데이터 포인트: 30
+
+📊 mapping_2d_local_trajectory_builder_residuals[component=angle].p95
+   평균: 0.016667
+   최소: 0.010000
+   최대: 0.020000
+   데이터 포인트: 30
+
+📊 mapping_2d_local_trajectory_builder_residuals[component=angle].peak_boundary
+   평균: 0.010000
+   최소: 0.010000
+   최대: 0.010000
+   데이터 포인트: 30
+
+📊 mapping_2d_local_trajectory_builder_residuals[component=angle].peak_count
+   평균: 596.433333
+   최소: 32.000000
+   최대: 1151.000000
+   데이터 포인트: 30
+
+📊 mapping_2d_local_trajectory_builder_residuals[component=distance].n
+   평균: 633.733333
+   최소: 32.000000
+   최대: 1236.000000
+   데이터 포인트: 30
+
+📊 mapping_2d_local_trajectory_builder_residuals[component=distance].p50
+   평균: 0.017000
+   최소: 0.010000
+   최대: 0.020000
+   데이터 포인트: 30
+
+📊 mapping_2d_local_trajectory_builder_residuals[component=distance].p90
+   평균: 0.038000
+   최소: 0.020000
+   최대: 0.040000
+   데이터 포인트: 30
+
+📊 mapping_2d_local_trajectory_builder_residuals[component=distance].p95
+   평균: 0.040000
+   최소: 0.020000
+   최대: 0.080000
+   데이터 포인트: 30
+
+📊 mapping_2d_local_trajectory_builder_residuals[component=distance].peak_boundary
+   평균: 0.012333
+   최소: 0.010000
+   최대: 0.020000
+   데이터 포인트: 30
+
+📊 mapping_2d_local_trajectory_builder_residuals[component=distance].peak_count
+   평균: 254.333333
+   최소: 21.000000
+   최대: 456.000000
+   데이터 포인트: 30
+
+📊 mapping_2d_local_trajectory_builder_scores[scan_matcher=real_time_correlative].n
+   평균: 0.000000
+   최소: 0.000000
+   최대: 0.000000
+   데이터 포인트: 30
+
+📊 mapping_2d_pose_graph_constraints[tag=inter_submap_trajectory=different]
+   평균: 12.000000
+   최소: 0.000000
+   최대: 25.000000
+   데이터 포인트: 30
+
+📊 mapping_2d_pose_graph_constraints[tag=inter_submap_trajectory=same]
+   평균: 0.166667
+   최소: 0.000000
+   최대: 1.000000
+   데이터 포인트: 30
+
+📊 mapping_2d_pose_graph_submaps[state=active]
+   평균: 3.233333
+   최소: 1.000000
+   최대: 5.000000
+   데이터 포인트: 30
+
+📊 mapping_2d_pose_graph_submaps[state=deleted]
+   평균: 1.966667
+   최소: 0.000000
+   최대: 7.000000
+   데이터 포인트: 30
+
+📊 mapping_2d_pose_graph_submaps[state=frozen]
+   평균: 14.000000
+   최소: 14.000000
+   최대: 14.000000
+   데이터 포인트: 30
+
+📊 mapping_2d_pose_graph_work_queue_delay
+   평균: 0.009447
+   최소: 0.000000
+   최대: 0.126123
+   데이터 포인트: 30
+
+📊 mapping_2d_pose_graph_work_queue_size
+   평균: 1.733333
+   최소: 0.000000
+   최대: 15.000000
+   데이터 포인트: 30
+
+📊 mapping_3d_pose_graph_constraints[tag=inter_submap_trajectory=different]
+   평균: 0.000000
+   최소: 0.000000
+   최대: 0.000000
+   데이터 포인트: 30
+
+📊 mapping_3d_pose_graph_constraints[tag=inter_submap_trajectory=same]
+   평균: 0.000000
+   최소: 0.000000
+   최대: 0.000000
+   데이터 포인트: 30
+
+📊 mapping_3d_pose_graph_submaps[state=active]
+   평균: 0.000000
+   최소: 0.000000
+   최대: 0.000000
+   데이터 포인트: 30
+
+📊 mapping_3d_pose_graph_submaps[state=deleted]
+   평균: 0.000000
+   최소: 0.000000
+   최대: 0.000000
+   데이터 포인트: 30
+
+📊 mapping_3d_pose_graph_submaps[state=frozen]
+   평균: 0.000000
+   최소: 0.000000
+   최대: 0.000000
+   데이터 포인트: 30
+
+📊 mapping_3d_pose_graph_work_queue_delay
+   평균: 0.000000
+   최소: 0.000000
+   최대: 0.000000
+   데이터 포인트: 30
+
+📊 mapping_3d_pose_graph_work_queue_size
+   평균: 0.000000
+   최소: 0.000000
+   최대: 0.000000
+   데이터 포인트: 30
+
+📊 mapping_constraints_constraint_builder_2d_constraints[matcher=found_search_region=global]
+   평균: 24.566667
+   최소: 0.000000
+   최대: 63.000000
+   데이터 포인트: 30
+
+📊 mapping_constraints_constraint_builder_2d_constraints[matcher=found_search_region=local]
+   평균: 0.733333
+   최소: 0.000000
+   최대: 1.000000
+   데이터 포인트: 30
+
+📊 mapping_constraints_constraint_builder_2d_constraints[matcher=searched_search_region=global]
+   평균: 53.900000
+   최소: 1.000000
+   최대: 128.000000
+   데이터 포인트: 30
+
+📊 mapping_constraints_constraint_builder_2d_constraints[matcher=searched_search_region=local]
+   평균: 3.400000
+   최소: 0.000000
+   최대: 9.000000
+   데이터 포인트: 30
+
+📊 mapping_constraints_constraint_builder_2d_num_submap_scan_matchers
+   평균: 7.266667
+   최소: 1.000000
+   최대: 10.000000
+   데이터 포인트: 30
+
+📊 mapping_constraints_constraint_builder_2d_queue_length
+   평균: 0.533333
+   최소: 0.000000
+   최대: 8.000000
+   데이터 포인트: 30
+
+📊 mapping_constraints_constraint_builder_2d_scores[search_region=global].n
+   평균: 24.566667
+   최소: 0.000000
+   최대: 63.000000
+   데이터 포인트: 30
+
+📊 mapping_constraints_constraint_builder_2d_scores[search_region=global].p50
+   평균: 0.724074
+   최소: 0.700000
+   최대: 0.750000
+   데이터 포인트: 27
+
+📊 mapping_constraints_constraint_builder_2d_scores[search_region=global].p90
+   평균: 0.790741
+   최소: 0.750000
+   최대: 0.800000
+   데이터 포인트: 27
+
+📊 mapping_constraints_constraint_builder_2d_scores[search_region=global].p95
+   평균: 0.790741
+   최소: 0.750000
+   최대: 0.800000
+   데이터 포인트: 27
+
+📊 mapping_constraints_constraint_builder_2d_scores[search_region=global].peak_boundary
+   평균: 0.738889
+   최소: 0.700000
+   최대: 0.750000
+   데이터 포인트: 27
+
+📊 mapping_constraints_constraint_builder_2d_scores[search_region=global].peak_count
+   평균: 8.592593
+   최소: 1.000000
+   최대: 17.000000
+   데이터 포인트: 27
+
+📊 mapping_constraints_constraint_builder_2d_scores[search_region=local].n
+   평균: 0.733333
+   최소: 0.000000
+   최대: 1.000000
+   데이터 포인트: 30
+
+📊 mapping_constraints_constraint_builder_2d_scores[search_region=local].p50
+   평균: 0.850000
+   최소: 0.850000
+   최대: 0.850000
+   데이터 포인트: 22
+
+📊 mapping_constraints_constraint_builder_2d_scores[search_region=local].p90
+   평균: 0.850000
+   최소: 0.850000
+   최대: 0.850000
+   데이터 포인트: 22
+
+📊 mapping_constraints_constraint_builder_2d_scores[search_region=local].p95
+   평균: 0.850000
+   최소: 0.850000
+   최대: 0.850000
+   데이터 포인트: 22
+
+📊 mapping_constraints_constraint_builder_2d_scores[search_region=local].peak_boundary
+   평균: 0.850000
+   최소: 0.850000
+   최대: 0.850000
+   데이터 포인트: 22
+
+📊 mapping_constraints_constraint_builder_2d_scores[search_region=local].peak_count
+   평균: 1.000000
+   최소: 1.000000
+   최대: 1.000000
+   데이터 포인트: 22
+
+📊 mapping_constraints_constraint_builder_3d_constraints[matcher=found_search_region=global]
+   평균: 0.000000
+   최소: 0.000000
+   최대: 0.000000
+   데이터 포인트: 30
+
+📊 mapping_constraints_constraint_builder_3d_constraints[matcher=found_search_region=local]
+   평균: 0.000000
+   최소: 0.000000
+   최대: 0.000000
+   데이터 포인트: 30
+
+📊 mapping_constraints_constraint_builder_3d_constraints[matcher=searched_search_region=global]
+   평균: 0.000000
+   최소: 0.000000
+   최대: 0.000000
+   데이터 포인트: 30
+
+📊 mapping_constraints_constraint_builder_3d_constraints[matcher=searched_search_region=local]
+   평균: 0.000000
+   최소: 0.000000
+   최대: 0.000000
+   데이터 포인트: 30
+
+📊 mapping_constraints_constraint_builder_3d_num_submap_scan_matchers
+   평균: 0.000000
+   최소: 0.000000
+   최대: 0.000000
+   데이터 포인트: 30
+
+📊 mapping_constraints_constraint_builder_3d_queue_length
+   평균: 0.000000
+   최소: 0.000000
+   최대: 0.000000
+   데이터 포인트: 30
+
+📊 mapping_constraints_constraint_builder_3d_scores[kind=low_resolution_score_search_region=global].n
+   평균: 0.000000
+   최소: 0.000000
+   최대: 0.000000
+   데이터 포인트: 30
+
+📊 mapping_constraints_constraint_builder_3d_scores[kind=low_resolution_score_search_region=local].n
+   평균: 0.000000
+   최소: 0.000000
+   최대: 0.000000
+   데이터 포인트: 30
+
+📊 mapping_constraints_constraint_builder_3d_scores[kind=rotational_score_search_region=global].n
+   평균: 0.000000
+   최소: 0.000000
+   최대: 0.000000
+   데이터 포인트: 30
+
+📊 mapping_constraints_constraint_builder_3d_scores[kind=rotational_score_search_region=local].n
+   평균: 0.000000
+   최소: 0.000000
+   최대: 0.000000
+   데이터 포인트: 30
+
+📊 mapping_constraints_constraint_builder_3d_scores[kind=score_search_region=global].n
+   평균: 0.000000
+   최소: 0.000000
+   최대: 0.000000
+   데이터 포인트: 30
+
+📊 mapping_constraints_constraint_builder_3d_scores[kind=score_search_region=local].n
+   평균: 0.000000
+   최소: 0.000000
+   최대: 0.000000
+   데이터 포인트: 30

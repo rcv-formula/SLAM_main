@@ -35,6 +35,17 @@ TRAJECTORY_BUILDER_2D.use_online_correlative_scan_matching = false
 
 MAP_BUILDER.use_trajectory_builder_2d = true
 TRAJECTORY_BUILDER_2D.use_imu_data = true
+TRAJECTORY_BUILDER_2D.log_local_quality_metrics_to_csv = false
+TRAJECTORY_BUILDER_2D.local_quality_metrics_csv_path = ""
+TRAJECTORY_BUILDER_2D.skip_submap_insertion_for_outliers = true
+TRAJECTORY_BUILDER_2D.outlier_min_correlative_score = 0.0
+TRAJECTORY_BUILDER_2D.outlier_max_translation_residual = 0.10
+TRAJECTORY_BUILDER_2D.outlier_max_rotation_residual = 0.02
+TRAJECTORY_BUILDER_2D.outlier_min_num_filtered_points = 0
+TRAJECTORY_BUILDER_2D.outlier_required_failures = 1
+TRAJECTORY_BUILDER_2D.outlier_medium_translation_residual = 0.06
+TRAJECTORY_BUILDER_2D.outlier_medium_rotation_residual = 0.012
+TRAJECTORY_BUILDER_2D.outlier_medium_required_consecutive = 3
 
 -- LiDAR settings
 TRAJECTORY_BUILDER_2D.min_range = 0.1

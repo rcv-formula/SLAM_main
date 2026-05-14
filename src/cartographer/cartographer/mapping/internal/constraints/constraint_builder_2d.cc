@@ -250,11 +250,15 @@ void ConstraintBuilder2D::ComputeConstraint(
 
   const transform::Rigid2d constraint_transform =
       ComputeSubmapPose(*submap).inverse() * pose_estimate;
+  // Outlier nodes are still inserted into submaps (to prevent active submap
+  // sparsity), but their constraints are down-weighted so the pose graph
+  // optimizer does not trust their imprecise pose estimates strongly.
+  const double weight_scale = constant_data->is_outlier ? 0.1 : 1.0;
   constraint->reset(new Constraint{submap_id,
                                    node_id,
                                    {transform::Embed3D(constraint_transform),
-                                    options_.loop_closure_translation_weight(),
-                                    options_.loop_closure_rotation_weight()},
+                                    options_.loop_closure_translation_weight() * weight_scale,
+                                    options_.loop_closure_rotation_weight() * weight_scale},
                                    Constraint::INTER_SUBMAP});
 
   if (options_.log_matches()) {

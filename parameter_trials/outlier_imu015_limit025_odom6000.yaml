@@ -1,0 +1,6 @@
+# Outlier rerun: small IMU decrease and slightly tighter IMU delta rejection.
+imu_weight: 0.15
+imu_delta_min: 0.25
+wheelodom_weight: 0.01
+odometry_translation_weight: 6000.0
+odometry_rotation_weight: 0.0

@@ -250,13 +250,13 @@ def main():
     
     rclpy.init()
     
-    collector = MetricsCollector(
-        output_dir=args.output,
-        duration=args.duration,
-        interval=args.interval
-    )
-    
     try:
+        collector = MetricsCollector(
+            output_dir=args.output,
+            duration=args.duration,
+            interval=args.interval
+        )
+        
         collector.collect()
         
         # 저장
@@ -269,8 +269,16 @@ def main():
     
     except KeyboardInterrupt:
         print("\n\n수집 중단됨")
+    except RuntimeError as e:
+        print(f"\n❌ 에러: {e}")
+        print("\n💡 해결방법:")
+        print("   1. SLAM 프로세스가 실행 중인지 확인")
+        print("   2. 또는 테스트 모드로 실행: python3 collect_metrics.py --test")
     finally:
-        collector.destroy_node()
+        try:
+            collector.destroy_node()
+        except:
+            pass
         rclpy.shutdown()
 
 
