@@ -23,3 +23,37 @@ odometry_translation_weight: 3000.0
 # 포즈 그래프에서 휠 오돔 각도/yaw 잔차에 주는 가중치입니다.
 # 현재 값 0.0은 휠 yaw가 불안정해서 직접 yaw 잔차를 끈 상태입니다.
 odometry_rotation_weight: 0.0
+
+# 전역 매칭/포즈 그래프 튜닝값입니다.
+# 0312 sensor_only bag full-run drift 테스트 기준:
+# - global_sampling_ratio 증가는 후반 residual을 키워서 유지하지 않습니다.
+# - wheel yaw 잔차는 후반 residual을 키워서 0.0 유지합니다.
+# - loop closure weight 4000 + optimize_every_n_nodes 1 조합이
+#   후반 translation residual p95가 가장 낮았습니다.
+global_localization_min_score: 0.58
+constraint_min_score: 0.65
+global_constraint_search_after_n_seconds: 0
+max_submaps_to_keep: 4
+global_linear_search_window: 1.5
+global_angular_search_window_deg: 10.0
+global_sampling_ratio: 0.005
+constraint_builder_sampling_ratio: 0.0001
+loop_closure_translation_weight: 4000.0
+loop_closure_rotation_weight: 4000.0
+max_constraint_distance: 15.0
+optimize_every_n_nodes: 1
+
+# 문제 구간(70~88s) 좁힌 테스트에서 반복 구조에 덜 끌리도록
+# Ceres가 예측 pose를 더 강하게 유지하게 한 값입니다.
+# 20/20 대비 70~88s translation residual p95가 0.0425 -> 0.0395로 개선되었습니다.
+ceres_occupied_space_weight: 50.0
+ceres_translation_weight: 40.0
+ceres_rotation_weight: 40.0
+
+# Outlier 기준 테스트값.
+outlier_max_translation_residual: 0.08
+outlier_max_rotation_residual: 0.03
+outlier_required_failures: 1
+outlier_medium_translation_residual: 0.07
+outlier_medium_rotation_residual: 0.02
+outlier_medium_required_consecutive: 2

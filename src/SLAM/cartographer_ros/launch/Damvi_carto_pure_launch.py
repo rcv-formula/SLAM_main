@@ -10,7 +10,7 @@ def generate_launch_description():
     package_dir = os.path.dirname(main_dir)
     config_dir = os.path.join(package_dir, 'configuration_files')
     workspace_dir = os.path.abspath(os.path.join(package_dir, '..', '..', '..'))
-    pbstream_file = os.path.join(package_dir, 'pbstream/0312.pbstream')   # .pbstream 파일이 있는 위치로 경로 수정
+    pbstream_file = os.path.join(package_dir, 'pbstream/0501.pbstream')   # .pbstream 파일이 있는 위치로 경로 수정
     use_sim_time = LaunchConfiguration('use_sim_time')
     fusion_extrapolator = LaunchConfiguration('fusion_extrapolator')
     pose_extrapolator_config = LaunchConfiguration('pose_extrapolator_config')

@@ -76,43 +76,62 @@ options = {
 -- 2D Trajectory 설정
 MAP_BUILDER.use_trajectory_builder_2d = true
 TRAJECTORY_BUILDER_2D.use_imu_data = true
+local LOCAL_QUALITY_METRICS_CSV = os.getenv("LOCAL_QUALITY_METRICS_CSV") or ""
+TRAJECTORY_BUILDER_2D.log_local_quality_metrics_to_csv =
+    LOCAL_QUALITY_METRICS_CSV ~= ""
+TRAJECTORY_BUILDER_2D.local_quality_metrics_csv_path =
+    LOCAL_QUALITY_METRICS_CSV
 
 -- 해상도 설정 (GridResolution). 0.1 = 10cm 단위, 여기서는 5cm
 TRAJECTORY_BUILDER_2D.submaps.grid_options_2d.resolution = 0.05
 
 -- 순수 위치추정 모드 관련 설정
   -- ◆ [1]전역 매칭(루프 클로저) 최소 점수
-POSE_GRAPH.constraint_builder.global_localization_min_score = 0.58
+POSE_GRAPH.constraint_builder.global_localization_min_score =
+    wheel_config_or_default("global_localization_min_score", 0.58)
   -- ◆ [1]로컬 매칭(일반 스캔 매칭) 최소 점수
-POSE_GRAPH.constraint_builder.min_score = 0.65
+POSE_GRAPH.constraint_builder.min_score =
+    wheel_config_or_default("constraint_min_score", 0.65)
 
 -- 시작 직후부터 전역 제약 탐색을 바로 시도한다.
-POSE_GRAPH.global_constraint_search_after_n_seconds = 0
+POSE_GRAPH.global_constraint_search_after_n_seconds =
+    wheel_config_or_default("global_constraint_search_after_n_seconds", 0)
 TRAJECTORY_BUILDER.pure_localization_trimmer = {
-  max_submaps_to_keep = 4,
+  max_submaps_to_keep = wheel_config_or_default("max_submaps_to_keep", 4),
 }
 TRAJECTORY_BUILDER_2D.num_accumulated_range_data = 1
 
 -- Outlier filter: wheel metric localization path에도 새 local SLAM outlier 로직을 적용한다.
 TRAJECTORY_BUILDER_2D.skip_submap_insertion_for_outliers = true
-TRAJECTORY_BUILDER_2D.outlier_max_translation_residual = 0.15
-TRAJECTORY_BUILDER_2D.outlier_max_rotation_residual = 0.03
-TRAJECTORY_BUILDER_2D.outlier_required_failures = 2
-TRAJECTORY_BUILDER_2D.outlier_medium_translation_residual = 0.10
-TRAJECTORY_BUILDER_2D.outlier_medium_rotation_residual = 0.02
-TRAJECTORY_BUILDER_2D.outlier_medium_required_consecutive = 4
-TRAJECTORY_BUILDER_2D.outlier_min_correlative_score = 0.0
-TRAJECTORY_BUILDER_2D.outlier_min_num_filtered_points = 0
+TRAJECTORY_BUILDER_2D.outlier_max_translation_residual =
+    wheel_config_or_default("outlier_max_translation_residual", 0.15)
+TRAJECTORY_BUILDER_2D.outlier_max_rotation_residual =
+    wheel_config_or_default("outlier_max_rotation_residual", 0.03)
+TRAJECTORY_BUILDER_2D.outlier_required_failures =
+    wheel_config_or_default("outlier_required_failures", 2)
+TRAJECTORY_BUILDER_2D.outlier_medium_translation_residual =
+    wheel_config_or_default("outlier_medium_translation_residual", 0.10)
+TRAJECTORY_BUILDER_2D.outlier_medium_rotation_residual =
+    wheel_config_or_default("outlier_medium_rotation_residual", 0.02)
+TRAJECTORY_BUILDER_2D.outlier_medium_required_consecutive =
+    wheel_config_or_default("outlier_medium_required_consecutive", 4)
+TRAJECTORY_BUILDER_2D.outlier_min_correlative_score =
+    wheel_config_or_default("outlier_min_correlative_score", 0.0)
+TRAJECTORY_BUILDER_2D.outlier_min_num_filtered_points =
+    wheel_config_or_default("outlier_min_num_filtered_points", 0)
 
 -- ◆ [전역 매칭]
 -- 초기 위치에 대한 설정. 아래 두 값은 초기 위치가 크게 벗어날 가능성이 높으면 큰 값을 지정
   -- [2]전역 Fast Correlative 매칭에서 x-y 평면상 탐색 범위 (m), 고정. 작을수록 좋음
-POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher.linear_search_window = 1.5
+POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher.linear_search_window =
+    wheel_config_or_default("global_linear_search_window", 1.5)
   -- [2]전역 Fast Correlative 매칭에서 회전(각도) 탐색 범위 (라디안), 고정. 작을수록 좋음
-POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher.angular_search_window = math.rad(10.0)
+POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher.angular_search_window =
+    math.rad(wheel_config_or_default("global_angular_search_window_deg", 10.0))
   -- [1] 전역 매칭(큰 오프셋 수정 등) 시 스캔을 추출하여 매칭 시도할 확률 (0 ~ 1). 연산량 tradeoff가 존재. 0.0036-0.004 사이. 0.0001 단위로 조절
 -- 초기 재위치 보정 시도가 너무 드물지 않도록 전역 후보 샘플링을 올린 값.
-POSE_GRAPH.global_sampling_ratio = 0.005 -- 정반대 일 떄
+POSE_GRAPH.global_sampling_ratio =
+    wheel_config_or_default("global_sampling_ratio", 0.005) -- 정반대 일 떄
 
 -- 휠 오돔은 움직임 사전값으로만 약하게 쓰는 것이 목적이다.
 -- 휠이 미끄러지거나 튈 때 스캔 매칭/전역 위치추정보다 강하면 맵이 밀릴 수 있다.
@@ -141,9 +160,12 @@ TRAJECTORY_BUILDER_2D.adaptive_voxel_filter.min_num_points = 200
 TRAJECTORY_BUILDER_2D.voxel_filter_size = 0.05
 
 -- Ceres 기반 스캔 매처 설정. 라이다 데이터로 이전 서브맵과 비교하여 포즈와 방향을 추정한다.
-TRAJECTORY_BUILDER_2D.ceres_scan_matcher.occupied_space_weight = 50.0
-TRAJECTORY_BUILDER_2D.ceres_scan_matcher.translation_weight = 20.0
-TRAJECTORY_BUILDER_2D.ceres_scan_matcher.rotation_weight = 20.0
+TRAJECTORY_BUILDER_2D.ceres_scan_matcher.occupied_space_weight =
+    wheel_config_or_default("ceres_occupied_space_weight", 50.0)
+TRAJECTORY_BUILDER_2D.ceres_scan_matcher.translation_weight =
+    wheel_config_or_default("ceres_translation_weight", 20.0)
+TRAJECTORY_BUILDER_2D.ceres_scan_matcher.rotation_weight =
+    wheel_config_or_default("ceres_rotation_weight", 20.0)
 
 --[드리프트 심할 때 키우세요] IMU 설정
   -- 급격한 조향이 있을 경우에는 time_constant와 rotation_weight 증가 고려
@@ -153,16 +175,21 @@ MAP_BUILDER.num_background_threads = 4
 
 -- ◆ 기타 포즈 그래프 관련
   -- n개의 노드(스캔)가 쌓일 때마다 전역 최적화(루프 클로저 등)를 실행한다. 적을수록 빠르게 최적화가 일어난다. 1개가 적절
-POSE_GRAPH.optimize_every_n_nodes = 2
+POSE_GRAPH.optimize_every_n_nodes =
+    wheel_config_or_default("optimize_every_n_nodes", 2)
 
 -- [대회장 길이에 맞추어 조절] 전역 매칭을 위한 서브맵 간 최대 거리
-POSE_GRAPH.constraint_builder.max_constraint_distance = 15.0
+POSE_GRAPH.constraint_builder.max_constraint_distance =
+    wheel_config_or_default("max_constraint_distance", 15.0)
 
 -- 루프 클로저 관련 변수
-POSE_GRAPH.constraint_builder.loop_closure_translation_weight = 2000.0
-POSE_GRAPH.constraint_builder.loop_closure_rotation_weight = 2000.0
+POSE_GRAPH.constraint_builder.loop_closure_translation_weight =
+    wheel_config_or_default("loop_closure_translation_weight", 2000.0)
+POSE_GRAPH.constraint_builder.loop_closure_rotation_weight =
+    wheel_config_or_default("loop_closure_rotation_weight", 2000.0)
 
 
-POSE_GRAPH.constraint_builder.sampling_ratio = 0.0001
+POSE_GRAPH.constraint_builder.sampling_ratio =
+    wheel_config_or_default("constraint_builder_sampling_ratio", 0.0001)
 
 return options

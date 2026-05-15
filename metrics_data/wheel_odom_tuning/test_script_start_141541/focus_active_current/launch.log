@@ -1,0 +1,841 @@
+[INFO] [launch]: All log files can be found below /home/symoon/.ros/log/2026-05-15-14-15-42-702864-symoon-HP-ZBook-Create-G7-Notebook-PC-51496
+[INFO] [launch]: Default logging verbosity is set to INFO
+[INFO] [cartographer_node-1]: process started with pid [51498]
+[cartographer_node-1] [INFO] [1778822142.803316302] [cartographer logger]: I0515 14:15:42.000000 51498 configuration_file_resolver.cc:41] Found '/home/symoon/Desktop/F1/Local_SLAM_Complete/local_SLAM_imu_wheel_ver4/src/SLAM/cartographer_ros/configuration_files/Damvi_localization_config_wheel.lua' for 'Damvi_localization_config_wheel.lua'.
+[cartographer_node-1] [INFO] [1778822142.804063861] [cartographer logger]: I0515 14:15:42.000000 51498 configuration_file_resolver.cc:41] Found '/home/symoon/Desktop/F1/Local_SLAM_Complete/local_SLAM_imu_wheel_ver3/install/cartographer/share/cartographer/configuration_files/map_builder.lua' for 'map_builder.lua'.
+[cartographer_node-1] [INFO] [1778822142.804114853] [cartographer logger]: I0515 14:15:42.000000 51498 configuration_file_resolver.cc:41] Found '/home/symoon/Desktop/F1/Local_SLAM_Complete/local_SLAM_imu_wheel_ver3/install/cartographer/share/cartographer/configuration_files/map_builder.lua' for 'map_builder.lua'.
+[cartographer_node-1] [INFO] [1778822142.804162148] [cartographer logger]: I0515 14:15:42.000000 51498 configuration_file_resolver.cc:41] Found '/home/symoon/Desktop/F1/Local_SLAM_Complete/local_SLAM_imu_wheel_ver3/install/cartographer/share/cartographer/configuration_files/pose_graph.lua' for 'pose_graph.lua'.
+[cartographer_node-1] [INFO] [1778822142.804197093] [cartographer logger]: I0515 14:15:42.000000 51498 configuration_file_resolver.cc:41] Found '/home/symoon/Desktop/F1/Local_SLAM_Complete/local_SLAM_imu_wheel_ver3/install/cartographer/share/cartographer/configuration_files/pose_graph.lua' for 'pose_graph.lua'.
+[cartographer_node-1] [INFO] [1778822142.804322850] [cartographer logger]: I0515 14:15:42.000000 51498 configuration_file_resolver.cc:41] Found '/home/symoon/Desktop/F1/Local_SLAM_Complete/local_SLAM_imu_wheel_ver3/install/cartographer/share/cartographer/configuration_files/trajectory_builder.lua' for 'trajectory_builder.lua'.
+[cartographer_node-1] [INFO] [1778822142.804343927] [cartographer logger]: I0515 14:15:42.000000 51498 configuration_file_resolver.cc:41] Found '/home/symoon/Desktop/F1/Local_SLAM_Complete/local_SLAM_imu_wheel_ver3/install/cartographer/share/cartographer/configuration_files/trajectory_builder.lua' for 'trajectory_builder.lua'.
+[cartographer_node-1] [INFO] [1778822142.804384573] [cartographer logger]: I0515 14:15:42.000000 51498 configuration_file_resolver.cc:41] Found '/home/symoon/Desktop/F1/Local_SLAM_Complete/local_SLAM_imu_wheel_ver3/install/cartographer/share/cartographer/configuration_files/trajectory_builder_2d.lua' for 'trajectory_builder_2d.lua'.
+[cartographer_node-1] [INFO] [1778822142.804403878] [cartographer logger]: I0515 14:15:42.000000 51498 configuration_file_resolver.cc:41] Found '/home/symoon/Desktop/F1/Local_SLAM_Complete/local_SLAM_imu_wheel_ver3/install/cartographer/share/cartographer/configuration_files/trajectory_builder_2d.lua' for 'trajectory_builder_2d.lua'.
+[cartographer_node-1] [INFO] [1778822142.804533905] [cartographer logger]: I0515 14:15:42.000000 51498 configuration_file_resolver.cc:41] Found '/home/symoon/Desktop/F1/Local_SLAM_Complete/local_SLAM_imu_wheel_ver3/install/cartographer/share/cartographer/configuration_files/trajectory_builder_3d.lua' for 'trajectory_builder_3d.lua'.
+[cartographer_node-1] [INFO] [1778822142.804554495] [cartographer logger]: I0515 14:15:42.000000 51498 configuration_file_resolver.cc:41] Found '/home/symoon/Desktop/F1/Local_SLAM_Complete/local_SLAM_imu_wheel_ver3/install/cartographer/share/cartographer/configuration_files/trajectory_builder_3d.lua' for 'trajectory_builder_3d.lua'.
+[cartographer_node-1] [INFO] [1778822142.816185535] [cartographer logger]: I0515 14:15:42.000000 51498 map_builder_bridge.cpp:117] Loading saved state '/home/symoon/Desktop/F1/Local_SLAM_Complete/local_SLAM_imu_wheel_ver4/src/SLAM/cartographer_ros/pbstream/0312.pbstream'...
+[cartographer_node-1] [INFO] [1778822142.894720054] [cartographer logger]: I0515 14:15:42.000000 51498 map_builder_bridge.cpp:140] Added trajectory with ID '1'.
+[cartographer_node-1] [INFO] [1778822142.894872693] [cartographer logger]: I0515 14:15:42.000000 51498 pose_extrapolator.cc:218] Loaded pose extrapolator config from /home/symoon/Desktop/F1/Local_SLAM_Complete/local_SLAM_imu_wheel_ver4/parameter_trials/focus_active_current.yaml imu_weight=0.2 imu_delta_min=0.3 wheelodom_weight=0.01 process_noise=0.001 measurement_noise_scan_default=1.5e-06 measurement_noise_odom_default=0.0002
+[cartographer_node-1] [INFO] [1778822142.894907256] [cartographer logger]: I0515 14:15:42.000000 51498 pose_extrapolator.cc:154] fusion is active
+[cartographer_node-1] [INFO] [1778822152.904681304] [cartographer logger]: I0515 14:15:52.000000 51498 ordered_multi_queue.cc:172] All sensor data for trajectory 1 is available starting at '639089883260544487'.
+[cartographer_node-1] [INFO] [1778822152.955634019] [cartographer logger]: I0515 14:15:52.000000 51498 local_trajectory_builder_2d.cc:461] Extrapolator not yet initialized.
+[cartographer_node-1] [INFO] [1778822152.955861505] [cartographer logger]: I0515 14:15:52.000000 51498 pose_extrapolator.cc:218] Loaded pose extrapolator config from /home/symoon/Desktop/F1/Local_SLAM_Complete/local_SLAM_imu_wheel_ver4/parameter_trials/focus_active_current.yaml imu_weight=0.2 imu_delta_min=0.3 wheelodom_weight=0.01 process_noise=0.001 measurement_noise_scan_default=1.5e-06 measurement_noise_odom_default=0.0002
+[cartographer_node-1] [INFO] [1778822152.955887903] [cartographer logger]: I0515 14:15:52.000000 51498 pose_extrapolator.cc:154] fusion is active
+[cartographer_node-1] [INFO] [1778822152.955979202] [cartographer logger]: I0515 14:15:52.000000 51498 local_trajectory_builder_2d.cc:198] Extrapolator is still initializing.
+[cartographer_node-1] [INFO] [1778822153.007490889] [cartographer logger]: I0515 14:15:53.000000 51498 pose_graph_2d.cc:148] Inserted submap (1, 0).
+[cartographer_node-1] [WARN] [1778822153.386713302] [cartographer logger]: W0515 14:15:53.000000 51498 range_data_collator.cc:82] Dropped 52 earlier points.
+[cartographer_node-1] [INFO] [1778822155.369807216] [cartographer logger]: I0515 14:15:55.000000 51513 pose_graph_2d.cc:538] Remaining work items in queue: 1
+[cartographer_node-1] [INFO] [1778822155.369857948] [cartographer logger]: I0515 14:15:55.000000 51513 constraint_builder_2d.cc:294] 1 computations resulted in 0 additional constraints.
+[cartographer_node-1] [INFO] [1778822155.369876304] [cartographer logger]: I0515 14:15:55.000000 51513 constraint_builder_2d.cc:296] Score histogram:
+[cartographer_node-1] Count: 0
+[cartographer_node-1] [INFO] [1778822155.633485301] [cartographer logger]: I0515 14:15:55.000000 51514 pose_graph_2d.cc:538] Remaining work items in queue: 0
+[cartographer_node-1] [INFO] [1778822155.633533457] [cartographer logger]: I0515 14:15:55.000000 51514 constraint_builder_2d.cc:294] 0 computations resulted in 0 additional constraints.
+[cartographer_node-1] [INFO] [1778822155.633549707] [cartographer logger]: I0515 14:15:55.000000 51514 constraint_builder_2d.cc:296] Score histogram:
+[cartographer_node-1] Count: 0
+[cartographer_node-1] [INFO] [1778822155.818723974] [cartographer logger]: I0515 14:15:55.000000 51512 pose_graph_2d.cc:538] Remaining work items in queue: 1
+[cartographer_node-1] [INFO] [1778822155.818771783] [cartographer logger]: I0515 14:15:55.000000 51512 constraint_builder_2d.cc:294] 0 computations resulted in 0 additional constraints.
+[cartographer_node-1] [INFO] [1778822155.818788876] [cartographer logger]: I0515 14:15:55.000000 51512 constraint_builder_2d.cc:296] Score histogram:
+[cartographer_node-1] Count: 0
+[cartographer_node-1] [INFO] [1778822155.912188506] [cartographer logger]: I0515 14:15:55.000000 51515 pose_graph_2d.cc:538] Remaining work items in queue: 0
+[cartographer_node-1] [INFO] [1778822155.912250634] [cartographer logger]: I0515 14:15:55.000000 51515 constraint_builder_2d.cc:294] 0 computations resulted in 0 additional constraints.
+[cartographer_node-1] [INFO] [1778822155.912267442] [cartographer logger]: I0515 14:15:55.000000 51515 constraint_builder_2d.cc:296] Score histogram:
+[cartographer_node-1] Count: 0
+[cartographer_node-1] [INFO] [1778822156.014787976] [cartographer logger]: I0515 14:15:56.000000 51515 pose_graph_2d.cc:538] Remaining work items in queue: 1
+[cartographer_node-1] [INFO] [1778822156.014828791] [cartographer logger]: I0515 14:15:56.000000 51515 constraint_builder_2d.cc:294] 0 computations resulted in 0 additional constraints.
+[cartographer_node-1] [INFO] [1778822156.014843392] [cartographer logger]: I0515 14:15:56.000000 51515 constraint_builder_2d.cc:296] Score histogram:
+[cartographer_node-1] Count: 0
+[cartographer_node-1] [INFO] [1778822156.166209612] [cartographer logger]: I0515 14:15:56.000000 51512 pose_graph_2d.cc:538] Remaining work items in queue: 0
+[cartographer_node-1] [INFO] [1778822156.166278664] [cartographer logger]: I0515 14:15:56.000000 51512 constraint_builder_2d.cc:294] 0 computations resulted in 0 additional constraints.
+[cartographer_node-1] [INFO] [1778822156.166310983] [cartographer logger]: I0515 14:15:56.000000 51512 constraint_builder_2d.cc:296] Score histogram:
+[cartographer_node-1] Count: 0
+[cartographer_node-1] [INFO] [1778822156.339562753] [cartographer logger]: I0515 14:15:56.000000 51513 pose_graph_2d.cc:538] Remaining work items in queue: 0
+[cartographer_node-1] [INFO] [1778822156.339653527] [cartographer logger]: I0515 14:15:56.000000 51513 constraint_builder_2d.cc:294] 0 computations resulted in 0 additional constraints.
+[cartographer_node-1] [INFO] [1778822156.339679037] [cartographer logger]: I0515 14:15:56.000000 51513 constraint_builder_2d.cc:296] Score histogram:
+[cartographer_node-1] Count: 0
+[cartographer_node-1] [INFO] [1778822156.485233780] [cartographer logger]: I0515 14:15:56.000000 51512 constraint_builder_2d.cc:279] Node (1, 14) with 201 points on submap (0, 4) matches with score 71.8%.
+[cartographer_node-1] [INFO] [1778822156.518489994] [cartographer logger]: I0515 14:15:56.000000 51512 pose_graph_2d.cc:538] Remaining work items in queue: 1
+[cartographer_node-1] [INFO] [1778822156.518531110] [cartographer logger]: I0515 14:15:56.000000 51512 constraint_builder_2d.cc:294] 1 computations resulted in 1 additional constraints.
+[cartographer_node-1] [INFO] [1778822156.518550195] [cartographer logger]: I0515 14:15:56.000000 51512 constraint_builder_2d.cc:296] Score histogram:
+[cartographer_node-1] Count: 1  Min: 0.718086  Max: 0.718086  Mean: 0.718086
+[cartographer_node-1] [INFO] [1778822156.616508665] [cartographer logger]: I0515 14:15:56.000000 51514 pose_graph_2d.cc:538] Remaining work items in queue: 0
+[cartographer_node-1] [INFO] [1778822156.616562208] [cartographer logger]: I0515 14:15:56.000000 51514 constraint_builder_2d.cc:294] 0 computations resulted in 0 additional constraints.
+[cartographer_node-1] [INFO] [1778822156.616606298] [cartographer logger]: I0515 14:15:56.000000 51514 constraint_builder_2d.cc:296] Score histogram:
+[cartographer_node-1] Count: 1  Min: 0.718086  Max: 0.718086  Mean: 0.718086
+[cartographer_node-1] [INFO] [1778822156.685195152] [cartographer logger]: I0515 14:15:56.000000 51515 pose_graph_2d.cc:538] Remaining work items in queue: 0
+[cartographer_node-1] [INFO] [1778822156.685271442] [cartographer logger]: I0515 14:15:56.000000 51515 constraint_builder_2d.cc:294] 0 computations resulted in 0 additional constraints.
+[cartographer_node-1] [INFO] [1778822156.685291284] [cartographer logger]: I0515 14:15:56.000000 51515 constraint_builder_2d.cc:296] Score histogram:
+[cartographer_node-1] Count: 1  Min: 0.718086  Max: 0.718086  Mean: 0.718086
+[cartographer_node-1] [INFO] [1778822156.814432343] [cartographer logger]: I0515 14:15:56.000000 51514 pose_graph_2d.cc:538] Remaining work items in queue: 0
+[cartographer_node-1] [INFO] [1778822156.814500463] [cartographer logger]: I0515 14:15:56.000000 51514 constraint_builder_2d.cc:294] 0 computations resulted in 0 additional constraints.
+[cartographer_node-1] [INFO] [1778822156.814516215] [cartographer logger]: I0515 14:15:56.000000 51514 constraint_builder_2d.cc:296] Score histogram:
+[cartographer_node-1] Count: 1  Min: 0.718086  Max: 0.718086  Mean: 0.718086
+[cartographer_node-1] [INFO] [1778822156.932583289] [cartographer logger]: I0515 14:15:56.000000 51513 pose_graph_2d.cc:538] Remaining work items in queue: 0
+[cartographer_node-1] [INFO] [1778822156.932646610] [cartographer logger]: I0515 14:15:56.000000 51513 constraint_builder_2d.cc:294] 0 computations resulted in 0 additional constraints.
+[cartographer_node-1] [INFO] [1778822156.932664095] [cartographer logger]: I0515 14:15:56.000000 51513 constraint_builder_2d.cc:296] Score histogram:
+[cartographer_node-1] Count: 1  Min: 0.718086  Max: 0.718086  Mean: 0.718086
+[cartographer_node-1] [INFO] [1778822157.000006476] [cartographer logger]: I0515 14:15:56.000000 51512 pose_graph_2d.cc:538] Remaining work items in queue: 1
+[cartographer_node-1] [INFO] [1778822157.000042899] [cartographer logger]: I0515 14:15:57.000000 51512 constraint_builder_2d.cc:294] 0 computations resulted in 0 additional constraints.
+[cartographer_node-1] [INFO] [1778822157.000098522] [cartographer logger]: I0515 14:15:57.000000 51512 constraint_builder_2d.cc:296] Score histogram:
+[cartographer_node-1] Count: 1  Min: 0.718086  Max: 0.718086  Mean: 0.718086
+[cartographer_node-1] [INFO] [1778822157.116242673] [cartographer logger]: I0515 14:15:57.000000 51515 pose_graph_2d.cc:538] Remaining work items in queue: 0
+[cartographer_node-1] [INFO] [1778822157.116304531] [cartographer logger]: I0515 14:15:57.000000 51515 constraint_builder_2d.cc:294] 0 computations resulted in 0 additional constraints.
+[cartographer_node-1] [INFO] [1778822157.116346854] [cartographer logger]: I0515 14:15:57.000000 51515 constraint_builder_2d.cc:296] Score histogram:
+[cartographer_node-1] Count: 1  Min: 0.718086  Max: 0.718086  Mean: 0.718086
+[cartographer_node-1] [INFO] [1778822157.213204462] [cartographer logger]: I0515 14:15:57.000000 51515 pose_graph_2d.cc:538] Remaining work items in queue: 0
+[cartographer_node-1] [INFO] [1778822157.213279217] [cartographer logger]: I0515 14:15:57.000000 51515 constraint_builder_2d.cc:294] 1 computations resulted in 0 additional constraints.
+[cartographer_node-1] [INFO] [1778822157.213302135] [cartographer logger]: I0515 14:15:57.000000 51515 constraint_builder_2d.cc:296] Score histogram:
+[cartographer_node-1] Count: 1  Min: 0.718086  Max: 0.718086  Mean: 0.718086
+[cartographer_node-1] [INFO] [1778822157.313110468] [cartographer logger]: I0515 14:15:57.000000 51515 pose_graph_2d.cc:538] Remaining work items in queue: 0
+[cartographer_node-1] [INFO] [1778822157.313179749] [cartographer logger]: I0515 14:15:57.000000 51515 constraint_builder_2d.cc:294] 0 computations resulted in 0 additional constraints.
+[cartographer_node-1] [INFO] [1778822157.313193971] [cartographer logger]: I0515 14:15:57.000000 51515 constraint_builder_2d.cc:296] Score histogram:
+[cartographer_node-1] Count: 1  Min: 0.718086  Max: 0.718086  Mean: 0.718086
+[cartographer_node-1] [INFO] [1778822157.386835972] [cartographer logger]: I0515 14:15:57.000000 51514 pose_graph_2d.cc:538] Remaining work items in queue: 1
+[cartographer_node-1] [INFO] [1778822157.386886682] [cartographer logger]: I0515 14:15:57.000000 51514 constraint_builder_2d.cc:294] 0 computations resulted in 0 additional constraints.
+[cartographer_node-1] [INFO] [1778822157.386940274] [cartographer logger]: I0515 14:15:57.000000 51514 constraint_builder_2d.cc:296] Score histogram:
+[cartographer_node-1] Count: 1  Min: 0.718086  Max: 0.718086  Mean: 0.718086
+[cartographer_node-1] [INFO] [1778822157.420813887] [cartographer logger]: I0515 14:15:57.000000 51512 pose_graph_2d.cc:538] Remaining work items in queue: 1
+[cartographer_node-1] [INFO] [1778822157.420888485] [cartographer logger]: I0515 14:15:57.000000 51512 constraint_builder_2d.cc:294] 0 computations resulted in 0 additional constraints.
+[cartographer_node-1] [INFO] [1778822157.420903237] [cartographer logger]: I0515 14:15:57.000000 51512 constraint_builder_2d.cc:296] Score histogram:
+[cartographer_node-1] Count: 1  Min: 0.718086  Max: 0.718086  Mean: 0.718086
+[cartographer_node-1] [INFO] [1778822157.492399826] [cartographer logger]: I0515 14:15:57.000000 51514 pose_graph_2d.cc:538] Remaining work items in queue: 0
+[cartographer_node-1] [INFO] [1778822157.492453424] [cartographer logger]: I0515 14:15:57.000000 51514 constraint_builder_2d.cc:294] 0 computations resulted in 0 additional constraints.
+[cartographer_node-1] [INFO] [1778822157.492472369] [cartographer logger]: I0515 14:15:57.000000 51514 constraint_builder_2d.cc:296] Score histogram:
+[cartographer_node-1] Count: 1  Min: 0.718086  Max: 0.718086  Mean: 0.718086
+[cartographer_node-1] [INFO] [1778822157.567252355] [cartographer logger]: I0515 14:15:57.000000 51513 pose_graph_2d.cc:538] Remaining work items in queue: 1
+[cartographer_node-1] [INFO] [1778822157.567304920] [cartographer logger]: I0515 14:15:57.000000 51513 constraint_builder_2d.cc:294] 0 computations resulted in 0 additional constraints.
+[cartographer_node-1] [INFO] [1778822157.567325961] [cartographer logger]: I0515 14:15:57.000000 51513 constraint_builder_2d.cc:296] Score histogram:
+[cartographer_node-1] Count: 1  Min: 0.718086  Max: 0.718086  Mean: 0.718086
+[cartographer_node-1] [INFO] [1778822157.612966201] [cartographer logger]: I0515 14:15:57.000000 51515 pose_graph_2d.cc:538] Remaining work items in queue: 1
+[cartographer_node-1] [INFO] [1778822157.613017650] [cartographer logger]: I0515 14:15:57.000000 51515 constraint_builder_2d.cc:294] 0 computations resulted in 0 additional constraints.
+[cartographer_node-1] [INFO] [1778822157.613031352] [cartographer logger]: I0515 14:15:57.000000 51515 constraint_builder_2d.cc:296] Score histogram:
+[cartographer_node-1] Count: 1  Min: 0.718086  Max: 0.718086  Mean: 0.718086
+[cartographer_node-1] [INFO] [1778822157.682974861] [cartographer logger]: I0515 14:15:57.000000 51514 constraint_builder_2d.cc:279] Node (1, 42) with 208 points on submap (0, 12) matches with score 66.2%.
+[cartographer_node-1] [INFO] [1778822157.702338795] [cartographer logger]: I0515 14:15:57.000000 51513 pose_graph_2d.cc:538] Remaining work items in queue: 0
+[cartographer_node-1] [INFO] [1778822157.702471999] [cartographer logger]: I0515 14:15:57.000000 51513 constraint_builder_2d.cc:294] 1 computations resulted in 1 additional constraints.
+[cartographer_node-1] [INFO] [1778822157.703006046] [cartographer logger]: I0515 14:15:57.000000 51513 constraint_builder_2d.cc:296] Score histogram:
+[cartographer_node-1] Count: 2  Min: 0.662383  Max: 0.718086  Mean: 0.690235
+[cartographer_node-1] [0.662383, 0.667953)	          ##########	Count: 1 (50%)	Total: 1 (50%)
+[cartographer_node-1] [0.667953, 0.673524)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.673524, 0.679094)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.679094, 0.684664)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.684664, 0.690235)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.690235, 0.695805)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.695805, 0.701375)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.701375, 0.706945)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.706945, 0.712516)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.712516, 0.718086]	          ##########	Count: 1 (50%)	Total: 2 (100%)
+[cartographer_node-1] [INFO] [1778822157.740953958] [cartographer logger]: I0515 14:15:57.000000 51512 pose_graph_2d.cc:538] Remaining work items in queue: 0
+[cartographer_node-1] [INFO] [1778822157.741004062] [cartographer logger]: I0515 14:15:57.000000 51512 constraint_builder_2d.cc:294] 0 computations resulted in 0 additional constraints.
+[cartographer_node-1] [INFO] [1778822157.741251625] [cartographer logger]: I0515 14:15:57.000000 51512 constraint_builder_2d.cc:296] Score histogram:
+[cartographer_node-1] Count: 2  Min: 0.662383  Max: 0.718086  Mean: 0.690235
+[cartographer_node-1] [0.662383, 0.667953)	          ##########	Count: 1 (50%)	Total: 1 (50%)
+[cartographer_node-1] [0.667953, 0.673524)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.673524, 0.679094)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.679094, 0.684664)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.684664, 0.690235)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.690235, 0.695805)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.695805, 0.701375)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.701375, 0.706945)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.706945, 0.712516)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.712516, 0.718086]	          ##########	Count: 1 (50%)	Total: 2 (100%)
+[cartographer_node-1] [INFO] [1778822157.817474260] [cartographer logger]: I0515 14:15:57.000000 51515 pose_graph_2d.cc:538] Remaining work items in queue: 1
+[cartographer_node-1] [INFO] [1778822157.817561854] [cartographer logger]: I0515 14:15:57.000000 51515 constraint_builder_2d.cc:294] 0 computations resulted in 0 additional constraints.
+[cartographer_node-1] [INFO] [1778822157.817974788] [cartographer logger]: I0515 14:15:57.000000 51515 constraint_builder_2d.cc:296] Score histogram:
+[cartographer_node-1] Count: 2  Min: 0.662383  Max: 0.718086  Mean: 0.690235
+[cartographer_node-1] [0.662383, 0.667953)	          ##########	Count: 1 (50%)	Total: 1 (50%)
+[cartographer_node-1] [0.667953, 0.673524)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.673524, 0.679094)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.679094, 0.684664)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.684664, 0.690235)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.690235, 0.695805)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.695805, 0.701375)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.701375, 0.706945)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.706945, 0.712516)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.712516, 0.718086]	          ##########	Count: 1 (50%)	Total: 2 (100%)
+[cartographer_node-1] [INFO] [1778822157.851129851] [cartographer logger]: I0515 14:15:57.000000 51515 pose_graph_2d.cc:538] Remaining work items in queue: 1
+[cartographer_node-1] [INFO] [1778822157.851181954] [cartographer logger]: I0515 14:15:57.000000 51515 constraint_builder_2d.cc:294] 0 computations resulted in 0 additional constraints.
+[cartographer_node-1] [INFO] [1778822157.851337133] [cartographer logger]: I0515 14:15:57.000000 51515 constraint_builder_2d.cc:296] Score histogram:
+[cartographer_node-1] Count: 2  Min: 0.662383  Max: 0.718086  Mean: 0.690235
+[cartographer_node-1] [0.662383, 0.667953)	          ##########	Count: 1 (50%)	Total: 1 (50%)
+[cartographer_node-1] [0.667953, 0.673524)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.673524, 0.679094)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.679094, 0.684664)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.684664, 0.690235)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.690235, 0.695805)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.695805, 0.701375)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.701375, 0.706945)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.706945, 0.712516)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.712516, 0.718086]	          ##########	Count: 1 (50%)	Total: 2 (100%)
+[cartographer_node-1] [INFO] [1778822157.896367179] [cartographer logger]: I0515 14:15:57.000000 51498 collated_trajectory_builder.cc:81] imu rate: 40.45 Hz 2.47e-02 s +/- 7.16e-03 s (pulsed at 99.57% real time)
+[cartographer_node-1] [INFO] [1778822157.896419279] [cartographer logger]: I0515 14:15:57.000000 51498 collated_trajectory_builder.cc:81] odom_wheel rate: 40.82 Hz 2.45e-02 s +/- 8.43e-03 s (pulsed at 99.81% real time)
+[cartographer_node-1] [INFO] [1778822157.896476780] [cartographer logger]: I0515 14:15:57.000000 51514 pose_graph_2d.cc:538] Remaining work items in queue: 0
+[cartographer_node-1] [INFO] [1778822157.896506946] [cartographer logger]: I0515 14:15:57.000000 51498 collated_trajectory_builder.cc:81] scan rate: 39.92 Hz 2.51e-02 s +/- 5.00e-03 s (pulsed at 99.42% real time)
+[cartographer_node-1] [INFO] [1778822157.896526858] [cartographer logger]: I0515 14:15:57.000000 51514 constraint_builder_2d.cc:294] 0 computations resulted in 0 additional constraints.
+[cartographer_node-1] [INFO] [1778822157.896627268] [cartographer logger]: I0515 14:15:57.000000 51514 constraint_builder_2d.cc:296] Score histogram:
+[cartographer_node-1] Count: 2  Min: 0.662383  Max: 0.718086  Mean: 0.690235
+[cartographer_node-1] [0.662383, 0.667953)	          ##########	Count: 1 (50%)	Total: 1 (50%)
+[cartographer_node-1] [0.667953, 0.673524)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.673524, 0.679094)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.679094, 0.684664)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.684664, 0.690235)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.690235, 0.695805)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.695805, 0.701375)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.701375, 0.706945)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.706945, 0.712516)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.712516, 0.718086]	          ##########	Count: 1 (50%)	Total: 2 (100%)
+[cartographer_node-1] [INFO] [1778822157.932181067] [cartographer logger]: I0515 14:15:57.000000 51512 pose_graph_2d.cc:538] Remaining work items in queue: 1
+[cartographer_node-1] [INFO] [1778822157.932233649] [cartographer logger]: I0515 14:15:57.000000 51512 constraint_builder_2d.cc:294] 0 computations resulted in 0 additional constraints.
+[cartographer_node-1] [INFO] [1778822157.932417754] [cartographer logger]: I0515 14:15:57.000000 51512 constraint_builder_2d.cc:296] Score histogram:
+[cartographer_node-1] Count: 2  Min: 0.662383  Max: 0.718086  Mean: 0.690235
+[cartographer_node-1] [0.662383, 0.667953)	          ##########	Count: 1 (50%)	Total: 1 (50%)
+[cartographer_node-1] [0.667953, 0.673524)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.673524, 0.679094)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.679094, 0.684664)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.684664, 0.690235)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.690235, 0.695805)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.695805, 0.701375)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.701375, 0.706945)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.706945, 0.712516)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.712516, 0.718086]	          ##########	Count: 1 (50%)	Total: 2 (100%)
+[cartographer_node-1] [INFO] [1778822157.995999030] [cartographer logger]: I0515 14:15:57.000000 51514 pose_graph_2d.cc:538] Remaining work items in queue: 1
+[cartographer_node-1] [INFO] [1778822157.996032195] [cartographer logger]: I0515 14:15:57.000000 51514 constraint_builder_2d.cc:294] 0 computations resulted in 0 additional constraints.
+[cartographer_node-1] [INFO] [1778822157.996234932] [cartographer logger]: I0515 14:15:57.000000 51514 constraint_builder_2d.cc:296] Score histogram:
+[cartographer_node-1] Count: 2  Min: 0.662383  Max: 0.718086  Mean: 0.690235
+[cartographer_node-1] [0.662383, 0.667953)	          ##########	Count: 1 (50%)	Total: 1 (50%)
+[cartographer_node-1] [0.667953, 0.673524)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.673524, 0.679094)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.679094, 0.684664)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.684664, 0.690235)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.690235, 0.695805)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.695805, 0.701375)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.701375, 0.706945)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.706945, 0.712516)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.712516, 0.718086]	          ##########	Count: 1 (50%)	Total: 2 (100%)
+[cartographer_node-1] [INFO] [1778822158.040728778] [cartographer logger]: I0515 14:15:58.000000 51512 pose_graph_2d.cc:538] Remaining work items in queue: 0
+[cartographer_node-1] [INFO] [1778822158.105185187] [cartographer logger]: I0515 14:15:58.000000 51515 constraint_builder_2d.cc:294] 1 computations resulted in 0 additional constraints.
+[cartographer_node-1] [INFO] [1778822158.105223647] [cartographer logger]: I0515 14:15:58.000000 51515 constraint_builder_2d.cc:296] Score histogram:
+[cartographer_node-1] Count: 2  Min: 0.662383  Max: 0.718086  Mean: 0.690235
+[cartographer_node-1] [0.662383, 0.667953)	          ##########	Count: 1 (50%)	Total: 1 (50%)
+[cartographer_node-1] [0.667953, 0.673524)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.673524, 0.679094)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.679094, 0.684664)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.684664, 0.690235)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.690235, 0.695805)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.695805, 0.701375)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.701375, 0.706945)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.706945, 0.712516)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.712516, 0.718086]	          ##########	Count: 1 (50%)	Total: 2 (100%)
+[cartographer_node-1] [INFO] [1778822158.117126082] [cartographer logger]: I0515 14:15:58.000000 51515 pose_graph_2d.cc:538] Remaining work items in queue: 0
+[cartographer_node-1] [INFO] [1778822158.117178670] [cartographer logger]: I0515 14:15:58.000000 51515 constraint_builder_2d.cc:294] 0 computations resulted in 0 additional constraints.
+[cartographer_node-1] [INFO] [1778822158.117395992] [cartographer logger]: I0515 14:15:58.000000 51515 constraint_builder_2d.cc:296] Score histogram:
+[cartographer_node-1] Count: 2  Min: 0.662383  Max: 0.718086  Mean: 0.690235
+[cartographer_node-1] [0.662383, 0.667953)	          ##########	Count: 1 (50%)	Total: 1 (50%)
+[cartographer_node-1] [0.667953, 0.673524)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.673524, 0.679094)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.679094, 0.684664)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.684664, 0.690235)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.690235, 0.695805)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.695805, 0.701375)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.701375, 0.706945)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.706945, 0.712516)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.712516, 0.718086]	          ##########	Count: 1 (50%)	Total: 2 (100%)
+[cartographer_node-1] [INFO] [1778822158.144231599] [cartographer logger]: I0515 14:15:58.000000 51515 pose_graph_2d.cc:538] Remaining work items in queue: 1
+[cartographer_node-1] [INFO] [1778822158.144264598] [cartographer logger]: I0515 14:15:58.000000 51515 constraint_builder_2d.cc:294] 0 computations resulted in 0 additional constraints.
+[cartographer_node-1] [INFO] [1778822158.144463952] [cartographer logger]: I0515 14:15:58.000000 51515 constraint_builder_2d.cc:296] Score histogram:
+[cartographer_node-1] Count: 2  Min: 0.662383  Max: 0.718086  Mean: 0.690235
+[cartographer_node-1] [0.662383, 0.667953)	          ##########	Count: 1 (50%)	Total: 1 (50%)
+[cartographer_node-1] [0.667953, 0.673524)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.673524, 0.679094)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.679094, 0.684664)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.684664, 0.690235)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.690235, 0.695805)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.695805, 0.701375)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.701375, 0.706945)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.706945, 0.712516)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.712516, 0.718086]	          ##########	Count: 1 (50%)	Total: 2 (100%)
+[cartographer_node-1] [INFO] [1778822158.219329200] [cartographer logger]: I0515 14:15:58.000000 51513 pose_graph_2d.cc:538] Remaining work items in queue: 1
+[cartographer_node-1] [INFO] [1778822158.219378412] [cartographer logger]: I0515 14:15:58.000000 51513 constraint_builder_2d.cc:294] 0 computations resulted in 0 additional constraints.
+[cartographer_node-1] [INFO] [1778822158.219580605] [cartographer logger]: I0515 14:15:58.000000 51513 constraint_builder_2d.cc:296] Score histogram:
+[cartographer_node-1] Count: 2  Min: 0.662383  Max: 0.718086  Mean: 0.690235
+[cartographer_node-1] [0.662383, 0.667953)	          ##########	Count: 1 (50%)	Total: 1 (50%)
+[cartographer_node-1] [0.667953, 0.673524)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.673524, 0.679094)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.679094, 0.684664)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.684664, 0.690235)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.690235, 0.695805)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.695805, 0.701375)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.701375, 0.706945)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.706945, 0.712516)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.712516, 0.718086]	          ##########	Count: 1 (50%)	Total: 2 (100%)
+[cartographer_node-1] [INFO] [1778822158.233180371] [cartographer logger]: I0515 14:15:58.000000 51512 pose_graph_2d.cc:538] Remaining work items in queue: 0
+[cartographer_node-1] [INFO] [1778822158.233225525] [cartographer logger]: I0515 14:15:58.000000 51512 constraint_builder_2d.cc:294] 0 computations resulted in 0 additional constraints.
+[cartographer_node-1] [INFO] [1778822158.233265784] [cartographer logger]: I0515 14:15:58.000000 51512 constraint_builder_2d.cc:296] Score histogram:
+[cartographer_node-1] Count: 2  Min: 0.662383  Max: 0.718086  Mean: 0.690235
+[cartographer_node-1] [0.662383, 0.667953)	          ##########	Count: 1 (50%)	Total: 1 (50%)
+[cartographer_node-1] [0.667953, 0.673524)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.673524, 0.679094)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.679094, 0.684664)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.684664, 0.690235)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.690235, 0.695805)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.695805, 0.701375)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.701375, 0.706945)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.706945, 0.712516)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.712516, 0.718086]	          ##########	Count: 1 (50%)	Total: 2 (100%)
+[cartographer_node-1] [INFO] [1778822158.298219065] [cartographer logger]: I0515 14:15:58.000000 51514 pose_graph_2d.cc:538] Remaining work items in queue: 0
+[cartographer_node-1] [INFO] [1778822158.298284974] [cartographer logger]: I0515 14:15:58.000000 51514 constraint_builder_2d.cc:294] 0 computations resulted in 0 additional constraints.
+[cartographer_node-1] [INFO] [1778822158.298522155] [cartographer logger]: I0515 14:15:58.000000 51514 constraint_builder_2d.cc:296] Score histogram:
+[cartographer_node-1] Count: 2  Min: 0.662383  Max: 0.718086  Mean: 0.690235
+[cartographer_node-1] [0.662383, 0.667953)	          ##########	Count: 1 (50%)	Total: 1 (50%)
+[cartographer_node-1] [0.667953, 0.673524)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.673524, 0.679094)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.679094, 0.684664)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.684664, 0.690235)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.690235, 0.695805)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.695805, 0.701375)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.701375, 0.706945)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.706945, 0.712516)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.712516, 0.718086]	          ##########	Count: 1 (50%)	Total: 2 (100%)
+[cartographer_node-1] [INFO] [1778822158.344435067] [cartographer logger]: I0515 14:15:58.000000 51514 pose_graph_2d.cc:538] Remaining work items in queue: 0
+[cartographer_node-1] [INFO] [1778822158.344478534] [cartographer logger]: I0515 14:15:58.000000 51514 constraint_builder_2d.cc:294] 0 computations resulted in 0 additional constraints.
+[cartographer_node-1] [INFO] [1778822158.344761126] [cartographer logger]: I0515 14:15:58.000000 51514 constraint_builder_2d.cc:296] Score histogram:
+[cartographer_node-1] Count: 2  Min: 0.662383  Max: 0.718086  Mean: 0.690235
+[cartographer_node-1] [0.662383, 0.667953)	          ##########	Count: 1 (50%)	Total: 1 (50%)
+[cartographer_node-1] [0.667953, 0.673524)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.673524, 0.679094)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.679094, 0.684664)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.684664, 0.690235)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.690235, 0.695805)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.695805, 0.701375)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.701375, 0.706945)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.706945, 0.712516)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.712516, 0.718086]	          ##########	Count: 1 (50%)	Total: 2 (100%)
+[cartographer_node-1] [INFO] [1778822158.414015306] [cartographer logger]: I0515 14:15:58.000000 51514 pose_graph_2d.cc:538] Remaining work items in queue: 0
+[cartographer_node-1] [INFO] [1778822158.504036954] [cartographer logger]: I0515 14:15:58.000000 51513 constraint_builder_2d.cc:294] 1 computations resulted in 0 additional constraints.
+[cartographer_node-1] [INFO] [1778822158.504078552] [cartographer logger]: I0515 14:15:58.000000 51513 constraint_builder_2d.cc:296] Score histogram:
+[cartographer_node-1] Count: 2  Min: 0.662383  Max: 0.718086  Mean: 0.690235
+[cartographer_node-1] [0.662383, 0.667953)	          ##########	Count: 1 (50%)	Total: 1 (50%)
+[cartographer_node-1] [0.667953, 0.673524)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.673524, 0.679094)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.679094, 0.684664)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.684664, 0.690235)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.690235, 0.695805)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.695805, 0.701375)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.701375, 0.706945)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.706945, 0.712516)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.712516, 0.718086]	          ##########	Count: 1 (50%)	Total: 2 (100%)
+[cartographer_node-1] [INFO] [1778822158.516326995] [cartographer logger]: I0515 14:15:58.000000 51513 pose_graph_2d.cc:538] Remaining work items in queue: 6
+[cartographer_node-1] [INFO] [1778822158.516396425] [cartographer logger]: I0515 14:15:58.000000 51513 constraint_builder_2d.cc:294] 0 computations resulted in 0 additional constraints.
+[cartographer_node-1] [INFO] [1778822158.516516223] [cartographer logger]: I0515 14:15:58.000000 51513 constraint_builder_2d.cc:296] Score histogram:
+[cartographer_node-1] Count: 2  Min: 0.662383  Max: 0.718086  Mean: 0.690235
+[cartographer_node-1] [0.662383, 0.667953)	          ##########	Count: 1 (50%)	Total: 1 (50%)
+[cartographer_node-1] [0.667953, 0.673524)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.673524, 0.679094)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.679094, 0.684664)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.684664, 0.690235)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.690235, 0.695805)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.695805, 0.701375)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.701375, 0.706945)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.706945, 0.712516)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.712516, 0.718086]	          ##########	Count: 1 (50%)	Total: 2 (100%)
+[cartographer_node-1] [INFO] [1778822158.530031426] [cartographer logger]: I0515 14:15:58.000000 51513 pose_graph_2d.cc:538] Remaining work items in queue: 3
+[cartographer_node-1] [INFO] [1778822158.530082788] [cartographer logger]: I0515 14:15:58.000000 51513 constraint_builder_2d.cc:294] 0 computations resulted in 0 additional constraints.
+[cartographer_node-1] [INFO] [1778822158.530378645] [cartographer logger]: I0515 14:15:58.000000 51513 constraint_builder_2d.cc:296] Score histogram:
+[cartographer_node-1] Count: 2  Min: 0.662383  Max: 0.718086  Mean: 0.690235
+[cartographer_node-1] [0.662383, 0.667953)	          ##########	Count: 1 (50%)	Total: 1 (50%)
+[cartographer_node-1] [0.667953, 0.673524)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.673524, 0.679094)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.679094, 0.684664)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.684664, 0.690235)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.690235, 0.695805)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.695805, 0.701375)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.701375, 0.706945)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.706945, 0.712516)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.712516, 0.718086]	          ##########	Count: 1 (50%)	Total: 2 (100%)
+[cartographer_node-1] [INFO] [1778822158.543940112] [cartographer logger]: I0515 14:15:58.000000 51514 pose_graph_2d.cc:538] Remaining work items in queue: 0
+[cartographer_node-1] [INFO] [1778822158.543985160] [cartographer logger]: I0515 14:15:58.000000 51514 constraint_builder_2d.cc:294] 0 computations resulted in 0 additional constraints.
+[cartographer_node-1] [INFO] [1778822158.544319577] [cartographer logger]: I0515 14:15:58.000000 51514 constraint_builder_2d.cc:296] Score histogram:
+[cartographer_node-1] Count: 2  Min: 0.662383  Max: 0.718086  Mean: 0.690235
+[cartographer_node-1] [0.662383, 0.667953)	          ##########	Count: 1 (50%)	Total: 1 (50%)
+[cartographer_node-1] [0.667953, 0.673524)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.673524, 0.679094)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.679094, 0.684664)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.684664, 0.690235)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.690235, 0.695805)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.695805, 0.701375)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.701375, 0.706945)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.706945, 0.712516)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.712516, 0.718086]	          ##########	Count: 1 (50%)	Total: 2 (100%)
+[cartographer_node-1] [INFO] [1778822158.601275909] [cartographer logger]: I0515 14:15:58.000000 51513 pose_graph_2d.cc:538] Remaining work items in queue: 1
+[cartographer_node-1] [INFO] [1778822158.601358119] [cartographer logger]: I0515 14:15:58.000000 51513 constraint_builder_2d.cc:294] 0 computations resulted in 0 additional constraints.
+[cartographer_node-1] [INFO] [1778822158.601568848] [cartographer logger]: I0515 14:15:58.000000 51513 constraint_builder_2d.cc:296] Score histogram:
+[cartographer_node-1] Count: 2  Min: 0.662383  Max: 0.718086  Mean: 0.690235
+[cartographer_node-1] [0.662383, 0.667953)	          ##########	Count: 1 (50%)	Total: 1 (50%)
+[cartographer_node-1] [0.667953, 0.673524)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.673524, 0.679094)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.679094, 0.684664)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.684664, 0.690235)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.690235, 0.695805)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.695805, 0.701375)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.701375, 0.706945)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.706945, 0.712516)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.712516, 0.718086]	          ##########	Count: 1 (50%)	Total: 2 (100%)
+[cartographer_node-1] [INFO] [1778822158.635259483] [cartographer logger]: I0515 14:15:58.000000 51513 pose_graph_2d.cc:538] Remaining work items in queue: 1
+[cartographer_node-1] [INFO] [1778822158.635291862] [cartographer logger]: I0515 14:15:58.000000 51513 constraint_builder_2d.cc:294] 0 computations resulted in 0 additional constraints.
+[cartographer_node-1] [INFO] [1778822158.635493020] [cartographer logger]: I0515 14:15:58.000000 51513 constraint_builder_2d.cc:296] Score histogram:
+[cartographer_node-1] Count: 2  Min: 0.662383  Max: 0.718086  Mean: 0.690235
+[cartographer_node-1] [0.662383, 0.667953)	          ##########	Count: 1 (50%)	Total: 1 (50%)
+[cartographer_node-1] [0.667953, 0.673524)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.673524, 0.679094)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.679094, 0.684664)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.684664, 0.690235)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.690235, 0.695805)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.695805, 0.701375)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.701375, 0.706945)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.706945, 0.712516)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.712516, 0.718086]	          ##########	Count: 1 (50%)	Total: 2 (100%)
+[cartographer_node-1] [INFO] [1778822158.699614797] [cartographer logger]: I0515 14:15:58.000000 51513 pose_graph_2d.cc:538] Remaining work items in queue: 1
+[cartographer_node-1] [INFO] [1778822158.699647447] [cartographer logger]: I0515 14:15:58.000000 51513 constraint_builder_2d.cc:294] 0 computations resulted in 0 additional constraints.
+[cartographer_node-1] [INFO] [1778822158.699918298] [cartographer logger]: I0515 14:15:58.000000 51513 constraint_builder_2d.cc:296] Score histogram:
+[cartographer_node-1] Count: 2  Min: 0.662383  Max: 0.718086  Mean: 0.690235
+[cartographer_node-1] [0.662383, 0.667953)	          ##########	Count: 1 (50%)	Total: 1 (50%)
+[cartographer_node-1] [0.667953, 0.673524)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.673524, 0.679094)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.679094, 0.684664)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.684664, 0.690235)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.690235, 0.695805)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.695805, 0.701375)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.701375, 0.706945)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.706945, 0.712516)	                    	Count: 0 (0%)	Total: 1 (50%)
+[cartographer_node-1] [0.712516, 0.718086]	          ##########	Count: 1 (50%)	Total: 2 (100%)
+[cartographer_node-1] [INFO] [1778822158.742589107] [cartographer logger]: I0515 14:15:58.000000 51515 pose_graph_2d.cc:538] Remaining work items in queue: 1
+[cartographer_node-1] [INFO] [1778822158.780991626] [cartographer logger]: I0515 14:15:58.000000 51513 constraint_builder_2d.cc:279] Node (1, 85) with 162 points on submap (0, 10) matches with score 60.0%.
+[cartographer_node-1] [INFO] [1778822158.781019706] [cartographer logger]: I0515 14:15:58.000000 51513 constraint_builder_2d.cc:294] 1 computations resulted in 1 additional constraints.
+[cartographer_node-1] [INFO] [1778822158.781041831] [cartographer logger]: I0515 14:15:58.000000 51513 constraint_builder_2d.cc:296] Score histogram:
+[cartographer_node-1] Count: 3  Min: 0.60047  Max: 0.718086  Mean: 0.660313
+[cartographer_node-1] [0.600470, 0.612231)	             #######	Count: 1 (33.3333%)	Total: 1 (33.3333%)
+[cartographer_node-1] [0.612231, 0.623993)	                    	Count: 0 (0%)	Total: 1 (33.3333%)
+[cartographer_node-1] [0.623993, 0.635755)	                    	Count: 0 (0%)	Total: 1 (33.3333%)
+[cartographer_node-1] [0.635755, 0.647516)	                    	Count: 0 (0%)	Total: 1 (33.3333%)
+[cartographer_node-1] [0.647516, 0.659278)	                    	Count: 0 (0%)	Total: 1 (33.3333%)
+[cartographer_node-1] [0.659278, 0.671039)	             #######	Count: 1 (33.3333%)	Total: 2 (66.6667%)
+[cartographer_node-1] [0.671039, 0.682801)	                    	Count: 0 (0%)	Total: 2 (66.6667%)
+[cartographer_node-1] [0.682801, 0.694563)	                    	Count: 0 (0%)	Total: 2 (66.6667%)
+[cartographer_node-1] [0.694563, 0.706324)	                    	Count: 0 (0%)	Total: 2 (66.6667%)
+[cartographer_node-1] [0.706324, 0.718086]	             #######	Count: 1 (33.3333%)	Total: 3 (100%)
+[cartographer_node-1] [INFO] [1778822158.800440562] [cartographer logger]: I0515 14:15:58.000000 51512 pose_graph_2d.cc:538] Remaining work items in queue: 0
+[cartographer_node-1] [INFO] [1778822158.800494676] [cartographer logger]: I0515 14:15:58.000000 51512 constraint_builder_2d.cc:294] 0 computations resulted in 0 additional constraints.
+[cartographer_node-1] [INFO] [1778822158.800701496] [cartographer logger]: I0515 14:15:58.000000 51512 constraint_builder_2d.cc:296] Score histogram:
+[cartographer_node-1] Count: 3  Min: 0.60047  Max: 0.718086  Mean: 0.660313
+[cartographer_node-1] [0.600470, 0.612231)	             #######	Count: 1 (33.3333%)	Total: 1 (33.3333%)
+[cartographer_node-1] [0.612231, 0.623993)	                    	Count: 0 (0%)	Total: 1 (33.3333%)
+[cartographer_node-1] [0.623993, 0.635755)	                    	Count: 0 (0%)	Total: 1 (33.3333%)
+[cartographer_node-1] [0.635755, 0.647516)	                    	Count: 0 (0%)	Total: 1 (33.3333%)
+[cartographer_node-1] [0.647516, 0.659278)	                    	Count: 0 (0%)	Total: 1 (33.3333%)
+[cartographer_node-1] [0.659278, 0.671039)	             #######	Count: 1 (33.3333%)	Total: 2 (66.6667%)
+[cartographer_node-1] [0.671039, 0.682801)	                    	Count: 0 (0%)	Total: 2 (66.6667%)
+[cartographer_node-1] [0.682801, 0.694563)	                    	Count: 0 (0%)	Total: 2 (66.6667%)
+[cartographer_node-1] [0.694563, 0.706324)	                    	Count: 0 (0%)	Total: 2 (66.6667%)
+[cartographer_node-1] [0.706324, 0.718086]	             #######	Count: 1 (33.3333%)	Total: 3 (100%)
+[cartographer_node-1] [INFO] [1778822158.843769051] [cartographer logger]: I0515 14:15:58.000000 51512 pose_graph_2d.cc:538] Remaining work items in queue: 1
+[cartographer_node-1] [INFO] [1778822158.843843383] [cartographer logger]: I0515 14:15:58.000000 51512 constraint_builder_2d.cc:294] 0 computations resulted in 0 additional constraints.
+[cartographer_node-1] [INFO] [1778822158.844040123] [cartographer logger]: I0515 14:15:58.000000 51512 constraint_builder_2d.cc:296] Score histogram:
+[cartographer_node-1] Count: 3  Min: 0.60047  Max: 0.718086  Mean: 0.660313
+[cartographer_node-1] [0.600470, 0.612231)	             #######	Count: 1 (33.3333%)	Total: 1 (33.3333%)
+[cartographer_node-1] [0.612231, 0.623993)	                    	Count: 0 (0%)	Total: 1 (33.3333%)
+[cartographer_node-1] [0.623993, 0.635755)	                    	Count: 0 (0%)	Total: 1 (33.3333%)
+[cartographer_node-1] [0.635755, 0.647516)	                    	Count: 0 (0%)	Total: 1 (33.3333%)
+[cartographer_node-1] [0.647516, 0.659278)	                    	Count: 0 (0%)	Total: 1 (33.3333%)
+[cartographer_node-1] [0.659278, 0.671039)	             #######	Count: 1 (33.3333%)	Total: 2 (66.6667%)
+[cartographer_node-1] [0.671039, 0.682801)	                    	Count: 0 (0%)	Total: 2 (66.6667%)
+[cartographer_node-1] [0.682801, 0.694563)	                    	Count: 0 (0%)	Total: 2 (66.6667%)
+[cartographer_node-1] [0.694563, 0.706324)	                    	Count: 0 (0%)	Total: 2 (66.6667%)
+[cartographer_node-1] [0.706324, 0.718086]	             #######	Count: 1 (33.3333%)	Total: 3 (100%)
+[cartographer_node-1] [INFO] [1778822158.898384072] [cartographer logger]: I0515 14:15:58.000000 51498 pose_graph_2d.cc:148] Inserted submap (1, 1).
+[cartographer_node-1] [INFO] [1778822158.941720348] [cartographer logger]: I0515 14:15:58.000000 51513 pose_graph_2d.cc:538] Remaining work items in queue: 0
+[cartographer_node-1] [INFO] [1778822158.941775479] [cartographer logger]: I0515 14:15:58.000000 51513 constraint_builder_2d.cc:294] 0 computations resulted in 0 additional constraints.
+[cartographer_node-1] [INFO] [1778822158.942115551] [cartographer logger]: I0515 14:15:58.000000 51513 constraint_builder_2d.cc:296] Score histogram:
+[cartographer_node-1] Count: 3  Min: 0.60047  Max: 0.718086  Mean: 0.660313
+[cartographer_node-1] [0.600470, 0.612231)	             #######	Count: 1 (33.3333%)	Total: 1 (33.3333%)
+[cartographer_node-1] [0.612231, 0.623993)	                    	Count: 0 (0%)	Total: 1 (33.3333%)
+[cartographer_node-1] [0.623993, 0.635755)	                    	Count: 0 (0%)	Total: 1 (33.3333%)
+[cartographer_node-1] [0.635755, 0.647516)	                    	Count: 0 (0%)	Total: 1 (33.3333%)
+[cartographer_node-1] [0.647516, 0.659278)	                    	Count: 0 (0%)	Total: 1 (33.3333%)
+[cartographer_node-1] [0.659278, 0.671039)	             #######	Count: 1 (33.3333%)	Total: 2 (66.6667%)
+[cartographer_node-1] [0.671039, 0.682801)	                    	Count: 0 (0%)	Total: 2 (66.6667%)
+[cartographer_node-1] [0.682801, 0.694563)	                    	Count: 0 (0%)	Total: 2 (66.6667%)
+[cartographer_node-1] [0.694563, 0.706324)	                    	Count: 0 (0%)	Total: 2 (66.6667%)
+[cartographer_node-1] [0.706324, 0.718086]	             #######	Count: 1 (33.3333%)	Total: 3 (100%)
+[cartographer_node-1] [INFO] [1778822159.043566737] [cartographer logger]: I0515 14:15:59.000000 51514 pose_graph_2d.cc:538] Remaining work items in queue: 1
+[cartographer_node-1] [INFO] [1778822159.043626841] [cartographer logger]: I0515 14:15:59.000000 51514 constraint_builder_2d.cc:294] 0 computations resulted in 0 additional constraints.
+[cartographer_node-1] [INFO] [1778822159.043925146] [cartographer logger]: I0515 14:15:59.000000 51514 constraint_builder_2d.cc:296] Score histogram:
+[cartographer_node-1] Count: 3  Min: 0.60047  Max: 0.718086  Mean: 0.660313
+[cartographer_node-1] [0.600470, 0.612231)	             #######	Count: 1 (33.3333%)	Total: 1 (33.3333%)
+[cartographer_node-1] [0.612231, 0.623993)	                    	Count: 0 (0%)	Total: 1 (33.3333%)
+[cartographer_node-1] [0.623993, 0.635755)	                    	Count: 0 (0%)	Total: 1 (33.3333%)
+[cartographer_node-1] [0.635755, 0.647516)	                    	Count: 0 (0%)	Total: 1 (33.3333%)
+[cartographer_node-1] [0.647516, 0.659278)	                    	Count: 0 (0%)	Total: 1 (33.3333%)
+[cartographer_node-1] [0.659278, 0.671039)	             #######	Count: 1 (33.3333%)	Total: 2 (66.6667%)
+[cartographer_node-1] [0.671039, 0.682801)	                    	Count: 0 (0%)	Total: 2 (66.6667%)
+[cartographer_node-1] [0.682801, 0.694563)	                    	Count: 0 (0%)	Total: 2 (66.6667%)
+[cartographer_node-1] [0.694563, 0.706324)	                    	Count: 0 (0%)	Total: 2 (66.6667%)
+[cartographer_node-1] [0.706324, 0.718086]	             #######	Count: 1 (33.3333%)	Total: 3 (100%)
+[cartographer_node-1] [INFO] [1778822159.105149186] [cartographer logger]: I0515 14:15:59.000000 51512 pose_graph_2d.cc:538] Remaining work items in queue: 1
+[cartographer_node-1] [INFO] [1778822159.105275595] [cartographer logger]: I0515 14:15:59.000000 51512 constraint_builder_2d.cc:294] 0 computations resulted in 0 additional constraints.
+[cartographer_node-1] [INFO] [1778822159.106050135] [cartographer logger]: I0515 14:15:59.000000 51512 constraint_builder_2d.cc:296] Score histogram:
+[cartographer_node-1] Count: 3  Min: 0.60047  Max: 0.718086  Mean: 0.660313
+[cartographer_node-1] [0.600470, 0.612231)	             #######	Count: 1 (33.3333%)	Total: 1 (33.3333%)
+[cartographer_node-1] [0.612231, 0.623993)	                    	Count: 0 (0%)	Total: 1 (33.3333%)
+[cartographer_node-1] [0.623993, 0.635755)	                    	Count: 0 (0%)	Total: 1 (33.3333%)
+[cartographer_node-1] [0.635755, 0.647516)	                    	Count: 0 (0%)	Total: 1 (33.3333%)
+[cartographer_node-1] [0.647516, 0.659278)	                    	Count: 0 (0%)	Total: 1 (33.3333%)
+[cartographer_node-1] [0.659278, 0.671039)	             #######	Count: 1 (33.3333%)	Total: 2 (66.6667%)
+[cartographer_node-1] [0.671039, 0.682801)	                    	Count: 0 (0%)	Total: 2 (66.6667%)
+[cartographer_node-1] [0.682801, 0.694563)	                    	Count: 0 (0%)	Total: 2 (66.6667%)
+[cartographer_node-1] [0.694563, 0.706324)	                    	Count: 0 (0%)	Total: 2 (66.6667%)
+[cartographer_node-1] [0.706324, 0.718086]	             #######	Count: 1 (33.3333%)	Total: 3 (100%)
+[cartographer_node-1] [INFO] [1778822159.130021824] [cartographer logger]: I0515 14:15:59.000000 51515 pose_graph_2d.cc:538] Remaining work items in queue: 0
+[cartographer_node-1] [INFO] [1778822159.130067237] [cartographer logger]: I0515 14:15:59.000000 51515 constraint_builder_2d.cc:294] 0 computations resulted in 0 additional constraints.
+[cartographer_node-1] [INFO] [1778822159.130290275] [cartographer logger]: I0515 14:15:59.000000 51515 constraint_builder_2d.cc:296] Score histogram:
+[cartographer_node-1] Count: 3  Min: 0.60047  Max: 0.718086  Mean: 0.660313
+[cartographer_node-1] [0.600470, 0.612231)	             #######	Count: 1 (33.3333%)	Total: 1 (33.3333%)
+[cartographer_node-1] [0.612231, 0.623993)	                    	Count: 0 (0%)	Total: 1 (33.3333%)
+[cartographer_node-1] [0.623993, 0.635755)	                    	Count: 0 (0%)	Total: 1 (33.3333%)
+[cartographer_node-1] [0.635755, 0.647516)	                    	Count: 0 (0%)	Total: 1 (33.3333%)
+[cartographer_node-1] [0.647516, 0.659278)	                    	Count: 0 (0%)	Total: 1 (33.3333%)
+[cartographer_node-1] [0.659278, 0.671039)	             #######	Count: 1 (33.3333%)	Total: 2 (66.6667%)
+[cartographer_node-1] [0.671039, 0.682801)	                    	Count: 0 (0%)	Total: 2 (66.6667%)
+[cartographer_node-1] [0.682801, 0.694563)	                    	Count: 0 (0%)	Total: 2 (66.6667%)
+[cartographer_node-1] [0.694563, 0.706324)	                    	Count: 0 (0%)	Total: 2 (66.6667%)
+[cartographer_node-1] [0.706324, 0.718086]	             #######	Count: 1 (33.3333%)	Total: 3 (100%)
+[cartographer_node-1] [INFO] [1778822159.191322161] [cartographer logger]: I0515 14:15:59.000000 51515 pose_graph_2d.cc:538] Remaining work items in queue: 0
+[cartographer_node-1] [INFO] [1778822159.191416490] [cartographer logger]: I0515 14:15:59.000000 51515 constraint_builder_2d.cc:294] 0 computations resulted in 0 additional constraints.
+[cartographer_node-1] [INFO] [1778822159.191761981] [cartographer logger]: I0515 14:15:59.000000 51515 constraint_builder_2d.cc:296] Score histogram:
+[cartographer_node-1] Count: 3  Min: 0.60047  Max: 0.718086  Mean: 0.660313
+[cartographer_node-1] [0.600470, 0.612231)	             #######	Count: 1 (33.3333%)	Total: 1 (33.3333%)
+[cartographer_node-1] [0.612231, 0.623993)	                    	Count: 0 (0%)	Total: 1 (33.3333%)
+[cartographer_node-1] [0.623993, 0.635755)	                    	Count: 0 (0%)	Total: 1 (33.3333%)
+[cartographer_node-1] [0.635755, 0.647516)	                    	Count: 0 (0%)	Total: 1 (33.3333%)
+[cartographer_node-1] [0.647516, 0.659278)	                    	Count: 0 (0%)	Total: 1 (33.3333%)
+[cartographer_node-1] [0.659278, 0.671039)	             #######	Count: 1 (33.3333%)	Total: 2 (66.6667%)
+[cartographer_node-1] [0.671039, 0.682801)	                    	Count: 0 (0%)	Total: 2 (66.6667%)
+[cartographer_node-1] [0.682801, 0.694563)	                    	Count: 0 (0%)	Total: 2 (66.6667%)
+[cartographer_node-1] [0.694563, 0.706324)	                    	Count: 0 (0%)	Total: 2 (66.6667%)
+[cartographer_node-1] [0.706324, 0.718086]	             #######	Count: 1 (33.3333%)	Total: 3 (100%)
+[cartographer_node-1] [INFO] [1778822159.214099878] [cartographer logger]: I0515 14:15:59.000000 51515 pose_graph_2d.cc:538] Remaining work items in queue: 0
+[cartographer_node-1] [INFO] [1778822159.254775046] [cartographer logger]: I0515 14:15:59.000000 51514 constraint_builder_2d.cc:294] 1 computations resulted in 0 additional constraints.
+[cartographer_node-1] [INFO] [1778822159.254837961] [cartographer logger]: I0515 14:15:59.000000 51514 constraint_builder_2d.cc:296] Score histogram:
+[cartographer_node-1] Count: 3  Min: 0.60047  Max: 0.718086  Mean: 0.660313
+[cartographer_node-1] [0.600470, 0.612231)	             #######	Count: 1 (33.3333%)	Total: 1 (33.3333%)
+[cartographer_node-1] [0.612231, 0.623993)	                    	Count: 0 (0%)	Total: 1 (33.3333%)
+[cartographer_node-1] [0.623993, 0.635755)	                    	Count: 0 (0%)	Total: 1 (33.3333%)
+[cartographer_node-1] [0.635755, 0.647516)	                    	Count: 0 (0%)	Total: 1 (33.3333%)
+[cartographer_node-1] [0.647516, 0.659278)	                    	Count: 0 (0%)	Total: 1 (33.3333%)
+[cartographer_node-1] [0.659278, 0.671039)	             #######	Count: 1 (33.3333%)	Total: 2 (66.6667%)
+[cartographer_node-1] [0.671039, 0.682801)	                    	Count: 0 (0%)	Total: 2 (66.6667%)
+[cartographer_node-1] [0.682801, 0.694563)	                    	Count: 0 (0%)	Total: 2 (66.6667%)
+[cartographer_node-1] [0.694563, 0.706324)	                    	Count: 0 (0%)	Total: 2 (66.6667%)
+[cartographer_node-1] [0.706324, 0.718086]	             #######	Count: 1 (33.3333%)	Total: 3 (100%)
+[cartographer_node-1] [INFO] [1778822159.296800957] [cartographer logger]: I0515 14:15:59.000000 51515 pose_graph_2d.cc:538] Remaining work items in queue: 0
+[cartographer_node-1] [INFO] [1778822159.296858268] [cartographer logger]: I0515 14:15:59.000000 51515 constraint_builder_2d.cc:294] 0 computations resulted in 0 additional constraints.
+[cartographer_node-1] [INFO] [1778822159.297132730] [cartographer logger]: I0515 14:15:59.000000 51515 constraint_builder_2d.cc:296] Score histogram:
+[cartographer_node-1] Count: 3  Min: 0.60047  Max: 0.718086  Mean: 0.660313
+[cartographer_node-1] [0.600470, 0.612231)	             #######	Count: 1 (33.3333%)	Total: 1 (33.3333%)
+[cartographer_node-1] [0.612231, 0.623993)	                    	Count: 0 (0%)	Total: 1 (33.3333%)
+[cartographer_node-1] [0.623993, 0.635755)	                    	Count: 0 (0%)	Total: 1 (33.3333%)
+[cartographer_node-1] [0.635755, 0.647516)	                    	Count: 0 (0%)	Total: 1 (33.3333%)
+[cartographer_node-1] [0.647516, 0.659278)	                    	Count: 0 (0%)	Total: 1 (33.3333%)
+[cartographer_node-1] [0.659278, 0.671039)	             #######	Count: 1 (33.3333%)	Total: 2 (66.6667%)
+[cartographer_node-1] [0.671039, 0.682801)	                    	Count: 0 (0%)	Total: 2 (66.6667%)
+[cartographer_node-1] [0.682801, 0.694563)	                    	Count: 0 (0%)	Total: 2 (66.6667%)
+[cartographer_node-1] [0.694563, 0.706324)	                    	Count: 0 (0%)	Total: 2 (66.6667%)
+[cartographer_node-1] [0.706324, 0.718086]	             #######	Count: 1 (33.3333%)	Total: 3 (100%)
+[cartographer_node-1] [INFO] [1778822159.311935778] [cartographer logger]: I0515 14:15:59.000000 51513 pose_graph_2d.cc:538] Remaining work items in queue: 1
+[cartographer_node-1] [INFO] [1778822159.311990303] [cartographer logger]: I0515 14:15:59.000000 51513 constraint_builder_2d.cc:294] 0 computations resulted in 0 additional constraints.
+[cartographer_node-1] [INFO] [1778822159.312276650] [cartographer logger]: I0515 14:15:59.000000 51513 constraint_builder_2d.cc:296] Score histogram:
+[cartographer_node-1] Count: 3  Min: 0.60047  Max: 0.718086  Mean: 0.660313
+[cartographer_node-1] [0.600470, 0.612231)	             #######	Count: 1 (33.3333%)	Total: 1 (33.3333%)
+[cartographer_node-1] [0.612231, 0.623993)	                    	Count: 0 (0%)	Total: 1 (33.3333%)
+[cartographer_node-1] [0.623993, 0.635755)	                    	Count: 0 (0%)	Total: 1 (33.3333%)
+[cartographer_node-1] [0.635755, 0.647516)	                    	Count: 0 (0%)	Total: 1 (33.3333%)
+[cartographer_node-1] [0.647516, 0.659278)	                    	Count: 0 (0%)	Total: 1 (33.3333%)
+[cartographer_node-1] [0.659278, 0.671039)	             #######	Count: 1 (33.3333%)	Total: 2 (66.6667%)
+[cartographer_node-1] [0.671039, 0.682801)	                    	Count: 0 (0%)	Total: 2 (66.6667%)
+[cartographer_node-1] [0.682801, 0.694563)	                    	Count: 0 (0%)	Total: 2 (66.6667%)
+[cartographer_node-1] [0.694563, 0.706324)	                    	Count: 0 (0%)	Total: 2 (66.6667%)
+[cartographer_node-1] [0.706324, 0.718086]	             #######	Count: 1 (33.3333%)	Total: 3 (100%)
+[cartographer_node-1] [INFO] [1778822159.396500410] [cartographer logger]: I0515 14:15:59.000000 51514 pose_graph_2d.cc:538] Remaining work items in queue: 1
+[cartographer_node-1] [INFO] [1778822159.396530305] [cartographer logger]: I0515 14:15:59.000000 51514 constraint_builder_2d.cc:294] 0 computations resulted in 0 additional constraints.
+[cartographer_node-1] [INFO] [1778822159.396564749] [cartographer logger]: I0515 14:15:59.000000 51514 constraint_builder_2d.cc:296] Score histogram:
+[cartographer_node-1] Count: 3  Min: 0.60047  Max: 0.718086  Mean: 0.660313
+[cartographer_node-1] [0.600470, 0.612231)	             #######	Count: 1 (33.3333%)	Total: 1 (33.3333%)
+[cartographer_node-1] [0.612231, 0.623993)	                    	Count: 0 (0%)	Total: 1 (33.3333%)
+[cartographer_node-1] [0.623993, 0.635755)	                    	Count: 0 (0%)	Total: 1 (33.3333%)
+[cartographer_node-1] [0.635755, 0.647516)	                    	Count: 0 (0%)	Total: 1 (33.3333%)
+[cartographer_node-1] [0.647516, 0.659278)	                    	Count: 0 (0%)	Total: 1 (33.3333%)
+[cartographer_node-1] [0.659278, 0.671039)	             #######	Count: 1 (33.3333%)	Total: 2 (66.6667%)
+[cartographer_node-1] [0.671039, 0.682801)	                    	Count: 0 (0%)	Total: 2 (66.6667%)
+[cartographer_node-1] [0.682801, 0.694563)	                    	Count: 0 (0%)	Total: 2 (66.6667%)
+[cartographer_node-1] [0.694563, 0.706324)	                    	Count: 0 (0%)	Total: 2 (66.6667%)
+[cartographer_node-1] [0.706324, 0.718086]	             #######	Count: 1 (33.3333%)	Total: 3 (100%)
+[cartographer_node-1] [INFO] [1778822159.421941493] [cartographer logger]: I0515 14:15:59.000000 51514 pose_graph_2d.cc:538] Remaining work items in queue: 0
+[cartographer_node-1] [INFO] [1778822159.421999269] [cartographer logger]: I0515 14:15:59.000000 51514 constraint_builder_2d.cc:294] 0 computations resulted in 0 additional constraints.
+[cartographer_node-1] [INFO] [1778822159.422277065] [cartographer logger]: I0515 14:15:59.000000 51514 constraint_builder_2d.cc:296] Score histogram:
+[cartographer_node-1] Count: 3  Min: 0.60047  Max: 0.718086  Mean: 0.660313
+[cartographer_node-1] [0.600470, 0.612231)	             #######	Count: 1 (33.3333%)	Total: 1 (33.3333%)
+[cartographer_node-1] [0.612231, 0.623993)	                    	Count: 0 (0%)	Total: 1 (33.3333%)
+[cartographer_node-1] [0.623993, 0.635755)	                    	Count: 0 (0%)	Total: 1 (33.3333%)
+[cartographer_node-1] [0.635755, 0.647516)	                    	Count: 0 (0%)	Total: 1 (33.3333%)
+[cartographer_node-1] [0.647516, 0.659278)	                    	Count: 0 (0%)	Total: 1 (33.3333%)
+[cartographer_node-1] [0.659278, 0.671039)	             #######	Count: 1 (33.3333%)	Total: 2 (66.6667%)
+[cartographer_node-1] [0.671039, 0.682801)	                    	Count: 0 (0%)	Total: 2 (66.6667%)
+[cartographer_node-1] [0.682801, 0.694563)	                    	Count: 0 (0%)	Total: 2 (66.6667%)
+[cartographer_node-1] [0.694563, 0.706324)	                    	Count: 0 (0%)	Total: 2 (66.6667%)
+[cartographer_node-1] [0.706324, 0.718086]	             #######	Count: 1 (33.3333%)	Total: 3 (100%)
+[cartographer_node-1] [INFO] [1778822159.497177799] [cartographer logger]: I0515 14:15:59.000000 51512 pose_graph_2d.cc:538] Remaining work items in queue: 0
+[cartographer_node-1] [INFO] [1778822159.497228063] [cartographer logger]: I0515 14:15:59.000000 51512 constraint_builder_2d.cc:294] 0 computations resulted in 0 additional constraints.
+[cartographer_node-1] [INFO] [1778822159.497462447] [cartographer logger]: I0515 14:15:59.000000 51512 constraint_builder_2d.cc:296] Score histogram:
+[cartographer_node-1] Count: 3  Min: 0.60047  Max: 0.718086  Mean: 0.660313
+[cartographer_node-1] [0.600470, 0.612231)	             #######	Count: 1 (33.3333%)	Total: 1 (33.3333%)
+[cartographer_node-1] [0.612231, 0.623993)	                    	Count: 0 (0%)	Total: 1 (33.3333%)
+[cartographer_node-1] [0.623993, 0.635755)	                    	Count: 0 (0%)	Total: 1 (33.3333%)
+[cartographer_node-1] [0.635755, 0.647516)	                    	Count: 0 (0%)	Total: 1 (33.3333%)
+[cartographer_node-1] [0.647516, 0.659278)	                    	Count: 0 (0%)	Total: 1 (33.3333%)
+[cartographer_node-1] [0.659278, 0.671039)	             #######	Count: 1 (33.3333%)	Total: 2 (66.6667%)
+[cartographer_node-1] [0.671039, 0.682801)	                    	Count: 0 (0%)	Total: 2 (66.6667%)
+[cartographer_node-1] [0.682801, 0.694563)	                    	Count: 0 (0%)	Total: 2 (66.6667%)
+[cartographer_node-1] [0.694563, 0.706324)	                    	Count: 0 (0%)	Total: 2 (66.6667%)
+[cartographer_node-1] [0.706324, 0.718086]	             #######	Count: 1 (33.3333%)	Total: 3 (100%)
+[cartographer_node-1] [INFO] [1778822159.511015428] [cartographer logger]: I0515 14:15:59.000000 51513 pose_graph_2d.cc:538] Remaining work items in queue: 0
+[cartographer_node-1] [INFO] [1778822159.511047954] [cartographer logger]: I0515 14:15:59.000000 51513 constraint_builder_2d.cc:294] 0 computations resulted in 0 additional constraints.
+[cartographer_node-1] [INFO] [1778822159.511289199] [cartographer logger]: I0515 14:15:59.000000 51513 constraint_builder_2d.cc:296] Score histogram:
+[cartographer_node-1] Count: 3  Min: 0.60047  Max: 0.718086  Mean: 0.660313
+[cartographer_node-1] [0.600470, 0.612231)	             #######	Count: 1 (33.3333%)	Total: 1 (33.3333%)
+[cartographer_node-1] [0.612231, 0.623993)	                    	Count: 0 (0%)	Total: 1 (33.3333%)
+[cartographer_node-1] [0.623993, 0.635755)	                    	Count: 0 (0%)	Total: 1 (33.3333%)
+[cartographer_node-1] [0.635755, 0.647516)	                    	Count: 0 (0%)	Total: 1 (33.3333%)
+[cartographer_node-1] [0.647516, 0.659278)	                    	Count: 0 (0%)	Total: 1 (33.3333%)
+[cartographer_node-1] [0.659278, 0.671039)	             #######	Count: 1 (33.3333%)	Total: 2 (66.6667%)
+[cartographer_node-1] [0.671039, 0.682801)	                    	Count: 0 (0%)	Total: 2 (66.6667%)
+[cartographer_node-1] [0.682801, 0.694563)	                    	Count: 0 (0%)	Total: 2 (66.6667%)
+[cartographer_node-1] [0.694563, 0.706324)	                    	Count: 0 (0%)	Total: 2 (66.6667%)
+[cartographer_node-1] [0.706324, 0.718086]	             #######	Count: 1 (33.3333%)	Total: 3 (100%)
+[cartographer_node-1] [INFO] [1778822159.589069685] [cartographer logger]: I0515 14:15:59.000000 51512 constraint_builder_2d.cc:279] Node (1, 114) with 166 points on submap (0, 4) matches with score 63.8%.
+[cartographer_node-1] [INFO] [1778822159.599535797] [cartographer logger]: I0515 14:15:59.000000 51515 pose_graph_2d.cc:538] Remaining work items in queue: 1
+[cartographer_node-1] [INFO] [1778822159.599572160] [cartographer logger]: I0515 14:15:59.000000 51515 constraint_builder_2d.cc:294] 1 computations resulted in 1 additional constraints.
+[cartographer_node-1] [INFO] [1778822159.599848478] [cartographer logger]: I0515 14:15:59.000000 51515 constraint_builder_2d.cc:296] Score histogram:
+[cartographer_node-1] Count: 4  Min: 0.60047  Max: 0.718086  Mean: 0.654721
+[cartographer_node-1] [0.600470, 0.612231)	               #####	Count: 1 (25%)	Total: 1 (25%)
+[cartographer_node-1] [0.612231, 0.623993)	                    	Count: 0 (0%)	Total: 1 (25%)
+[cartographer_node-1] [0.623993, 0.635755)	                    	Count: 0 (0%)	Total: 1 (25%)
+[cartographer_node-1] [0.635755, 0.647516)	               #####	Count: 1 (25%)	Total: 2 (50%)
+[cartographer_node-1] [0.647516, 0.659278)	                    	Count: 0 (0%)	Total: 2 (50%)
+[cartographer_node-1] [0.659278, 0.671039)	               #####	Count: 1 (25%)	Total: 3 (75%)
+[cartographer_node-1] [0.671039, 0.682801)	                    	Count: 0 (0%)	Total: 3 (75%)
+[cartographer_node-1] [0.682801, 0.694563)	                    	Count: 0 (0%)	Total: 3 (75%)
+[cartographer_node-1] [0.694563, 0.706324)	                    	Count: 0 (0%)	Total: 3 (75%)
+[cartographer_node-1] [0.706324, 0.718086]	               #####	Count: 1 (25%)	Total: 4 (100%)
+[cartographer_node-1] [INFO] [1778822159.620587279] [cartographer logger]: I0515 14:15:59.000000 51513 pose_graph_2d.cc:538] Remaining work items in queue: 0
+[cartographer_node-1] [INFO] [1778822159.620646420] [cartographer logger]: I0515 14:15:59.000000 51513 constraint_builder_2d.cc:294] 0 computations resulted in 0 additional constraints.
+[cartographer_node-1] [INFO] [1778822159.620989732] [cartographer logger]: I0515 14:15:59.000000 51513 constraint_builder_2d.cc:296] Score histogram:
+[cartographer_node-1] Count: 4  Min: 0.60047  Max: 0.718086  Mean: 0.654721
+[cartographer_node-1] [0.600470, 0.612231)	               #####	Count: 1 (25%)	Total: 1 (25%)
+[cartographer_node-1] [0.612231, 0.623993)	                    	Count: 0 (0%)	Total: 1 (25%)
+[cartographer_node-1] [0.623993, 0.635755)	                    	Count: 0 (0%)	Total: 1 (25%)
+[cartographer_node-1] [0.635755, 0.647516)	               #####	Count: 1 (25%)	Total: 2 (50%)
+[cartographer_node-1] [0.647516, 0.659278)	                    	Count: 0 (0%)	Total: 2 (50%)
+[cartographer_node-1] [0.659278, 0.671039)	               #####	Count: 1 (25%)	Total: 3 (75%)
+[cartographer_node-1] [0.671039, 0.682801)	                    	Count: 0 (0%)	Total: 3 (75%)
+[cartographer_node-1] [0.682801, 0.694563)	                    	Count: 0 (0%)	Total: 3 (75%)
+[cartographer_node-1] [0.694563, 0.706324)	                    	Count: 0 (0%)	Total: 3 (75%)
+[cartographer_node-1] [0.706324, 0.718086]	               #####	Count: 1 (25%)	Total: 4 (100%)
+[cartographer_node-1] [INFO] [1778822159.694821342] [cartographer logger]: I0515 14:15:59.000000 51513 pose_graph_2d.cc:538] Remaining work items in queue: 1
+[cartographer_node-1] [INFO] [1778822159.694855428] [cartographer logger]: I0515 14:15:59.000000 51513 constraint_builder_2d.cc:294] 0 computations resulted in 0 additional constraints.
+[cartographer_node-1] [INFO] [1778822159.695089328] [cartographer logger]: I0515 14:15:59.000000 51513 constraint_builder_2d.cc:296] Score histogram:
+[cartographer_node-1] Count: 4  Min: 0.60047  Max: 0.718086  Mean: 0.654721
+[cartographer_node-1] [0.600470, 0.612231)	               #####	Count: 1 (25%)	Total: 1 (25%)
+[cartographer_node-1] [0.612231, 0.623993)	                    	Count: 0 (0%)	Total: 1 (25%)
+[cartographer_node-1] [0.623993, 0.635755)	                    	Count: 0 (0%)	Total: 1 (25%)
+[cartographer_node-1] [0.635755, 0.647516)	               #####	Count: 1 (25%)	Total: 2 (50%)
+[cartographer_node-1] [0.647516, 0.659278)	                    	Count: 0 (0%)	Total: 2 (50%)
+[cartographer_node-1] [0.659278, 0.671039)	               #####	Count: 1 (25%)	Total: 3 (75%)
+[cartographer_node-1] [0.671039, 0.682801)	                    	Count: 0 (0%)	Total: 3 (75%)
+[cartographer_node-1] [0.682801, 0.694563)	                    	Count: 0 (0%)	Total: 3 (75%)
+[cartographer_node-1] [0.694563, 0.706324)	                    	Count: 0 (0%)	Total: 3 (75%)
+[cartographer_node-1] [0.706324, 0.718086]	               #####	Count: 1 (25%)	Total: 4 (100%)
+[cartographer_node-1] [INFO] [1778822159.721119542] [cartographer logger]: I0515 14:15:59.000000 51512 pose_graph_2d.cc:538] Remaining work items in queue: 0
+[cartographer_node-1] [INFO] [1778822159.721164192] [cartographer logger]: I0515 14:15:59.000000 51512 constraint_builder_2d.cc:294] 0 computations resulted in 0 additional constraints.
+[cartographer_node-1] [INFO] [1778822159.721284359] [cartographer logger]: I0515 14:15:59.000000 51512 constraint_builder_2d.cc:296] Score histogram:
+[cartographer_node-1] Count: 4  Min: 0.60047  Max: 0.718086  Mean: 0.654721
+[cartographer_node-1] [0.600470, 0.612231)	               #####	Count: 1 (25%)	Total: 1 (25%)
+[cartographer_node-1] [0.612231, 0.623993)	                    	Count: 0 (0%)	Total: 1 (25%)
+[cartographer_node-1] [0.623993, 0.635755)	                    	Count: 0 (0%)	Total: 1 (25%)
+[cartographer_node-1] [0.635755, 0.647516)	               #####	Count: 1 (25%)	Total: 2 (50%)
+[cartographer_node-1] [0.647516, 0.659278)	                    	Count: 0 (0%)	Total: 2 (50%)
+[cartographer_node-1] [0.659278, 0.671039)	               #####	Count: 1 (25%)	Total: 3 (75%)
+[cartographer_node-1] [0.671039, 0.682801)	                    	Count: 0 (0%)	Total: 3 (75%)
+[cartographer_node-1] [0.682801, 0.694563)	                    	Count: 0 (0%)	Total: 3 (75%)
+[cartographer_node-1] [0.694563, 0.706324)	                    	Count: 0 (0%)	Total: 3 (75%)
+[cartographer_node-1] [0.706324, 0.718086]	               #####	Count: 1 (25%)	Total: 4 (100%)
+[cartographer_node-1] [INFO] [1778822159.795355210] [cartographer logger]: I0515 14:15:59.000000 51514 pose_graph_2d.cc:538] Remaining work items in queue: 1
+[cartographer_node-1] [INFO] [1778822159.795424953] [cartographer logger]: I0515 14:15:59.000000 51514 constraint_builder_2d.cc:294] 0 computations resulted in 0 additional constraints.
+[cartographer_node-1] [INFO] [1778822159.795652031] [cartographer logger]: I0515 14:15:59.000000 51514 constraint_builder_2d.cc:296] Score histogram:
+[cartographer_node-1] Count: 4  Min: 0.60047  Max: 0.718086  Mean: 0.654721
+[cartographer_node-1] [0.600470, 0.612231)	               #####	Count: 1 (25%)	Total: 1 (25%)
+[cartographer_node-1] [0.612231, 0.623993)	                    	Count: 0 (0%)	Total: 1 (25%)
+[cartographer_node-1] [0.623993, 0.635755)	                    	Count: 0 (0%)	Total: 1 (25%)
+[cartographer_node-1] [0.635755, 0.647516)	               #####	Count: 1 (25%)	Total: 2 (50%)
+[cartographer_node-1] [0.647516, 0.659278)	                    	Count: 0 (0%)	Total: 2 (50%)
+[cartographer_node-1] [0.659278, 0.671039)	               #####	Count: 1 (25%)	Total: 3 (75%)
+[cartographer_node-1] [0.671039, 0.682801)	                    	Count: 0 (0%)	Total: 3 (75%)
+[cartographer_node-1] [0.682801, 0.694563)	                    	Count: 0 (0%)	Total: 3 (75%)
+[cartographer_node-1] [0.694563, 0.706324)	                    	Count: 0 (0%)	Total: 3 (75%)
+[cartographer_node-1] [0.706324, 0.718086]	               #####	Count: 1 (25%)	Total: 4 (100%)
+[cartographer_node-1] [INFO] [1778822159.811614917] [cartographer logger]: I0515 14:15:59.000000 51513 pose_graph_2d.cc:538] Remaining work items in queue: 0
+[cartographer_node-1] [INFO] [1778822159.811686902] [cartographer logger]: I0515 14:15:59.000000 51513 constraint_builder_2d.cc:294] 0 computations resulted in 0 additional constraints.
+[cartographer_node-1] [INFO] [1778822159.811943954] [cartographer logger]: I0515 14:15:59.000000 51513 constraint_builder_2d.cc:296] Score histogram:
+[cartographer_node-1] Count: 4  Min: 0.60047  Max: 0.718086  Mean: 0.654721
+[cartographer_node-1] [0.600470, 0.612231)	               #####	Count: 1 (25%)	Total: 1 (25%)
+[cartographer_node-1] [0.612231, 0.623993)	                    	Count: 0 (0%)	Total: 1 (25%)
+[cartographer_node-1] [0.623993, 0.635755)	                    	Count: 0 (0%)	Total: 1 (25%)
+[cartographer_node-1] [0.635755, 0.647516)	               #####	Count: 1 (25%)	Total: 2 (50%)
+[cartographer_node-1] [0.647516, 0.659278)	                    	Count: 0 (0%)	Total: 2 (50%)
+[cartographer_node-1] [0.659278, 0.671039)	               #####	Count: 1 (25%)	Total: 3 (75%)
+[cartographer_node-1] [0.671039, 0.682801)	                    	Count: 0 (0%)	Total: 3 (75%)
+[cartographer_node-1] [0.682801, 0.694563)	                    	Count: 0 (0%)	Total: 3 (75%)
+[cartographer_node-1] [0.694563, 0.706324)	                    	Count: 0 (0%)	Total: 3 (75%)
+[cartographer_node-1] [0.706324, 0.718086]	               #####	Count: 1 (25%)	Total: 4 (100%)
+[cartographer_node-1] [INFO] [1778822159.876418600] [cartographer logger]: I0515 14:15:59.000000 51515 pose_graph_2d.cc:538] Remaining work items in queue: 0
+[cartographer_node-1] [INFO] [1778822159.876502243] [cartographer logger]: I0515 14:15:59.000000 51515 constraint_builder_2d.cc:294] 0 computations resulted in 0 additional constraints.
+[cartographer_node-1] [INFO] [1778822159.876781011] [cartographer logger]: I0515 14:15:59.000000 51515 constraint_builder_2d.cc:296] Score histogram:
+[cartographer_node-1] Count: 4  Min: 0.60047  Max: 0.718086  Mean: 0.654721
+[cartographer_node-1] [0.600470, 0.612231)	               #####	Count: 1 (25%)	Total: 1 (25%)
+[cartographer_node-1] [0.612231, 0.623993)	                    	Count: 0 (0%)	Total: 1 (25%)
+[cartographer_node-1] [0.623993, 0.635755)	                    	Count: 0 (0%)	Total: 1 (25%)
+[cartographer_node-1] [0.635755, 0.647516)	               #####	Count: 1 (25%)	Total: 2 (50%)
+[cartographer_node-1] [0.647516, 0.659278)	                    	Count: 0 (0%)	Total: 2 (50%)
+[cartographer_node-1] [0.659278, 0.671039)	               #####	Count: 1 (25%)	Total: 3 (75%)
+[cartographer_node-1] [0.671039, 0.682801)	                    	Count: 0 (0%)	Total: 3 (75%)
+[cartographer_node-1] [0.682801, 0.694563)	                    	Count: 0 (0%)	Total: 3 (75%)
+[cartographer_node-1] [0.694563, 0.706324)	                    	Count: 0 (0%)	Total: 3 (75%)
+[cartographer_node-1] [0.706324, 0.718086]	               #####	Count: 1 (25%)	Total: 4 (100%)
+[cartographer_node-1] [INFO] [1778822159.914372674] [cartographer logger]: I0515 14:15:59.000000 51515 pose_graph_2d.cc:538] Remaining work items in queue: 0
+[cartographer_node-1] [INFO] [1778822159.931969790] [cartographer logger]: I0515 14:15:59.000000 51512 constraint_builder_2d.cc:294] 1 computations resulted in 0 additional constraints.
+[cartographer_node-1] [INFO] [1778822159.932058448] [cartographer logger]: I0515 14:15:59.000000 51512 constraint_builder_2d.cc:296] Score histogram:
+[cartographer_node-1] Count: 4  Min: 0.60047  Max: 0.718086  Mean: 0.654721
+[cartographer_node-1] [0.600470, 0.612231)	               #####	Count: 1 (25%)	Total: 1 (25%)
+[cartographer_node-1] [0.612231, 0.623993)	                    	Count: 0 (0%)	Total: 1 (25%)
+[cartographer_node-1] [0.623993, 0.635755)	                    	Count: 0 (0%)	Total: 1 (25%)
+[cartographer_node-1] [0.635755, 0.647516)	               #####	Count: 1 (25%)	Total: 2 (50%)
+[cartographer_node-1] [0.647516, 0.659278)	                    	Count: 0 (0%)	Total: 2 (50%)
+[cartographer_node-1] [0.659278, 0.671039)	               #####	Count: 1 (25%)	Total: 3 (75%)
+[cartographer_node-1] [0.671039, 0.682801)	                    	Count: 0 (0%)	Total: 3 (75%)
+[cartographer_node-1] [0.682801, 0.694563)	                    	Count: 0 (0%)	Total: 3 (75%)
+[cartographer_node-1] [0.694563, 0.706324)	                    	Count: 0 (0%)	Total: 3 (75%)
+[cartographer_node-1] [0.706324, 0.718086]	               #####	Count: 1 (25%)	Total: 4 (100%)
+[cartographer_node-1] [INFO] [1778822160.097315044] [cartographer logger]: I0515 14:16:00.000000 51514 pose_graph_2d.cc:538] Remaining work items in queue: 1
+[cartographer_node-1] [INFO] [1778822160.097365173] [cartographer logger]: I0515 14:16:00.000000 51514 constraint_builder_2d.cc:294] 0 computations resulted in 0 additional constraints.
+[cartographer_node-1] [INFO] [1778822160.097602893] [cartographer logger]: I0515 14:16:00.000000 51514 constraint_builder_2d.cc:296] Score histogram:
+[cartographer_node-1] Count: 4  Min: 0.60047  Max: 0.718086  Mean: 0.654721
+[cartographer_node-1] [0.600470, 0.612231)	               #####	Count: 1 (25%)	Total: 1 (25%)
+[cartographer_node-1] [0.612231, 0.623993)	                    	Count: 0 (0%)	Total: 1 (25%)
+[cartographer_node-1] [0.623993, 0.635755)	                    	Count: 0 (0%)	Total: 1 (25%)
+[cartographer_node-1] [0.635755, 0.647516)	               #####	Count: 1 (25%)	Total: 2 (50%)
+[cartographer_node-1] [0.647516, 0.659278)	                    	Count: 0 (0%)	Total: 2 (50%)
+[cartographer_node-1] [0.659278, 0.671039)	               #####	Count: 1 (25%)	Total: 3 (75%)
+[cartographer_node-1] [0.671039, 0.682801)	                    	Count: 0 (0%)	Total: 3 (75%)
+[cartographer_node-1] [0.682801, 0.694563)	                    	Count: 0 (0%)	Total: 3 (75%)
+[cartographer_node-1] [0.694563, 0.706324)	                    	Count: 0 (0%)	Total: 3 (75%)
+[cartographer_node-1] [0.706324, 0.718086]	               #####	Count: 1 (25%)	Total: 4 (100%)
+[cartographer_node-1] [INFO] [1778822160.148556959] [rclcpp]: signal_handler(SIGINT/SIGTERM)
+[cartographer_node-1] [WARN] [1778822160.153026106] [cartographer logger]: W0515 14:16:00.000000 51498 tf_bridge.cpp:53] Lookup would require extrapolation into the future.  Requested time 1773391533.324425 but the latest data is at time 1773391533.313931, when looking up transform from frame [laser] to frame [imu]
+[cartographer_node-1] [INFO] [1778822160.153598494] [cartographer logger]: I0515 14:16:00.000000 51498 node.cpp:583] Shutdown the subscriber of [scan]
+[cartographer_node-1] [INFO] [1778822160.153924660] [cartographer logger]: I0515 14:16:00.000000 51498 node.cpp:583] Shutdown the subscriber of [imu]
+[cartographer_node-1] [INFO] [1778822160.154208275] [cartographer logger]: I0515 14:16:00.000000 51498 node.cpp:583] Shutdown the subscriber of [odom_wheel]
+[cartographer_node-1] [INFO] [1778822160.154234432] [cartographer logger]: I0515 14:16:00.000000 51498 map_builder_bridge.cpp:156] Finishing trajectory with ID '1'...
+[cartographer_node-1] [INFO] [1778822160.157912607] [cartographer logger]: I0515 14:16:00.000000 51515 pose_graph_2d.cc:538] Remaining work items in queue: 1
+[cartographer_node-1] [INFO] [1778822160.157940207] [cartographer logger]: I0515 14:16:00.000000 51515 constraint_builder_2d.cc:294] 0 computations resulted in 0 additional constraints.
+[cartographer_node-1] [INFO] [1778822160.158217421] [cartographer logger]: I0515 14:16:00.000000 51515 constraint_builder_2d.cc:296] Score histogram:
+[cartographer_node-1] Count: 4  Min: 0.60047  Max: 0.718086  Mean: 0.654721
+[cartographer_node-1] [0.600470, 0.612231)	               #####	Count: 1 (25%)	Total: 1 (25%)
+[cartographer_node-1] [0.612231, 0.623993)	                    	Count: 0 (0%)	Total: 1 (25%)
+[cartographer_node-1] [0.623993, 0.635755)	                    	Count: 0 (0%)	Total: 1 (25%)
+[cartographer_node-1] [0.635755, 0.647516)	               #####	Count: 1 (25%)	Total: 2 (50%)
+[cartographer_node-1] [0.647516, 0.659278)	                    	Count: 0 (0%)	Total: 2 (50%)
+[cartographer_node-1] [0.659278, 0.671039)	               #####	Count: 1 (25%)	Total: 3 (75%)
+[cartographer_node-1] [0.671039, 0.682801)	                    	Count: 0 (0%)	Total: 3 (75%)
+[cartographer_node-1] [0.682801, 0.694563)	                    	Count: 0 (0%)	Total: 3 (75%)
+[cartographer_node-1] [0.694563, 0.706324)	                    	Count: 0 (0%)	Total: 3 (75%)
+[cartographer_node-1] [0.706324, 0.718086]	               #####	Count: 1 (25%)	Total: 4 (100%)
+[cartographer_node-1] [WARN] [1778822160.161490029] [cartographer logger]: W0515 14:16:00.000000 51498 node.cpp:787] Can't run final optimization if there are one or more active trajectories. Trying to finish trajectory with ID 1 now.
+[cartographer_node-1] [INFO] [1778822160.161510062] [cartographer logger]: I0515 14:16:00.000000 51498 node.cpp:565] Trajectory 1 already pending to finish.
+[cartographer_node-1] [INFO] [1778822160.161537927] [cartographer logger]: I0515 14:16:00.000000 51498 map_builder_bridge.cpp:165] Running final trajectory optimization...
+[cartographer_node-1] [INFO] [1778822160.174351191] [cartographer logger]: I0515 14:16:00.000000 51515 pose_graph_2d.cc:538] Remaining work items in queue: 3
+[cartographer_node-1] [INFO] [1778822160.174380390] [cartographer logger]: I0515 14:16:00.000000 51515 constraint_builder_2d.cc:294] 0 computations resulted in 0 additional constraints.
+[cartographer_node-1] [INFO] [1778822160.174681218] [cartographer logger]: I0515 14:16:00.000000 51515 constraint_builder_2d.cc:296] Score histogram:
+[cartographer_node-1] Count: 4  Min: 0.60047  Max: 0.718086  Mean: 0.654721
+[cartographer_node-1] [0.600470, 0.612231)	               #####	Count: 1 (25%)	Total: 1 (25%)
+[cartographer_node-1] [0.612231, 0.623993)	                    	Count: 0 (0%)	Total: 1 (25%)
+[cartographer_node-1] [0.623993, 0.635755)	                    	Count: 0 (0%)	Total: 1 (25%)
+[cartographer_node-1] [0.635755, 0.647516)	               #####	Count: 1 (25%)	Total: 2 (50%)
+[cartographer_node-1] [0.647516, 0.659278)	                    	Count: 0 (0%)	Total: 2 (50%)
+[cartographer_node-1] [0.659278, 0.671039)	               #####	Count: 1 (25%)	Total: 3 (75%)
+[cartographer_node-1] [0.671039, 0.682801)	                    	Count: 0 (0%)	Total: 3 (75%)
+[cartographer_node-1] [0.682801, 0.694563)	                    	Count: 0 (0%)	Total: 3 (75%)
+[cartographer_node-1] [0.694563, 0.706324)	                    	Count: 0 (0%)	Total: 3 (75%)
+[cartographer_node-1] [0.706324, 0.718086]	               #####	Count: 1 (25%)	Total: 4 (100%)
+[cartographer_node-1] [INFO] [1778822160.189922379] [cartographer logger]: I0515 14:16:00.000000 51515 pose_graph_2d.cc:538] Remaining work items in queue: 2
+[cartographer_node-1] [INFO] [1778822160.189986306] [cartographer logger]: I0515 14:16:00.000000 51515 constraint_builder_2d.cc:294] 0 computations resulted in 0 additional constraints.
+[cartographer_node-1] [INFO] [1778822160.190279047] [cartographer logger]: I0515 14:16:00.000000 51515 constraint_builder_2d.cc:296] Score histogram:
+[cartographer_node-1] Count: 4  Min: 0.60047  Max: 0.718086  Mean: 0.654721
+[cartographer_node-1] [0.600470, 0.612231)	               #####	Count: 1 (25%)	Total: 1 (25%)
+[cartographer_node-1] [0.612231, 0.623993)	                    	Count: 0 (0%)	Total: 1 (25%)
+[cartographer_node-1] [0.623993, 0.635755)	                    	Count: 0 (0%)	Total: 1 (25%)
+[cartographer_node-1] [0.635755, 0.647516)	               #####	Count: 1 (25%)	Total: 2 (50%)
+[cartographer_node-1] [0.647516, 0.659278)	                    	Count: 0 (0%)	Total: 2 (50%)
+[cartographer_node-1] [0.659278, 0.671039)	               #####	Count: 1 (25%)	Total: 3 (75%)
+[cartographer_node-1] [0.671039, 0.682801)	                    	Count: 0 (0%)	Total: 3 (75%)
+[cartographer_node-1] [0.682801, 0.694563)	                    	Count: 0 (0%)	Total: 3 (75%)
+[cartographer_node-1] [0.694563, 0.706324)	                    	Count: 0 (0%)	Total: 3 (75%)
+[cartographer_node-1] [0.706324, 0.718086]	               #####	Count: 1 (25%)	Total: 4 (100%)
+[cartographer_node-1] [INFO] [1778822160.204880674] [cartographer logger]: I0515 14:16:00.000000 51515 pose_graph_2d.cc:538] Remaining work items in queue: 1
+[cartographer_node-1] [INFO] [1778822160.204920290] [cartographer logger]: I0515 14:16:00.000000 51515 constraint_builder_2d.cc:294] 0 computations resulted in 0 additional constraints.
+[cartographer_node-1] [INFO] [1778822160.204990820] [cartographer logger]: I0515 14:16:00.000000 51515 constraint_builder_2d.cc:296] Score histogram:
+[cartographer_node-1] Count: 4  Min: 0.60047  Max: 0.718086  Mean: 0.654721
+[cartographer_node-1] [0.600470, 0.612231)	               #####	Count: 1 (25%)	Total: 1 (25%)
+[cartographer_node-1] [0.612231, 0.623993)	                    	Count: 0 (0%)	Total: 1 (25%)
+[cartographer_node-1] [0.623993, 0.635755)	                    	Count: 0 (0%)	Total: 1 (25%)
+[cartographer_node-1] [0.635755, 0.647516)	               #####	Count: 1 (25%)	Total: 2 (50%)
+[cartographer_node-1] [0.647516, 0.659278)	                    	Count: 0 (0%)	Total: 2 (50%)
+[cartographer_node-1] [0.659278, 0.671039)	               #####	Count: 1 (25%)	Total: 3 (75%)
+[cartographer_node-1] [0.671039, 0.682801)	                    	Count: 0 (0%)	Total: 3 (75%)
+[cartographer_node-1] [0.682801, 0.694563)	                    	Count: 0 (0%)	Total: 3 (75%)
+[cartographer_node-1] [0.694563, 0.706324)	                    	Count: 0 (0%)	Total: 3 (75%)
+[cartographer_node-1] [0.706324, 0.718086]	               #####	Count: 1 (25%)	Total: 4 (100%)
+[cartographer_node-1] [INFO] [1778822160.213435825] [cartographer logger]: I0515 14:16:00.000000 51512 constraint_builder_2d.cc:294] 0 computations resulted in 0 additional constraints.
+[cartographer_node-1] [INFO] [1778822160.213500850] [cartographer logger]: I0515 14:16:00.000000 51512 constraint_builder_2d.cc:296] Score histogram:
+[cartographer_node-1] Count: 4  Min: 0.60047  Max: 0.718086  Mean: 0.654721
+[cartographer_node-1] [0.600470, 0.612231)	               #####	Count: 1 (25%)	Total: 1 (25%)
+[cartographer_node-1] [0.612231, 0.623993)	                    	Count: 0 (0%)	Total: 1 (25%)
+[cartographer_node-1] [0.623993, 0.635755)	                    	Count: 0 (0%)	Total: 1 (25%)
+[cartographer_node-1] [0.635755, 0.647516)	               #####	Count: 1 (25%)	Total: 2 (50%)
+[cartographer_node-1] [0.647516, 0.659278)	                    	Count: 0 (0%)	Total: 2 (50%)
+[cartographer_node-1] [0.659278, 0.671039)	               #####	Count: 1 (25%)	Total: 3 (75%)
+[cartographer_node-1] [0.671039, 0.682801)	                    	Count: 0 (0%)	Total: 3 (75%)
+[cartographer_node-1] [0.682801, 0.694563)	                    	Count: 0 (0%)	Total: 3 (75%)
+[cartographer_node-1] [0.694563, 0.706324)	                    	Count: 0 (0%)	Total: 3 (75%)
+[cartographer_node-1] [0.706324, 0.718086]	               #####	Count: 1 (25%)	Total: 4 (100%)
+[cartographer_node-1] [KOptimizing: Done.     
+[cartographer_node-1] [INFO] [1778822160.215556633] [cartographer logger]: I0515 14:16:00.000000 51514 constraint_builder_2d.cc:294] 0 computations resulted in 0 additional constraints.
+[cartographer_node-1] [INFO] [1778822160.215647827] [cartographer logger]: I0515 14:16:00.000000 51514 constraint_builder_2d.cc:296] Score histogram:
+[cartographer_node-1] Count: 4  Min: 0.60047  Max: 0.718086  Mean: 0.654721
+[cartographer_node-1] [0.600470, 0.612231)	               #####	Count: 1 (25%)	Total: 1 (25%)
+[cartographer_node-1] [0.612231, 0.623993)	                    	Count: 0 (0%)	Total: 1 (25%)
+[cartographer_node-1] [0.623993, 0.635755)	                    	Count: 0 (0%)	Total: 1 (25%)
+[cartographer_node-1] [0.635755, 0.647516)	               #####	Count: 1 (25%)	Total: 2 (50%)
+[cartographer_node-1] [0.647516, 0.659278)	                    	Count: 0 (0%)	Total: 2 (50%)
+[cartographer_node-1] [0.659278, 0.671039)	               #####	Count: 1 (25%)	Total: 3 (75%)
+[cartographer_node-1] [0.671039, 0.682801)	                    	Count: 0 (0%)	Total: 3 (75%)
+[cartographer_node-1] [0.682801, 0.694563)	                    	Count: 0 (0%)	Total: 3 (75%)
+[cartographer_node-1] [0.694563, 0.706324)	                    	Count: 0 (0%)	Total: 3 (75%)
+[cartographer_node-1] [0.706324, 0.718086]	               #####	Count: 1 (25%)	Total: 4 (100%)
+[cartographer_node-1] [KOptimizing: Done.     
+[INFO] [cartographer_node-1]: process has finished cleanly [pid 51498]

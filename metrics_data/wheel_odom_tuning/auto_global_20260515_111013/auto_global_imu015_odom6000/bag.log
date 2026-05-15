@@ -1,0 +1,18 @@
+stdin is not a terminal device. Keyboard handling disabled.[INFO] [1778811199.075767805] [rosbag2_storage]: Opened database '/home/symoon/Desktop/bag/sensor_only/rosbag2_2026_03_13-17_45_23_0.db3' for READ_ONLY.
+[INFO] [1778811199.305464135] [rosbag2_player]: Set rate to 1
+[INFO] [1778811199.318209763] [rosbag2_player]: Adding keyboard callbacks.
+[INFO] [1778811199.318242456] [rosbag2_player]: Press SPACE for Pause/Resume
+[INFO] [1778811199.318251159] [rosbag2_player]: Press CURSOR_RIGHT for Play Next Message
+[INFO] [1778811199.318258192] [rosbag2_player]: Press CURSOR_UP for Increase Rate 10%
+[INFO] [1778811199.318264628] [rosbag2_player]: Press CURSOR_DOWN for Decrease Rate 10%
+[INFO] [1778811199.318577295] [rosbag2_storage]: Opened database '/home/symoon/Desktop/bag/sensor_only/rosbag2_2026_03_13-17_45_23_0.db3' for READ_ONLY.
+[INFO] [1778811243.852626253] [rclcpp]: signal_handler(SIGINT/SIGTERM)
+[INFO] [1778811243.853087603] [rclcpp]: signal_handler(SIGINT/SIGTERM)
+
+closing.
+
+closing.
+
+closing.
+
+closing.

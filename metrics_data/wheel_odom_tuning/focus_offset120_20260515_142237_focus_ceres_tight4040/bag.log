@@ -1,0 +1,12 @@
+stdin is not a terminal device. Keyboard handling disabled.[INFO] [1778822562.348135297] [rosbag2_storage]: Opened database '/home/symoon/Desktop/bag/sensor_only/rosbag2_2026_03_13-17_45_23_0.db3' for READ_ONLY.
+[INFO] [1778822562.647530028] [rosbag2_player]: Set rate to 1
+[INFO] [1778822562.664827657] [rosbag2_storage]: Opened database '/home/symoon/Desktop/bag/sensor_only/rosbag2_2026_03_13-17_45_23_0.db3' for READ_ONLY.
+[INFO] [1778822582.054003721] [rclcpp]: signal_handler(SIGINT/SIGTERM)
+
+closing.
+
+closing.
+
+closing.
+
+closing.
