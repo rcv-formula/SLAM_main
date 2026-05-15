@@ -88,7 +88,8 @@ class ConstraintBuilder2D {
   // all computations are finished.
   void MaybeAddGlobalConstraint(
       const SubmapId& submap_id, const Submap2D* submap, const NodeId& node_id,
-      const TrajectoryNode::Data* const constant_data);
+      const TrajectoryNode::Data* const constant_data,
+      double global_localization_min_score);
 
   // Must be called after all computations related to one node have been added.
   void NotifyEndOfNode();
@@ -126,13 +127,13 @@ class ConstraintBuilder2D {
   void ComputeConstraint(const SubmapId& submap_id, const Submap2D* submap,
                          const NodeId& node_id, bool match_full_submap,
                          const TrajectoryNode::Data* const constant_data,
+                         double global_localization_min_score,
                          const transform::Rigid2d& initial_relative_pose,
                          const SubmapScanMatcher& submap_scan_matcher,
                          std::unique_ptr<Constraint>* constraint)
       LOCKS_EXCLUDED(mutex_);
 
   void RunWhenDoneCallback() LOCKS_EXCLUDED(mutex_);
-
   const constraints::proto::ConstraintBuilderOptions options_;
   common::ThreadPoolInterface* thread_pool_;
   absl::Mutex mutex_;

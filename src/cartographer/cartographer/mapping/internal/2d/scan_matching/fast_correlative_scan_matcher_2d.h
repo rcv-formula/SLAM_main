@@ -25,7 +25,10 @@
 #ifndef CARTOGRAPHER_MAPPING_INTERNAL_2D_SCAN_MATCHING_FAST_CORRELATIVE_SCAN_MATCHER_2D_H_
 #define CARTOGRAPHER_MAPPING_INTERNAL_2D_SCAN_MATCHING_FAST_CORRELATIVE_SCAN_MATCHER_2D_H_
 
+#include <fstream>
+#include <limits>
 #include <memory>
+#include <mutex>
 #include <vector>
 
 #include "Eigen/Core"
@@ -111,6 +114,16 @@ class PrecomputationGridStack2D {
 // An implementation of "Real-Time Correlative Scan Matching" by Olson.
 class FastCorrelativeScanMatcher2D {
  public:
+  struct ScoreDistributionSummary {
+    int candidate_count = 0;
+    float top1_score = std::numeric_limits<float>::quiet_NaN();
+    float top2_score = std::numeric_limits<float>::quiet_NaN();
+    float top3_score = std::numeric_limits<float>::quiet_NaN();
+    int near_top_count_0p02 = 0;
+    bool accepted = false;
+    float final_best_score = std::numeric_limits<float>::quiet_NaN();
+  };
+
   FastCorrelativeScanMatcher2D(
       const Grid2D& grid,
       const proto::FastCorrelativeScanMatcherOptions2D& options);
@@ -126,14 +139,18 @@ class FastCorrelativeScanMatcher2D {
   // with the result.
   bool Match(const transform::Rigid2d& initial_pose_estimate,
              const sensor::PointCloud& point_cloud, float min_score,
-             float* score, transform::Rigid2d* pose_estimate) const;
+             float* score, transform::Rigid2d* pose_estimate,
+             ScoreDistributionSummary* score_distribution_summary = nullptr)
+      const;
 
   // Aligns 'point_cloud' within the full 'grid', i.e., not
   // restricted to the configured search window. If a score above 'min_score'
   // (excluding equality) is possible, true is returned, and 'score' and
   // 'pose_estimate' are updated with the result.
   bool MatchFullSubmap(const sensor::PointCloud& point_cloud, float min_score,
-                       float* score, transform::Rigid2d* pose_estimate) const;
+                       float* score, transform::Rigid2d* pose_estimate,
+                       ScoreDistributionSummary* score_distribution_summary =
+                           nullptr) const;
 
  private:
   // The actual implementation of the scan matcher, called by Match() and
@@ -143,7 +160,13 @@ class FastCorrelativeScanMatcher2D {
       SearchParameters search_parameters,
       const transform::Rigid2d& initial_pose_estimate,
       const sensor::PointCloud& point_cloud, float min_score, float* score,
-      transform::Rigid2d* pose_estimate) const;
+      transform::Rigid2d* pose_estimate, const char* match_type,
+      ScoreDistributionSummary* score_distribution_summary) const;
+  bool InitializeScoreDistributionCsvWriter();
+  void MaybeWriteScoreDistributionCsv(const char* match_type, float min_score,
+                                      const std::vector<Candidate2D>& candidates,
+                                      float final_best_score,
+                                      bool accepted) const;
   std::vector<Candidate2D> ComputeLowestResolutionCandidates(
       const std::vector<DiscreteScan2D>& discrete_scans,
       const SearchParameters& search_parameters) const;
@@ -161,6 +184,9 @@ class FastCorrelativeScanMatcher2D {
   const proto::FastCorrelativeScanMatcherOptions2D options_;
   MapLimits limits_;
   std::unique_ptr<PrecomputationGridStack2D> precomputation_grid_stack_;
+  mutable std::ofstream score_distribution_csv_;
+  bool score_distribution_csv_enabled_ = false;
+  mutable std::mutex score_distribution_csv_mutex_;
 };
 
 }  // namespace scan_matching

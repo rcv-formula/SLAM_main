@@ -40,6 +40,7 @@
 #include "cartographer_ros_msgs/msg/scan_match_score.hpp"
 #include "cartographer_ros_msgs/msg/status_code.hpp"
 #include "cartographer_ros_msgs/msg/status_response.hpp"
+#include "std_msgs/msg/bool.hpp"
 #include "geometry_msgs/msg/point_stamped.hpp"
 #include "glog/logging.h"
 #include "nav_msgs/msg/odometry.hpp"
@@ -130,6 +131,15 @@ Node::Node(
   scan_match_score_publisher_ =
       node_->create_publisher<cartographer_ros_msgs::msg::ScanMatchScore>(
           kScanMatchScoreTopic, 10);
+  localization_status_publisher_ =
+      node_->create_publisher<std_msgs::msg::Bool>(
+          kLocalizationStatusTopic, rclcpp::QoS(1).transient_local());
+
+  // Wire localization status callback from pose graph
+  map_builder_bridge_->GetPoseGraph()->SetLocalizationStatusCallback(
+      [this](carto::mapping::PoseGraphInterface::LocalizationStatus status) {
+        OnLocalizationStatusChanged(status);
+      });
 
   submap_query_server_ = node_->create_service<cartographer_ros_msgs::srv::SubmapQuery>(
       kSubmapQueryServiceName,
@@ -233,8 +243,8 @@ void Node::AddExtrapolator(const int trajectory_id,
           : options.trajectory_builder_options.trajectory_builder_2d_options()
                 .imu_gravity_time_constant();
   extrapolators_.emplace(
-      trajectory_id,
-      absl::make_unique<::cartographer::mapping::PoseExtrapolator>(
+      std::piecewise_construct, std::forward_as_tuple(trajectory_id),
+      std::forward_as_tuple(
           ::cartographer::common::FromSeconds(kExtrapolationEstimationTimeSec),
           gravity_time_constant));
 }
@@ -255,7 +265,7 @@ void Node::PublishLocalTrajectoryData() {
   for (const auto& entry : map_builder_bridge_->GetLocalTrajectoryData()) {
     const auto& trajectory_data = entry.second;
 
-    auto& extrapolator = *extrapolators_.at(entry.first);
+    auto& extrapolator = extrapolators_.at(entry.first);
     // We only publish a point cloud if it has changed. It is not needed at high
     // frequency, and republishing it would be computationally wasteful.
     if (trajectory_data.local_slam_data->time !=
@@ -809,7 +819,7 @@ void Node::HandleOdometryMessage(const int trajectory_id,
   auto sensor_bridge_ptr = map_builder_bridge_->sensor_bridge(trajectory_id);
   auto odometry_data_ptr = sensor_bridge_ptr->ToOdometryData(msg);
   if (odometry_data_ptr != nullptr) {
-    extrapolators_.at(trajectory_id)->AddOdometryData(*odometry_data_ptr);
+    extrapolators_.at(trajectory_id).AddOdometryData(*odometry_data_ptr);
   }
   sensor_bridge_ptr->HandleOdometryMessage(sensor_id, msg);
 }
@@ -846,7 +856,7 @@ void Node::HandleImuMessage(const int trajectory_id,
   auto sensor_bridge_ptr = map_builder_bridge_->sensor_bridge(trajectory_id);
   auto imu_data_ptr = sensor_bridge_ptr->ToImuData(msg);
   if (imu_data_ptr != nullptr) {
-    extrapolators_.at(trajectory_id)->AddImuData(*imu_data_ptr);
+    extrapolators_.at(trajectory_id).AddImuData(*imu_data_ptr);
   }
   sensor_bridge_ptr->HandleImuMessage(sensor_id, msg);
 }
@@ -927,6 +937,16 @@ void Node::MaybeWarnAboutTopicMismatch() {
 //    LOG(WARNING) << "Currently available topics are: "
 //                 << published_topics_string.str();
 //  }
+}
+
+void Node::OnLocalizationStatusChanged(
+    carto::mapping::PoseGraphInterface::LocalizationStatus status) {
+  const bool lost =
+      (status == carto::mapping::PoseGraphInterface::LocalizationStatus::kLost);
+  LOG(WARNING) << "Localization status: " << (lost ? "LOST" : "GOOD");
+  std_msgs::msg::Bool msg;
+  msg.data = lost;
+  localization_status_publisher_->publish(msg);
 }
 
 }  // namespace cartographer_ros

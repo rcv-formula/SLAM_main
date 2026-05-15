@@ -28,6 +28,7 @@
 #include "cartographer/common/fixed_ratio_sampler.h"
 #include "cartographer/mapping/map_builder_interface.h"
 #include "cartographer/mapping/pose_extrapolator.h"
+#include "cartographer/mapping/pose_graph_interface.h"
 #include "cartographer_ros/map_builder_bridge.h"
 #include "cartographer_ros/metrics/family_factory.h"
 #include "cartographer_ros/node_constants.h"
@@ -44,6 +45,7 @@
 #include "cartographer_ros_msgs/srv/submap_query.hpp"
 #include "cartographer_ros_msgs/srv/write_state.hpp"
 #include "nav_msgs/msg/odometry.hpp"
+#include "std_msgs/msg/bool.hpp"
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/imu.hpp>
 #include <sensor_msgs/msg/laser_scan.hpp>
@@ -171,6 +173,8 @@ class Node {
   cartographer_ros_msgs::msg::StatusResponse FinishTrajectoryUnderLock(
       int trajectory_id) EXCLUSIVE_LOCKS_REQUIRED(mutex_);
   void MaybeWarnAboutTopicMismatch();
+  void OnLocalizationStatusChanged(
+      cartographer::mapping::PoseGraphInterface::LocalizationStatus status);
 
   // Helper function for service handlers that need to check trajectory states.
   cartographer_ros_msgs::msg::StatusResponse TrajectoryStateToStatus(
@@ -194,6 +198,7 @@ class Node {
   ::rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr tracked_pose_publisher_;
   ::rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr scan_matched_point_cloud_publisher_;
   ::rclcpp::Publisher<::cartographer_ros_msgs::msg::ScanMatchScore>::SharedPtr scan_match_score_publisher_;
+  ::rclcpp::Publisher<::std_msgs::msg::Bool>::SharedPtr localization_status_publisher_;
   // These ros service servers need to live for the lifetime of the node.
   ::rclcpp::Service<cartographer_ros_msgs::srv::SubmapQuery>::SharedPtr submap_query_server_;
   ::rclcpp::Service<cartographer_ros_msgs::srv::TrajectoryQuery>::SharedPtr trajectory_query_server;
@@ -224,8 +229,7 @@ class Node {
   };
 
   // These are keyed with 'trajectory_id'.
-  std::map<int, std::unique_ptr<::cartographer::mapping::PoseExtrapolator>>
-      extrapolators_;
+  std::map<int, ::cartographer::mapping::PoseExtrapolator> extrapolators_;
   std::map<int, builtin_interfaces::msg::Time> last_published_tf_stamps_;
   std::unordered_map<int, TrajectorySensorSamplers> sensor_samplers_;
   std::unordered_map<int, std::vector<Subscriber>> subscribers_;

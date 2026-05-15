@@ -73,7 +73,6 @@ class PoseExtrapolator : public PoseExtrapolatorInterface {
   bool fusion_extrpolator_enabled() const { return fusion_extrpolator; }
 
  private:
-  void LoadFusionConfigFromYaml();
   void UpdateVelocitiesFromPoses();
   void TrimImuData();
   void TrimOdometryData();
@@ -81,6 +80,7 @@ class PoseExtrapolator : public PoseExtrapolatorInterface {
   Eigen::Quaterniond ExtrapolateRotation(common::Time time,
                                          ImuTracker* imu_tracker) const;
   Eigen::Vector3d ExtrapolateTranslation(common::Time time);
+  void LoadFusionConfigFromYaml();
 
   ///////////////////////////////////////////////////
   // Fusion state for scan- and odom-derived planar velocities.
@@ -103,16 +103,6 @@ class PoseExtrapolator : public PoseExtrapolatorInterface {
       Eigen::Matrix2d::Identity() * 1.5e-6;
   Eigen::Matrix2d measurement_noise_odom =
       Eigen::Matrix2d::Identity() * 2.0e-4;
-  double measurement_noise_scan_default = 1.5e-6;
-  double measurement_noise_odom_default = 2.0e-4;
-  double measurement_noise_scan_low_score_or_straight = 5.5e-6;
-  double measurement_noise_odom_low_score_or_straight = 1.2e-4;
-  double measurement_noise_scan_high_score_or_curve = 5.0e-7;
-  double measurement_noise_odom_high_score_or_curve = 1.0e-3;
-  double scan_match_low_score_threshold = 0.6;
-  double scan_match_high_score_threshold = 0.9;
-  double straight_yaw_speed_threshold = 0.15;
-  double curve_yaw_speed_threshold = 0.41;
 
   Eigen::Vector3d translation_fusion(
       common::Time time, const Eigen::Vector3d* linear_velocity_scan,
@@ -160,7 +150,7 @@ common::Time last_imu_time = common::Time::min(); // imu가 이전에 측정한 
 double imu_weight = 0.2;//예측 속도에 미칠 imu의 영향
 // double imu_weight = 0.2;//예측 속도에 미칠 imu의 
 // double imu_delta_clip = 0.2; // 너무 강한 보정이 들어갈 경우 clip 한다
-double imu_delta_min = 0.3; // 너무 작은 보정이 들어갈 경우 제거할 임계값
+double imu_delta_min = 0.4; // 너무 작은 보정이 들어갈 경우 제거할 임계값
 double wheelodom_weight = 0.01;
 Eigen::Vector3d translation_imu_wheel(const Eigen::Vector3d* linear_velocity_scan, const Eigen::Vector3d* linear_velocity_odom);
 ////////////////////////////////////////////////////////////////////////

@@ -102,8 +102,9 @@ void ConstraintBuilder2D::MaybeAddConstraint(
   auto constraint_task = absl::make_unique<common::Task>();
   constraint_task->SetWorkItem([=]() LOCKS_EXCLUDED(mutex_) {
     ComputeConstraint(submap_id, submap, node_id, false, /* match_full_submap */
-                      constant_data, initial_relative_pose, *scan_matcher,
-                      constraint);
+                      constant_data,
+                      options_.global_localization_min_score(),
+                      initial_relative_pose, *scan_matcher, constraint);
   });
   constraint_task->AddDependency(scan_matcher->creation_task_handle);
   auto constraint_task_handle =
@@ -113,7 +114,8 @@ void ConstraintBuilder2D::MaybeAddConstraint(
 
 void ConstraintBuilder2D::MaybeAddGlobalConstraint(
     const SubmapId& submap_id, const Submap2D* const submap,
-    const NodeId& node_id, const TrajectoryNode::Data* const constant_data) {
+    const NodeId& node_id, const TrajectoryNode::Data* const constant_data,
+    const double global_localization_min_score) {
   absl::MutexLock locker(&mutex_);
   if (when_done_) {
     LOG(WARNING)
@@ -127,8 +129,9 @@ void ConstraintBuilder2D::MaybeAddGlobalConstraint(
   auto constraint_task = absl::make_unique<common::Task>();
   constraint_task->SetWorkItem([=]() LOCKS_EXCLUDED(mutex_) {
     ComputeConstraint(submap_id, submap, node_id, true, /* match_full_submap */
-                      constant_data, transform::Rigid2d::Identity(),
-                      *scan_matcher, constraint);
+                      constant_data, global_localization_min_score,
+                      transform::Rigid2d::Identity(), *scan_matcher,
+                      constraint);
   });
   constraint_task->AddDependency(scan_matcher->creation_task_handle);
   auto constraint_task_handle =
@@ -189,6 +192,7 @@ void ConstraintBuilder2D::ComputeConstraint(
     const SubmapId& submap_id, const Submap2D* const submap,
     const NodeId& node_id, bool match_full_submap,
     const TrajectoryNode::Data* const constant_data,
+    const double global_localization_min_score,
     const transform::Rigid2d& initial_relative_pose,
     const SubmapScanMatcher& submap_scan_matcher,
     std::unique_ptr<ConstraintBuilder2D::Constraint>* constraint) {
@@ -212,8 +216,8 @@ void ConstraintBuilder2D::ComputeConstraint(
     kGlobalConstraintsSearchedMetric->Increment();
     if (submap_scan_matcher.fast_correlative_scan_matcher->MatchFullSubmap(
             constant_data->filtered_gravity_aligned_point_cloud,
-            options_.global_localization_min_score(), &score, &pose_estimate)) {
-      CHECK_GT(score, options_.global_localization_min_score());
+            global_localization_min_score, &score, &pose_estimate)) {
+      CHECK_GT(score, global_localization_min_score);
       CHECK_GE(node_id.trajectory_id, 0);
       CHECK_GE(submap_id.trajectory_id, 0);
       kGlobalConstraintsFoundMetric->Increment();

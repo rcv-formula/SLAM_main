@@ -1,6 +1,0 @@
-# Trial: disable wheel odom influence in both local extrapolator and pose graph.
-imu_weight: 0.2
-imu_delta_min: 0.3
-wheelodom_weight: 0.0
-odometry_translation_weight: 0.0
-odometry_rotation_weight: 0.0

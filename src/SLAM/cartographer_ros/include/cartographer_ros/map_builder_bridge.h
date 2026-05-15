@@ -104,6 +104,10 @@ class MapBuilderBridge {
 
   SensorBridge* sensor_bridge(int trajectory_id);
 
+  cartographer::mapping::PoseGraphInterface* GetPoseGraph() {
+    return map_builder_->pose_graph();
+  }
+
  private:
   void OnLocalSlamResult(const int trajectory_id,
                          const ::cartographer::common::Time time,

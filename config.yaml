@@ -1,59 +1,49 @@
-# 포즈 예측기(PoseExtrapolator)와 포즈 그래프가 같이 쓰는 휠 오돔 튜닝값입니다.
-# cartographer_node가 시작할 때 한 번 읽습니다.
-# 값을 바꾼 뒤에는 launch만 다시 시작하면 됩니다. C++ 재빌드는 필요 없습니다.
+# 0501 bag metric tuning for imu_ver2.
+# cartographer_node reads this once at startup through Damvi_carto_pure_metric_launch.py.
+# Change values, then restart launch. IMU defaults are kept equal to current imu_ver2 source values.
 
-# 로컬 위치 이동량 예측에서 IMU 속도 변화량을 얼마나 반영할지 정합니다.
-# 현재 의미: 스캔/로컬 포즈 속도 + 0.2 * IMU 속도 변화량.
+# Local extrapolator fusion. Keep IMU conservative unless there is a clear reason to retune it.
 imu_weight: 0.2
-
-# IMU 속도 변화량을 버릴지 판단하는 기준입니다.
-# 적분된 IMU 속도 변화량의 크기가 이 값보다 크면 튄 값으로 보고 무시합니다.
-imu_delta_min: 0.3
-
-# 로컬 위치 이동량 예측에서 휠 오돔 보정을 얼마나 반영할지 정합니다.
-# 현재 의미: 휠 속도와 스캔/로컬 포즈 속도 차이 중 1%만 주행 방향으로 반영합니다.
-# 이 값은 휠 yaw(회전각)를 켜는 값이 아닙니다.
+imu_delta_min: 0.4
 wheelodom_weight: 0.01
 
-# 포즈 그래프에서 휠 오돔 이동 잔차에 주는 가중치입니다.
-# 값을 키우면 전역 최적화가 휠 이동량을 더 강하게 따라갑니다.
-# 기존 good setting 기준값입니다.
-odometry_translation_weight: 3000.0
-
-# 포즈 그래프에서 휠 오돔 각도/yaw 잔차에 주는 가중치입니다.
-# 현재 값 0.0은 휠 yaw가 불안정해서 직접 yaw 잔차를 끈 상태입니다.
+# Pose graph wheel odometry residual weights.
+odometry_translation_weight: 5000.0
 odometry_rotation_weight: 0.0
 
-# 전역 매칭/포즈 그래프 튜닝값입니다.
-# 0312 sensor_only bag full-run drift 테스트 기준:
-# - global_sampling_ratio 증가는 후반 residual을 키워서 유지하지 않습니다.
-# - wheel yaw 잔차는 후반 residual을 키워서 0.0 유지합니다.
-# - loop closure weight 4000 + optimize_every_n_nodes 1 조합이
-#   후반 translation residual p95가 가장 낮았습니다.
+# Global constraint / relocalization tuning.
 global_localization_min_score: 0.58
 constraint_min_score: 0.65
-global_constraint_search_after_n_seconds: 0
-max_submaps_to_keep: 4
+global_constraint_search_after_n_seconds: 0.0
 global_linear_search_window: 1.5
 global_angular_search_window_deg: 10.0
-global_sampling_ratio: 0.005
-constraint_builder_sampling_ratio: 0.0001
-loop_closure_translation_weight: 4000.0
-loop_closure_rotation_weight: 4000.0
+global_sampling_ratio: 0.006
+initial_global_sampling_ratio: 0.05
+initial_global_constraint_search_after_n_seconds: 0.0
+initial_global_localization_min_score: 0.50
+min_score_distribution_margin: 0.0
+constraint_builder_sampling_ratio: 0.78
 max_constraint_distance: 15.0
+loop_closure_translation_weight: 20000.0
+loop_closure_rotation_weight: 20000.0
 optimize_every_n_nodes: 1
+max_submaps_to_keep: 5
+relocalization_trigger_sec: 6.0
+relocalization_recovery_required_successes: 3
+relocalization_recovery_grace_sec: 4.0
 
-# 문제 구간(70~88s) 좁힌 테스트에서 반복 구조에 덜 끌리도록
-# Ceres가 예측 pose를 더 강하게 유지하게 한 값입니다.
-# 20/20 대비 70~88s translation residual p95가 0.0425 -> 0.0395로 개선되었습니다.
-ceres_occupied_space_weight: 50.0
-ceres_translation_weight: 40.0
-ceres_rotation_weight: 40.0
+# Local matching search. These are included because they directly affect residual metrics.
+local_linear_search_window: 0.20
+local_angular_search_window_deg: 5.0
+local_translation_delta_cost_weight: 25.0
+local_rotation_delta_cost_weight: 25.0
 
-# Outlier 기준 테스트값.
-outlier_max_translation_residual: 0.08
+# Outlier thresholds used only for local quality logging/filtering.
+outlier_max_translation_residual: 0.15
 outlier_max_rotation_residual: 0.03
-outlier_required_failures: 1
-outlier_medium_translation_residual: 0.07
+outlier_required_failures: 2
+outlier_medium_translation_residual: 0.10
 outlier_medium_rotation_residual: 0.02
-outlier_medium_required_consecutive: 2
+outlier_medium_required_consecutive: 4
+
+num_background_threads: 8

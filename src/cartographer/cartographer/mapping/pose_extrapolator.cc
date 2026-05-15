@@ -18,8 +18,6 @@
 
 #include <algorithm>
 #include <cctype>
-#include <cmath>
-#include <exception>
 #include <fstream>
 #include <unordered_map>
 
@@ -29,29 +27,15 @@
 #include <cstdlib>
 #include <string>
 
-
-
-
-
-namespace cartographer {
-namespace mapping {
-
 namespace {
 
 std::string Trim(const std::string& value) {
-  size_t begin = 0;
-  while (begin < value.size() &&
-         std::isspace(static_cast<unsigned char>(value[begin]))) {
-    ++begin;
+  const auto begin = value.find_first_not_of(" \t");
+  if (begin == std::string::npos) {
+    return "";
   }
-
-  size_t end = value.size();
-  while (end > begin &&
-         std::isspace(static_cast<unsigned char>(value[end - 1]))) {
-    --end;
-  }
-
-  return value.substr(begin, end - begin);
+  const auto end = value.find_last_not_of(" \t");
+  return value.substr(begin, end - begin + 1);
 }
 
 std::unordered_map<std::string, double> LoadFlatDoubleConfig(
@@ -59,75 +43,49 @@ std::unordered_map<std::string, double> LoadFlatDoubleConfig(
   std::unordered_map<std::string, double> values;
   std::ifstream file(config_path);
   if (!file.is_open()) {
-    LOG(WARNING) << "Could not open pose extrapolator config: "
-                 << config_path;
+    LOG(WARNING) << "Unable to open pose extrapolator config: " << config_path;
     return values;
   }
 
   std::string line;
-  int line_number = 0;
   while (std::getline(file, line)) {
-    ++line_number;
-    const size_t comment_position = line.find('#');
-    if (comment_position != std::string::npos) {
-      line = line.substr(0, comment_position);
+    const auto comment = line.find('#');
+    if (comment != std::string::npos) {
+      line = line.substr(0, comment);
     }
-
-    line = Trim(line);
-    if (line.empty()) {
+    const auto separator = line.find(':');
+    if (separator == std::string::npos) {
       continue;
     }
-
-    const size_t colon_position = line.find(':');
-    if (colon_position == std::string::npos) {
-      LOG(WARNING) << "Ignoring pose extrapolator config line without ':' at "
-                   << config_path << ":" << line_number;
-      continue;
-    }
-
-    const std::string key = Trim(line.substr(0, colon_position));
-    std::string raw_value = Trim(line.substr(colon_position + 1));
+    const std::string key = Trim(line.substr(0, separator));
+    const std::string raw_value = Trim(line.substr(separator + 1));
     if (key.empty() || raw_value.empty()) {
       continue;
     }
 
-    if (raw_value.size() >= 2 &&
-        ((raw_value.front() == '"' && raw_value.back() == '"') ||
-         (raw_value.front() == '\'' && raw_value.back() == '\''))) {
-      raw_value = raw_value.substr(1, raw_value.size() - 2);
+    char* parse_end = nullptr;
+    const double numeric_value = std::strtod(raw_value.c_str(), &parse_end);
+    if (parse_end == raw_value.c_str()) {
+      continue;
     }
-
-    try {
-      size_t parsed_chars = 0;
-      const double parsed_value = std::stod(raw_value, &parsed_chars);
-      if (!Trim(raw_value.substr(parsed_chars)).empty()) {
-        LOG(WARNING) << "Ignoring non-numeric pose extrapolator config value "
-                     << "at " << config_path << ":" << line_number << " for "
-                     << key << ": " << raw_value;
-        continue;
-      }
-      values[key] = parsed_value;
-    } catch (const std::exception& exception) {
-      LOG(WARNING) << "Ignoring invalid pose extrapolator config value at "
-                   << config_path << ":" << line_number << " for " << key
-                   << ": " << raw_value << " (" << exception.what() << ")";
-    }
+    values[key] = numeric_value;
   }
-
   return values;
 }
 
 double ConfigValue(const std::unordered_map<std::string, double>& config,
-                   const std::string& key, const double fallback) {
+                   const std::string& key, const double default_value) {
   const auto it = config.find(key);
-  return it == config.end() ? fallback : it->second;
-}
-
-void SetIsotropicNoise(Eigen::Matrix2d* matrix, const double value) {
-  *matrix = Eigen::Matrix2d::Identity() * value;
+  return it == config.end() ? default_value : it->second;
 }
 
 }  // namespace
+
+
+
+
+namespace cartographer {
+namespace mapping {
 
 PoseExtrapolator::PoseExtrapolator(const common::Duration pose_queue_duration,
                                    double imu_gravity_time_constant)
@@ -160,70 +118,23 @@ void PoseExtrapolator::LoadFusionConfigFromYaml() {
     config_path_env = std::getenv("WHEEL_ODOM_CONFIG");
   }
   if (config_path_env == nullptr || std::string(config_path_env).empty()) {
-    LOG(INFO) << "POSE_EXTRAPOLATOR_CONFIG/WHEEL_ODOM_CONFIG is not set. "
-              << "Using built-in pose extrapolator fusion defaults.";
     return;
   }
 
   const std::string config_path(config_path_env);
   const auto config = LoadFlatDoubleConfig(config_path);
   if (config.empty()) {
-    LOG(WARNING) << "Pose extrapolator config has no numeric values. "
-                 << "Using built-in/default values. path=" << config_path;
     return;
   }
 
-  const double process_noise_value =
-      ConfigValue(config, "process_noise", process_noise(0, 0));
-  measurement_noise_scan_default =
-      ConfigValue(config, "measurement_noise_scan_default",
-                  measurement_noise_scan_default);
-  measurement_noise_odom_default =
-      ConfigValue(config, "measurement_noise_odom_default",
-                  measurement_noise_odom_default);
-  measurement_noise_scan_low_score_or_straight =
-      ConfigValue(config, "measurement_noise_scan_low_score_or_straight",
-                  measurement_noise_scan_low_score_or_straight);
-  measurement_noise_odom_low_score_or_straight =
-      ConfigValue(config, "measurement_noise_odom_low_score_or_straight",
-                  measurement_noise_odom_low_score_or_straight);
-  measurement_noise_scan_high_score_or_curve =
-      ConfigValue(config, "measurement_noise_scan_high_score_or_curve",
-                  measurement_noise_scan_high_score_or_curve);
-  measurement_noise_odom_high_score_or_curve =
-      ConfigValue(config, "measurement_noise_odom_high_score_or_curve",
-                  measurement_noise_odom_high_score_or_curve);
-  scan_match_low_score_threshold =
-      ConfigValue(config, "scan_match_low_score_threshold",
-                  scan_match_low_score_threshold);
-  scan_match_high_score_threshold =
-      ConfigValue(config, "scan_match_high_score_threshold",
-                  scan_match_high_score_threshold);
-  straight_yaw_speed_threshold =
-      ConfigValue(config, "straight_yaw_speed_threshold",
-                  straight_yaw_speed_threshold);
-  curve_yaw_speed_threshold =
-      ConfigValue(config, "curve_yaw_speed_threshold",
-                  curve_yaw_speed_threshold);
-
-  // config.yaml에서 실제로 자주 튜닝할 local fusion 값들이다.
   imu_weight = ConfigValue(config, "imu_weight", imu_weight);
   imu_delta_min = ConfigValue(config, "imu_delta_min", imu_delta_min);
   wheelodom_weight = ConfigValue(config, "wheelodom_weight", wheelodom_weight);
 
-  SetIsotropicNoise(&process_noise, process_noise_value);
-  SetIsotropicNoise(&measurement_noise_scan, measurement_noise_scan_default);
-  SetIsotropicNoise(&measurement_noise_odom, measurement_noise_odom_default);
-
   LOG(INFO) << "Loaded pose extrapolator config from " << config_path
             << " imu_weight=" << imu_weight
             << " imu_delta_min=" << imu_delta_min
-            << " wheelodom_weight=" << wheelodom_weight
-            << " process_noise=" << process_noise_value
-            << " measurement_noise_scan_default="
-            << measurement_noise_scan_default
-            << " measurement_noise_odom_default="
-            << measurement_noise_odom_default;
+            << " wheelodom_weight=" << wheelodom_weight;
 }
 
 std::unique_ptr<PoseExtrapolator> PoseExtrapolator::InitializeWithImu(
@@ -494,25 +405,19 @@ Eigen::Quaterniond PoseExtrapolator::ExtrapolateRotation(
 ///////////////////////////Reliabilty of sensor and control noise ////////////////
 void PoseExtrapolator::ScanMatchScore(double score){
   scan_match_score = score;
-  if(score<scan_match_low_score_threshold){
-    measurement_noise_scan =
-        Eigen::Matrix2d::Identity() * measurement_noise_scan_low_score_or_straight;
-    measurement_noise_odom =
-        Eigen::Matrix2d::Identity() * measurement_noise_odom_low_score_or_straight;
+  if(score<0.6){
+    measurement_noise_scan = Eigen::Matrix2d::Identity() * 5.5e-6;
+    measurement_noise_odom = Eigen::Matrix2d::Identity() * 1.2e-4;
     return;
   }
-  if(score>scan_match_high_score_threshold){
-    measurement_noise_scan =
-        Eigen::Matrix2d::Identity() * measurement_noise_scan_high_score_or_curve;
-    measurement_noise_odom =
-        Eigen::Matrix2d::Identity() * measurement_noise_odom_high_score_or_curve;
+  if(score>0.9){
+    measurement_noise_scan = Eigen::Matrix2d::Identity() * 5.0e-7;
+    measurement_noise_odom = Eigen::Matrix2d::Identity() * 1.0e-3;
     return;
   }
 
-  measurement_noise_scan =
-      Eigen::Matrix2d::Identity() * measurement_noise_scan_default;
-  measurement_noise_odom =
-      Eigen::Matrix2d::Identity() * measurement_noise_odom_default;
+  measurement_noise_scan = Eigen::Matrix2d::Identity() * 1.5e-6;
+  measurement_noise_odom = Eigen::Matrix2d::Identity() * 2.0e-4;
   }
 
 // Q= 1e-3이면:
@@ -527,32 +432,25 @@ void PoseExtrapolator::ScanMatchScore(double score){
 
 
 void PoseExtrapolator::Reliability_sensor(){
-  yaw_speed = std::abs(angular_velocity_from_poses_.z());
+  yaw_speed = abs(angular_velocity_from_poses_.z());
   
-  if (scan_match_score>scan_match_low_score_threshold &&
-      scan_match_score<scan_match_high_score_threshold){
+  if (scan_match_score>0.6 && scan_match_score<0.9){
 
-    if(yaw_speed<straight_yaw_speed_threshold){
-      measurement_noise_scan =
-          Eigen::Matrix2d::Identity() * measurement_noise_scan_low_score_or_straight;
-      measurement_noise_odom =
-          Eigen::Matrix2d::Identity() * measurement_noise_odom_low_score_or_straight;
+    if(yaw_speed<0.15){
+      measurement_noise_scan = Eigen::Matrix2d::Identity() * 5.5e-6;
+      measurement_noise_odom = Eigen::Matrix2d::Identity() * 1.2e-4;
       return;
     }
   
-    if(yaw_speed>curve_yaw_speed_threshold){
-      measurement_noise_scan =
-          Eigen::Matrix2d::Identity() * measurement_noise_scan_high_score_or_curve;
-      measurement_noise_odom =
-          Eigen::Matrix2d::Identity() * measurement_noise_odom_high_score_or_curve;
+    if(yaw_speed>0.41){
+      measurement_noise_scan = Eigen::Matrix2d::Identity() * 5.0e-7;
+      measurement_noise_odom = Eigen::Matrix2d::Identity() * 1.0e-3;
       return;
     }
   
   
-    measurement_noise_scan =
-        Eigen::Matrix2d::Identity() * measurement_noise_scan_default;
-    measurement_noise_odom =
-        Eigen::Matrix2d::Identity() * measurement_noise_odom_default;
+    measurement_noise_scan = Eigen::Matrix2d::Identity() * 1.5e-6;
+    measurement_noise_odom = Eigen::Matrix2d::Identity() * 2.0e-4;
     return;
   }
     return;
