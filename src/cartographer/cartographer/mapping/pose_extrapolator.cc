@@ -127,6 +127,16 @@ void SetIsotropicNoise(Eigen::Matrix2d* matrix, const double value) {
   *matrix = Eigen::Matrix2d::Identity() * value;
 }
 
+Eigen::Vector2d ProjectOntoDirectionOrZero(const Eigen::Vector2d& vector,
+                                           const Eigen::Vector2d& direction) {
+  constexpr double kMinDirectionNorm = 1e-6;
+  if (direction.norm() <= kMinDirectionNorm) {
+    return Eigen::Vector2d::Zero();
+  }
+  const Eigen::Vector2d unit_direction = direction.normalized();
+  return vector.dot(unit_direction) * unit_direction;
+}
+
 }  // namespace
 
 PoseExtrapolator::PoseExtrapolator(const common::Duration pose_queue_duration,
@@ -685,16 +695,19 @@ Eigen::Vector3d PoseExtrapolator::ExtrapolateTranslation(common::Time time) {
 
     Eigen::Vector2d velocity_from_scan = linear_velocity_from_poses_.head<2>();
     Eigen::Vector2d delta_velocity_from_imu = imu_delta_velocity.head<2>();
-    const Eigen::Vector2d scan_direction = velocity_from_scan.normalized();
-    const double imu_delta_scalar = delta_velocity_from_imu.dot(scan_direction);
-    const Eigen::Vector2d imu_delta_velocity = imu_delta_scalar * scan_direction;
-    const Eigen::Vector2d scan_velocity_with_imu = velocity_from_scan + imu_weight * imu_delta_velocity;
-    const Eigen::Vector3d velocity_scan_based = {scan_velocity_with_imu.x(), scan_velocity_with_imu.y(), 0.0};
+    const Eigen::Vector2d imu_delta_velocity =
+        ProjectOntoDirectionOrZero(delta_velocity_from_imu, velocity_from_scan);
+    const Eigen::Vector2d scan_velocity_with_imu =
+        velocity_from_scan + imu_weight * imu_delta_velocity;
+    const Eigen::Vector3d velocity_scan_based = {
+        scan_velocity_with_imu.x(), scan_velocity_with_imu.y(), 0.0};
 
     if (odometry_data_.size() < 2) {
       return extrapolation_delta * velocity_scan_based;
     }
-    return extrapolation_delta * translation_imu_wheel(&velocity_scan_based, &linear_velocity_from_odometry_);
+    return extrapolation_delta *
+           translation_imu_wheel(&velocity_scan_based,
+                                 &linear_velocity_from_odometry_);
   }
 
   // Original behavior: simple extrapolation using pose- or odometry-derived
@@ -715,15 +728,18 @@ PoseExtrapolator::ExtrapolatePosesWithGravity(
   if (fusion_extrpolator) {
     Eigen::Vector2d velocity_from_scan = linear_velocity_from_poses_.head<2>();
     Eigen::Vector2d delta_velocity_from_imu = imu_delta_velocity.head<2>();
-    const Eigen::Vector2d scan_direction = velocity_from_scan.normalized();
-    const double imu_delta_scalar = delta_velocity_from_imu.dot(scan_direction);
-    const Eigen::Vector2d imu_delta_velocity = imu_delta_scalar * scan_direction;
-    const Eigen::Vector2d scan_velocity_with_imu = velocity_from_scan + imu_weight * imu_delta_velocity;
-    const Eigen::Vector3d velocity_scan_based = {scan_velocity_with_imu.x(), scan_velocity_with_imu.y(), 0.0};
+    const Eigen::Vector2d imu_delta_velocity =
+        ProjectOntoDirectionOrZero(delta_velocity_from_imu, velocity_from_scan);
+    const Eigen::Vector2d scan_velocity_with_imu =
+        velocity_from_scan + imu_weight * imu_delta_velocity;
+    const Eigen::Vector3d velocity_scan_based = {
+        scan_velocity_with_imu.x(), scan_velocity_with_imu.y(), 0.0};
 
     const Eigen::Vector3d current_velocity =
-        (odometry_data_.size() < 2 ? velocity_scan_based
-                                   : translation_imu_wheel(&velocity_scan_based, &linear_velocity_from_odometry_));
+        (odometry_data_.size() < 2
+             ? velocity_scan_based
+             : translation_imu_wheel(&velocity_scan_based,
+                                     &linear_velocity_from_odometry_));
     return ExtrapolationResult{poses, ExtrapolatePose(times.back()),
                                current_velocity,
                                EstimateGravityOrientation(times.back())};

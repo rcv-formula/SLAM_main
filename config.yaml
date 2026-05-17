@@ -18,42 +18,40 @@ wheelodom_weight: 0.01
 # 포즈 그래프에서 휠 오돔 이동 잔차에 주는 가중치입니다.
 # 값을 키우면 전역 최적화가 휠 이동량을 더 강하게 따라갑니다.
 # 기존 good setting 기준값입니다.
-odometry_translation_weight: 3000.0
+odometry_translation_weight: 1000.0
 
 # 포즈 그래프에서 휠 오돔 각도/yaw 잔차에 주는 가중치입니다.
 # 현재 값 0.0은 휠 yaw가 불안정해서 직접 yaw 잔차를 끈 상태입니다.
 odometry_rotation_weight: 0.0
 
 # 전역 매칭/포즈 그래프 튜닝값입니다.
-# 0312 sensor_only bag full-run drift 테스트 기준:
-# - global_sampling_ratio 증가는 후반 residual을 키워서 유지하지 않습니다.
-# - wheel yaw 잔차는 후반 residual을 키워서 0.0 유지합니다.
-# - loop closure weight 4000 + optimize_every_n_nodes 1 조합이
-#   후반 translation residual p95가 가장 낮았습니다.
-global_localization_min_score: 0.58
-constraint_min_score: 0.65
+# 0312 기준 pure_wheel locked 값은 PURE_WHEEL_LOCALIZATION_LOCKED_PARAMS.md에 보관했습니다.
+# Recovery trial: 평소 안정값은 유지하고, 깨졌을 때 다시 붙는 속도를 높이기 위해
+# global 후보 탐색 범위와 샘플링만 넓힙니다.
+global_localization_min_score: 0.62
+constraint_min_score: 0.95
 global_constraint_search_after_n_seconds: 0
-max_submaps_to_keep: 4
-global_linear_search_window: 1.5
-global_angular_search_window_deg: 10.0
-global_sampling_ratio: 0.005
-constraint_builder_sampling_ratio: 0.0001
-loop_closure_translation_weight: 4000.0
-loop_closure_rotation_weight: 4000.0
+max_submaps_to_keep: 5
+global_linear_search_window: 0.12
+global_angular_search_window_deg: 3.0
+global_sampling_ratio: 0.012
+constraint_builder_sampling_ratio: 0.90
+loop_closure_translation_weight: 100.0
+loop_closure_rotation_weight: 100.0
 max_constraint_distance: 15.0
 optimize_every_n_nodes: 1
 
-# 문제 구간(70~88s) 좁힌 테스트에서 반복 구조에 덜 끌리도록
-# Ceres가 예측 pose를 더 강하게 유지하게 한 값입니다.
-# 20/20 대비 70~88s translation residual p95가 0.0425 -> 0.0395로 개선되었습니다.
-ceres_occupied_space_weight: 50.0
-ceres_translation_weight: 40.0
-ceres_rotation_weight: 40.0
+# pure_wheel은 안정된 pure_launch의 scan matcher 값을 기준으로 맞춥니다.
+# wheel odom은 위의 약한 prior로만 보조하고, scan matching 자체는 pure_launch와 같은
+# 보수적인 search/constraint 조건을 사용합니다.
+ceres_occupied_space_weight: 15.0
+ceres_translation_weight: 30.0
+ceres_rotation_weight: 30.0
 
 # Outlier 기준 테스트값.
-outlier_max_translation_residual: 0.08
+outlier_max_translation_residual: 0.15
 outlier_max_rotation_residual: 0.03
-outlier_required_failures: 1
-outlier_medium_translation_residual: 0.07
+outlier_required_failures: 2
+outlier_medium_translation_residual: 0.10
 outlier_medium_rotation_residual: 0.02
-outlier_medium_required_consecutive: 2
+outlier_medium_required_consecutive: 4

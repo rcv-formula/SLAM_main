@@ -10,7 +10,7 @@ def generate_launch_description():
     package_dir = os.path.dirname(main_dir)
     config_dir = os.path.join(package_dir, 'configuration_files')
     workspace_dir = os.path.abspath(os.path.join(package_dir, '..', '..', '..'))
-    pbstream_file = os.path.join(package_dir, 'pbstream/0501.pbstream')   # .pbstream 파일이 있는 위치로 경로 수정
+    pbstream_file = LaunchConfiguration('pbstream_file')
     use_sim_time = LaunchConfiguration('use_sim_time')
     fusion_extrapolator = LaunchConfiguration('fusion_extrapolator')
     pose_extrapolator_config = LaunchConfiguration('pose_extrapolator_config')
@@ -32,6 +32,11 @@ def generate_launch_description():
             'pose_extrapolator_config',
             default_value=os.path.join(workspace_dir, 'config.yaml'),
             description='Path to wheel odom tuning YAML'
+        ),
+        DeclareLaunchArgument(
+            'pbstream_file',
+            default_value=os.path.join(workspace_dir, '0125_4.pbstream'),
+            description='Path to the localization pbstream map'
         ),
         SetEnvironmentVariable(
             name='FUSION_EXTRPOLATOR',
@@ -55,7 +60,7 @@ def generate_launch_description():
                 '--collect_metrics',
                 '-configuration_directory', config_dir,
                 '-configuration_basename', 'Damvi_localization_config_wheel.lua',
-                '-load_state_filename', pbstream_file  # Specify the map file for localization
+                '-load_state_filename', pbstream_file
             ],
             remappings=[
                 ('scan', 'scan'),

@@ -59,9 +59,9 @@ options = {
   use_pose_extrapolator = true,
   publish_to_tf = true,
   lookup_transform_timeout_sec = 0.2, 
-  submap_publish_period_sec = 0.025,
-  pose_publish_period_sec = 0.025,
-  trajectory_publish_period_sec = 0.025,
+  submap_publish_period_sec = 0.1,
+  pose_publish_period_sec = 0.05,
+  trajectory_publish_period_sec = 0.1,
   num_laser_scans = 1,
   num_multi_echo_laser_scans = 0,
   num_subdivisions_per_laser_scan = 1,
@@ -144,19 +144,19 @@ POSE_GRAPH.optimization_problem.odometry_rotation_weight =
 -- 실시간 변수 설정
 TRAJECTORY_BUILDER_2D.use_online_correlative_scan_matching = false
   -- [2]실시간 로컬 Correlative 매칭에서 x-y 평면상 탐색 범위 (m)
-TRAJECTORY_BUILDER_2D.real_time_correlative_scan_matcher.linear_search_window = 1.0
+TRAJECTORY_BUILDER_2D.real_time_correlative_scan_matcher.linear_search_window = 0.05
 -- [2]실시간 로컬 Correlative 매칭에서 회전(각도) 탐색 범위 (라디안), 얼마나 허용할 지
-TRAJECTORY_BUILDER_2D.real_time_correlative_scan_matcher.angular_search_window = math.rad(10.0)
+TRAJECTORY_BUILDER_2D.real_time_correlative_scan_matcher.angular_search_window = math.rad(1.0)
 
-TRAJECTORY_BUILDER_2D.real_time_correlative_scan_matcher.translation_delta_cost_weight = 5.0
-TRAJECTORY_BUILDER_2D.real_time_correlative_scan_matcher.rotation_delta_cost_weight = 5.0
+TRAJECTORY_BUILDER_2D.real_time_correlative_scan_matcher.translation_delta_cost_weight = 25.0
+TRAJECTORY_BUILDER_2D.real_time_correlative_scan_matcher.rotation_delta_cost_weight = 25.0
 
 -- LiDAR 관련
 TRAJECTORY_BUILDER_2D.min_range = 0.1
-TRAJECTORY_BUILDER_2D.max_range = 25.0
+TRAJECTORY_BUILDER_2D.max_range = 20.0
 TRAJECTORY_BUILDER_2D.missing_data_ray_length = 5.0
 TRAJECTORY_BUILDER_2D.adaptive_voxel_filter.max_length = 5.0
-TRAJECTORY_BUILDER_2D.adaptive_voxel_filter.min_num_points = 200
+TRAJECTORY_BUILDER_2D.adaptive_voxel_filter.min_num_points = 350
 TRAJECTORY_BUILDER_2D.voxel_filter_size = 0.05
 
 -- Ceres 기반 스캔 매처 설정. 라이다 데이터로 이전 서브맵과 비교하여 포즈와 방향을 추정한다.
@@ -169,7 +169,7 @@ TRAJECTORY_BUILDER_2D.ceres_scan_matcher.rotation_weight =
 
 --[드리프트 심할 때 키우세요] IMU 설정
   -- 급격한 조향이 있을 경우에는 time_constant와 rotation_weight 증가 고려
-TRAJECTORY_BUILDER_2D.imu_gravity_time_constant = 30.0
+TRAJECTORY_BUILDER_2D.imu_gravity_time_constant = 12.0
 
 MAP_BUILDER.num_background_threads = 4
 

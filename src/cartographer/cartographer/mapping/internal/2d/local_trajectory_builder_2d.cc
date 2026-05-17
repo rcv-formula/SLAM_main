@@ -304,17 +304,19 @@ LocalTrajectoryBuilder2D::AddAccumulatedRangeData(
     LOG(WARNING) << "Scan matching failed.";
     return nullptr;
   }
-  const transform::Rigid3d pose_estimate =
-      transform::Embed3D(*pose_estimate_2d) * gravity_alignment;
-  extrapolator_->AddPose(time, pose_estimate);
   quality_metrics.was_outlier = IsLocalSlamOutlier(&quality_metrics);
+  const transform::Rigid2d pose_to_use_2d =
+      quality_metrics.was_outlier ? pose_prediction : *pose_estimate_2d;
+  const transform::Rigid3d pose_to_use =
+      transform::Embed3D(pose_to_use_2d) * gravity_alignment;
+  extrapolator_->AddPose(time, pose_to_use);
 
   sensor::RangeData range_data_in_local =
       TransformRangeData(gravity_aligned_range_data,
-                         transform::Embed3D(pose_estimate_2d->cast<float>()));
+                         transform::Embed3D(pose_to_use_2d.cast<float>()));
   if (quality_metrics.was_outlier) {
     LOG_EVERY_N(WARNING, 20)
-        << "Local SLAM outlier detected (inserting with reduced constraint weight). "
+        << "Local SLAM outlier detected (using prediction and skipping submap update). "
         << "score=" << quality_metrics.real_time_correlative_score
         << " translation_residual=" << quality_metrics.translation_residual
         << " rotation_residual=" << quality_metrics.rotation_residual
@@ -323,9 +325,9 @@ LocalTrajectoryBuilder2D::AddAccumulatedRangeData(
   }
   std::unique_ptr<InsertionResult> insertion_result = InsertIntoSubmap(
       time, range_data_in_local, filtered_gravity_aligned_point_cloud,
-      pose_estimate, gravity_alignment.rotation(), quality_metrics.was_outlier);
+      pose_to_use, gravity_alignment.rotation(), quality_metrics.was_outlier);
   MaybeWriteQualityMetricsCsv(
-      time, pose_prediction, *pose_estimate_2d, quality_metrics,
+      time, pose_prediction, pose_to_use_2d, quality_metrics,
       insertion_result != nullptr,
       insertion_result != nullptr ? insertion_result->insertion_submaps.size()
                                   : 0);
@@ -352,7 +354,7 @@ LocalTrajectoryBuilder2D::AddAccumulatedRangeData(
   last_wall_time_ = wall_time;
   last_thread_cpu_time_seconds_ = thread_cpu_time_seconds;
   return absl::make_unique<MatchingResult>(
-      MatchingResult{time, pose_estimate, std::move(range_data_in_local),
+      MatchingResult{time, pose_to_use, std::move(range_data_in_local),
                      quality_metrics,
                      latest_scan_match_score_,
                      latest_scan_match_score_valid_,
@@ -366,6 +368,9 @@ LocalTrajectoryBuilder2D::InsertIntoSubmap(
     const transform::Rigid3d& pose_estimate,
     const Eigen::Quaterniond& gravity_alignment,
     const bool is_outlier) {
+  if (is_outlier && options_.skip_submap_insertion_for_outliers()) {
+    return nullptr;
+  }
   if (motion_filter_.IsSimilar(time, pose_estimate)) {
     return nullptr;
   }

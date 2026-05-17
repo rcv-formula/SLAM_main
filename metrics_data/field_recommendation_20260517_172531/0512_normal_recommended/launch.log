@@ -1,0 +1,298 @@
+[INFO] [launch]: All log files can be found below /home/symoon/.ros/log/2026-05-17-17-38-23-204850-symoon-HP-ZBook-Create-G7-Notebook-PC-71850
+[INFO] [launch]: Default logging verbosity is set to INFO
+[INFO] [cartographer_node-1]: process started with pid [71881]
+[cartographer_node-1] [INFO] [1779007103.314604735] [cartographer logger]: I0517 17:38:23.000000 71881 configuration_file_resolver.cc:41] Found '/home/symoon/Desktop/F1/Local_SLAM_Complete/local_SLAM_imu_wheel_ver5/src/SLAM/cartographer_ros/configuration_files/Damvi_localization_config_wheel.lua' for 'Damvi_localization_config_wheel.lua'.
+[cartographer_node-1] [INFO] [1779007103.315377183] [cartographer logger]: I0517 17:38:23.000000 71881 configuration_file_resolver.cc:41] Found '/home/symoon/Desktop/F1/Local_SLAM_Complete/local_SLAM_imu_wheel_ver5/install/cartographer/share/cartographer/configuration_files/map_builder.lua' for 'map_builder.lua'.
+[cartographer_node-1] [INFO] [1779007103.315415766] [cartographer logger]: I0517 17:38:23.000000 71881 configuration_file_resolver.cc:41] Found '/home/symoon/Desktop/F1/Local_SLAM_Complete/local_SLAM_imu_wheel_ver5/install/cartographer/share/cartographer/configuration_files/map_builder.lua' for 'map_builder.lua'.
+[cartographer_node-1] [INFO] [1779007103.315564796] [cartographer logger]: I0517 17:38:23.000000 71881 configuration_file_resolver.cc:41] Found '/home/symoon/Desktop/F1/Local_SLAM_Complete/local_SLAM_imu_wheel_ver5/install/cartographer/share/cartographer/configuration_files/pose_graph.lua' for 'pose_graph.lua'.
+[cartographer_node-1] [INFO] [1779007103.315593711] [cartographer logger]: I0517 17:38:23.000000 71881 configuration_file_resolver.cc:41] Found '/home/symoon/Desktop/F1/Local_SLAM_Complete/local_SLAM_imu_wheel_ver5/install/cartographer/share/cartographer/configuration_files/pose_graph.lua' for 'pose_graph.lua'.
+[cartographer_node-1] [INFO] [1779007103.315835602] [cartographer logger]: I0517 17:38:23.000000 71881 configuration_file_resolver.cc:41] Found '/home/symoon/Desktop/F1/Local_SLAM_Complete/local_SLAM_imu_wheel_ver5/install/cartographer/share/cartographer/configuration_files/trajectory_builder.lua' for 'trajectory_builder.lua'.
+[cartographer_node-1] [INFO] [1779007103.315864848] [cartographer logger]: I0517 17:38:23.000000 71881 configuration_file_resolver.cc:41] Found '/home/symoon/Desktop/F1/Local_SLAM_Complete/local_SLAM_imu_wheel_ver5/install/cartographer/share/cartographer/configuration_files/trajectory_builder.lua' for 'trajectory_builder.lua'.
+[cartographer_node-1] [INFO] [1779007103.316017206] [cartographer logger]: I0517 17:38:23.000000 71881 configuration_file_resolver.cc:41] Found '/home/symoon/Desktop/F1/Local_SLAM_Complete/local_SLAM_imu_wheel_ver5/install/cartographer/share/cartographer/configuration_files/trajectory_builder_2d.lua' for 'trajectory_builder_2d.lua'.
+[cartographer_node-1] [INFO] [1779007103.316040397] [cartographer logger]: I0517 17:38:23.000000 71881 configuration_file_resolver.cc:41] Found '/home/symoon/Desktop/F1/Local_SLAM_Complete/local_SLAM_imu_wheel_ver5/install/cartographer/share/cartographer/configuration_files/trajectory_builder_2d.lua' for 'trajectory_builder_2d.lua'.
+[cartographer_node-1] [INFO] [1779007103.316272721] [cartographer logger]: I0517 17:38:23.000000 71881 configuration_file_resolver.cc:41] Found '/home/symoon/Desktop/F1/Local_SLAM_Complete/local_SLAM_imu_wheel_ver5/install/cartographer/share/cartographer/configuration_files/trajectory_builder_3d.lua' for 'trajectory_builder_3d.lua'.
+[cartographer_node-1] [INFO] [1779007103.316298777] [cartographer logger]: I0517 17:38:23.000000 71881 configuration_file_resolver.cc:41] Found '/home/symoon/Desktop/F1/Local_SLAM_Complete/local_SLAM_imu_wheel_ver5/install/cartographer/share/cartographer/configuration_files/trajectory_builder_3d.lua' for 'trajectory_builder_3d.lua'.
+[cartographer_node-1] [INFO] [1779007103.326498225] [cartographer logger]: I0517 17:38:23.000000 71881 map_builder_bridge.cpp:117] Loading saved state '/home/symoon/Desktop/bag/0512/0512.pbstream'...
+[cartographer_node-1] [INFO] [1779007103.403554620] [cartographer logger]: I0517 17:38:23.000000 71881 map_builder_bridge.cpp:140] Added trajectory with ID '1'.
+[cartographer_node-1] [INFO] [1779007103.403693535] [cartographer logger]: I0517 17:38:23.000000 71881 pose_extrapolator.cc:218] Loaded pose extrapolator config from /home/symoon/Desktop/F1/Local_SLAM_Complete/local_SLAM_imu_wheel_ver5/parameter_trials/field_recommended.yaml imu_weight=0.2 imu_delta_min=0.3 wheelodom_weight=0.01 process_noise=0.001 measurement_noise_scan_default=1.5e-06 measurement_noise_odom_default=0.0002
+[cartographer_node-1] [INFO] [1779007103.403714223] [cartographer logger]: I0517 17:38:23.000000 71881 pose_extrapolator.cc:154] fusion is active
+[cartographer_node-1] [WARN] [1779007112.807627908] [cartographer logger]: W0517 17:38:32.000000 71881 tf_bridge.cpp:53] "imu" passed to lookupTransform argument target_frame does not exist. 
+[cartographer_node-1] [WARN] [1779007113.008293331] [cartographer logger]: W0517 17:38:33.000000 71881 tf_bridge.cpp:53] "imu" passed to lookupTransform argument target_frame does not exist. 
+[cartographer_node-1] [WARN] [1779007113.232423336] [cartographer logger]: W0517 17:38:33.000000 71881 tf_bridge.cpp:53] "imu" passed to lookupTransform argument target_frame does not exist. 
+[cartographer_node-1] [WARN] [1779007113.428551811] [cartographer logger]: W0517 17:38:33.000000 71881 tf_bridge.cpp:53] "imu" passed to lookupTransform argument target_frame does not exist. 
+[cartographer_node-1] [WARN] [1779007113.631762747] [cartographer logger]: W0517 17:38:33.000000 71881 tf_bridge.cpp:53] "imu" passed to lookupTransform argument target_frame does not exist. 
+[cartographer_node-1] [WARN] [1779007113.831928889] [cartographer logger]: W0517 17:38:33.000000 71881 tf_bridge.cpp:53] "imu" passed to lookupTransform argument target_frame does not exist. 
+[cartographer_node-1] [WARN] [1779007114.055422895] [cartographer logger]: W0517 17:38:34.000000 71881 tf_bridge.cpp:53] "imu" passed to lookupTransform argument target_frame does not exist. 
+[cartographer_node-1] [WARN] [1779007114.248868938] [cartographer logger]: W0517 17:38:34.000000 71881 tf_bridge.cpp:53] Lookup would require extrapolation into the past.  Requested time 1778568136.964563 but the earliest data is at time 1778568137.246109, when looking up transform from frame [laser] to frame [imu]
+[cartographer_node-1] [WARN] [1779007114.249050158] [cartographer logger]: W0517 17:38:34.000000 71881 tf_bridge.cpp:53] Lookup would require extrapolation into the past.  Requested time 1778568137.163558 but the earliest data is at time 1778568137.246109, when looking up transform from frame [base_link] to frame [imu]
+[cartographer_node-1] [WARN] [1779007114.249163803] [cartographer logger]: W0517 17:38:34.000000 71881 tf_bridge.cpp:53] Lookup would require extrapolation into the past.  Requested time 1778568137.163558 but the earliest data is at time 1778568137.246109, when looking up transform from frame [base_link] to frame [imu]
+[cartographer_node-1] [WARN] [1779007114.257879731] [cartographer logger]: W0517 17:38:34.000000 71881 tf_bridge.cpp:53] Lookup would require extrapolation into the past.  Requested time 1778568137.164711 but the earliest data is at time 1778568137.246109, when looking up transform from frame [laser] to frame [imu]
+[cartographer_node-1] [WARN] [1779007114.258029448] [cartographer logger]: W0517 17:38:34.000000 71881 tf_bridge.cpp:53] Lookup would require extrapolation into the past.  Requested time 1778568137.182142 but the earliest data is at time 1778568137.246109, when looking up transform from frame [base_link] to frame [imu]
+[cartographer_node-1] [WARN] [1779007114.258143708] [cartographer logger]: W0517 17:38:34.000000 71881 tf_bridge.cpp:53] Lookup would require extrapolation into the past.  Requested time 1778568137.182142 but the earliest data is at time 1778568137.246109, when looking up transform from frame [base_link] to frame [imu]
+[cartographer_node-1] [WARN] [1779007114.266876468] [cartographer logger]: W0517 17:38:34.000000 71881 tf_bridge.cpp:53] Lookup would require extrapolation into the past.  Requested time 1778568137.189107 but the earliest data is at time 1778568137.246109, when looking up transform from frame [laser] to frame [imu]
+[cartographer_node-1] [WARN] [1779007114.267034946] [cartographer logger]: W0517 17:38:34.000000 71881 tf_bridge.cpp:53] Lookup would require extrapolation into the past.  Requested time 1778568137.202162 but the earliest data is at time 1778568137.246109, when looking up transform from frame [base_link] to frame [imu]
+[cartographer_node-1] [WARN] [1779007114.267146785] [cartographer logger]: W0517 17:38:34.000000 71881 tf_bridge.cpp:53] Lookup would require extrapolation into the past.  Requested time 1778568137.202162 but the earliest data is at time 1778568137.246109, when looking up transform from frame [base_link] to frame [imu]
+[cartographer_node-1] [WARN] [1779007114.275811354] [cartographer logger]: W0517 17:38:34.000000 71881 tf_bridge.cpp:53] Lookup would require extrapolation into the past.  Requested time 1778568137.214475 but the earliest data is at time 1778568137.246109, when looking up transform from frame [laser] to frame [imu]
+[cartographer_node-1] [WARN] [1779007114.275999976] [cartographer logger]: W0517 17:38:34.000000 71881 tf_bridge.cpp:53] Lookup would require extrapolation into the past.  Requested time 1778568137.221895 but the earliest data is at time 1778568137.246109, when looking up transform from frame [base_link] to frame [imu]
+[cartographer_node-1] [WARN] [1779007114.276112615] [cartographer logger]: W0517 17:38:34.000000 71881 tf_bridge.cpp:53] Lookup would require extrapolation into the past.  Requested time 1778568137.221895 but the earliest data is at time 1778568137.246109, when looking up transform from frame [base_link] to frame [imu]
+[cartographer_node-1] [WARN] [1779007114.284675330] [cartographer logger]: W0517 17:38:34.000000 71881 tf_bridge.cpp:53] Lookup would require extrapolation into the past.  Requested time 1778568137.234393 but the earliest data is at time 1778568137.246109, when looking up transform from frame [laser] to frame [imu]
+[cartographer_node-1] [WARN] [1779007114.284834292] [cartographer logger]: W0517 17:38:34.000000 71881 tf_bridge.cpp:53] Lookup would require extrapolation into the past.  Requested time 1778568137.236898 but the earliest data is at time 1778568137.246109, when looking up transform from frame [base_link] to frame [imu]
+[cartographer_node-1] [WARN] [1779007114.284942091] [cartographer logger]: W0517 17:38:34.000000 71881 tf_bridge.cpp:53] Lookup would require extrapolation into the past.  Requested time 1778568137.236898 but the earliest data is at time 1778568137.246109, when looking up transform from frame [base_link] to frame [imu]
+[cartographer_node-1] [WARN] [1779007114.680928110] [cartographer logger]: W0517 17:38:34.000000 71881 tf_bridge.cpp:53] Lookup would require extrapolation into the future.  Requested time 1778568137.464473 but the latest data is at time 1778568137.453172, when looking up transform from frame [laser] to frame [imu]
+[cartographer_node-1] [WARN] [1779007115.630186785] [cartographer logger]: W0517 17:38:35.000000 71881 tf_bridge.cpp:53] Lookup would require extrapolation into the future.  Requested time 1778568138.434286 but the latest data is at time 1778568138.423388, when looking up transform from frame [laser] to frame [imu]
+[cartographer_node-1] [WARN] [1779007126.333312700] [cartographer logger]: W0517 17:38:46.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007127.078093381] [cartographer logger]: W0517 17:38:47.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007127.809447317] [cartographer logger]: W0517 17:38:47.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007128.566527528] [cartographer logger]: W0517 17:38:48.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007129.308271170] [cartographer logger]: W0517 17:38:49.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007130.067370216] [cartographer logger]: W0517 17:38:50.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007130.765316270] [cartographer logger]: W0517 17:38:50.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007131.508122013] [cartographer logger]: W0517 17:38:51.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007132.265629742] [cartographer logger]: W0517 17:38:52.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007133.013001510] [cartographer logger]: W0517 17:38:53.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007133.769452006] [cartographer logger]: W0517 17:38:53.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007134.483223968] [cartographer logger]: W0517 17:38:54.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007135.193655067] [cartographer logger]: W0517 17:38:55.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007135.948226182] [cartographer logger]: W0517 17:38:55.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007136.616893102] [cartographer logger]: W0517 17:38:56.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007137.367867241] [cartographer logger]: W0517 17:38:57.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007138.098768809] [cartographer logger]: W0517 17:38:58.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007138.804758112] [cartographer logger]: W0517 17:38:58.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007139.540579122] [cartographer logger]: W0517 17:38:59.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007140.302749583] [cartographer logger]: W0517 17:39:00.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007141.001855721] [cartographer logger]: W0517 17:39:01.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007141.736219510] [cartographer logger]: W0517 17:39:01.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007142.486345587] [cartographer logger]: W0517 17:39:02.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007143.216366702] [cartographer logger]: W0517 17:39:03.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007143.965930660] [cartographer logger]: W0517 17:39:03.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007144.709746859] [cartographer logger]: W0517 17:39:04.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007145.414048158] [cartographer logger]: W0517 17:39:05.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007146.114584687] [cartographer logger]: W0517 17:39:06.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007146.811795554] [cartographer logger]: W0517 17:39:06.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007147.511615735] [cartographer logger]: W0517 17:39:07.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007148.158169701] [cartographer logger]: W0517 17:39:08.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007148.843607980] [cartographer logger]: W0517 17:39:08.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007149.591844861] [cartographer logger]: W0517 17:39:09.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007150.343127450] [cartographer logger]: W0517 17:39:10.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007151.068581111] [cartographer logger]: W0517 17:39:11.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007151.791909698] [cartographer logger]: W0517 17:39:11.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007152.551127262] [cartographer logger]: W0517 17:39:12.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007153.260229059] [cartographer logger]: W0517 17:39:13.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007154.003557960] [cartographer logger]: W0517 17:39:14.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007154.686586856] [cartographer logger]: W0517 17:39:14.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007155.345836793] [cartographer logger]: W0517 17:39:15.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007156.080468360] [cartographer logger]: W0517 17:39:16.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007156.814522560] [cartographer logger]: W0517 17:39:16.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007157.529815392] [cartographer logger]: W0517 17:39:17.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007158.229403024] [cartographer logger]: W0517 17:39:18.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007158.986361524] [cartographer logger]: W0517 17:39:18.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007159.661841951] [cartographer logger]: W0517 17:39:19.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007160.385728441] [cartographer logger]: W0517 17:39:20.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007161.147363774] [cartographer logger]: W0517 17:39:21.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007161.893446831] [cartographer logger]: W0517 17:39:21.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007162.643776532] [cartographer logger]: W0517 17:39:22.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007163.389209320] [cartographer logger]: W0517 17:39:23.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007164.069480763] [cartographer logger]: W0517 17:39:24.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007164.788790128] [cartographer logger]: W0517 17:39:24.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007165.545044813] [cartographer logger]: W0517 17:39:25.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007166.286623493] [cartographer logger]: W0517 17:39:26.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007167.019725115] [cartographer logger]: W0517 17:39:27.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007167.772441393] [cartographer logger]: W0517 17:39:27.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007168.408531208] [cartographer logger]: W0517 17:39:28.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007169.203176772] [cartographer logger]: W0517 17:39:29.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007169.866923015] [cartographer logger]: W0517 17:39:29.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007170.583252266] [cartographer logger]: W0517 17:39:30.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007171.288212959] [cartographer logger]: W0517 17:39:31.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007171.954328915] [cartographer logger]: W0517 17:39:31.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007172.704048013] [cartographer logger]: W0517 17:39:32.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007173.359705203] [cartographer logger]: W0517 17:39:33.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007174.021028019] [cartographer logger]: W0517 17:39:34.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007174.736820252] [cartographer logger]: W0517 17:39:34.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007175.461604987] [cartographer logger]: W0517 17:39:35.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007176.120896088] [cartographer logger]: W0517 17:39:36.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007176.810568449] [cartographer logger]: W0517 17:39:36.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007177.500614383] [cartographer logger]: W0517 17:39:37.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007178.163061575] [cartographer logger]: W0517 17:39:38.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007178.860065843] [cartographer logger]: W0517 17:39:38.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007179.558864693] [cartographer logger]: W0517 17:39:39.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007180.242501543] [cartographer logger]: W0517 17:39:40.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007180.938851160] [cartographer logger]: W0517 17:39:40.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007181.659803018] [cartographer logger]: W0517 17:39:41.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007182.301982712] [cartographer logger]: W0517 17:39:42.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007182.949943018] [cartographer logger]: W0517 17:39:42.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007183.651346304] [cartographer logger]: W0517 17:39:43.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007184.347299615] [cartographer logger]: W0517 17:39:44.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007185.025421500] [cartographer logger]: W0517 17:39:45.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007185.674130620] [cartographer logger]: W0517 17:39:45.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007186.307573186] [cartographer logger]: W0517 17:39:46.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007186.986235659] [cartographer logger]: W0517 17:39:46.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007187.633146452] [cartographer logger]: W0517 17:39:47.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007188.307610319] [cartographer logger]: W0517 17:39:48.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007188.970445091] [cartographer logger]: W0517 17:39:48.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007189.662062839] [cartographer logger]: W0517 17:39:49.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007190.308649941] [cartographer logger]: W0517 17:39:50.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007191.016399955] [cartographer logger]: W0517 17:39:51.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007191.687435524] [cartographer logger]: W0517 17:39:51.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007192.344627520] [cartographer logger]: W0517 17:39:52.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007193.019667310] [cartographer logger]: W0517 17:39:53.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007193.696954529] [cartographer logger]: W0517 17:39:53.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007194.359991407] [cartographer logger]: W0517 17:39:54.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007195.007313414] [cartographer logger]: W0517 17:39:55.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007195.708884139] [cartographer logger]: W0517 17:39:55.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007196.345315903] [cartographer logger]: W0517 17:39:56.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007197.025738771] [cartographer logger]: W0517 17:39:57.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007197.689368276] [cartographer logger]: W0517 17:39:57.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007198.376190993] [cartographer logger]: W0517 17:39:58.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007199.036609086] [cartographer logger]: W0517 17:39:59.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007199.689577481] [cartographer logger]: W0517 17:39:59.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007200.375160105] [cartographer logger]: W0517 17:40:00.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007201.019829085] [cartographer logger]: W0517 17:40:01.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007201.690030849] [cartographer logger]: W0517 17:40:01.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007202.343108825] [cartographer logger]: W0517 17:40:02.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007203.018742568] [cartographer logger]: W0517 17:40:03.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007203.704202815] [cartographer logger]: W0517 17:40:03.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007204.353857093] [cartographer logger]: W0517 17:40:04.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007205.020708976] [cartographer logger]: W0517 17:40:05.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007205.701769489] [cartographer logger]: W0517 17:40:05.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007206.353904066] [cartographer logger]: W0517 17:40:06.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007207.024007465] [cartographer logger]: W0517 17:40:07.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007207.703026885] [cartographer logger]: W0517 17:40:07.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007208.380851945] [cartographer logger]: W0517 17:40:08.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007209.048895541] [cartographer logger]: W0517 17:40:09.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007209.700934335] [cartographer logger]: W0517 17:40:09.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007210.384099321] [cartographer logger]: W0517 17:40:10.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007211.050274178] [cartographer logger]: W0517 17:40:11.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007211.707542653] [cartographer logger]: W0517 17:40:11.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007212.348319100] [cartographer logger]: W0517 17:40:12.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007213.047897521] [cartographer logger]: W0517 17:40:13.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007213.698626856] [cartographer logger]: W0517 17:40:13.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007214.385293540] [cartographer logger]: W0517 17:40:14.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007215.032628802] [cartographer logger]: W0517 17:40:15.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007215.712941516] [cartographer logger]: W0517 17:40:15.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007216.384925783] [cartographer logger]: W0517 17:40:16.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007217.063950913] [cartographer logger]: W0517 17:40:17.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007217.690967754] [cartographer logger]: W0517 17:40:17.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007218.386526602] [cartographer logger]: W0517 17:40:18.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007219.063523189] [cartographer logger]: W0517 17:40:19.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007219.737104623] [cartographer logger]: W0517 17:40:19.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007220.410644182] [cartographer logger]: W0517 17:40:20.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007221.087828838] [cartographer logger]: W0517 17:40:21.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007221.764489600] [cartographer logger]: W0517 17:40:21.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007222.443450668] [cartographer logger]: W0517 17:40:22.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007223.108543902] [cartographer logger]: W0517 17:40:23.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007223.757886963] [cartographer logger]: W0517 17:40:23.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007224.438252682] [cartographer logger]: W0517 17:40:24.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007225.091462141] [cartographer logger]: W0517 17:40:25.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007225.758491867] [cartographer logger]: W0517 17:40:25.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007226.478791627] [cartographer logger]: W0517 17:40:26.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007227.118052090] [cartographer logger]: W0517 17:40:27.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007227.792682940] [cartographer logger]: W0517 17:40:27.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007228.447552969] [cartographer logger]: W0517 17:40:28.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [WARN] [1779007229.125865727] [cartographer logger]: W0517 17:40:29.000000 71881 ordered_multi_queue.cc:155] Queue waiting for data: (1, imu)
+[cartographer_node-1] [INFO] [1779007229.272819040] [cartographer logger]: I0517 17:40:29.000000 71881 ordered_multi_queue.cc:172] All sensor data for trajectory 1 is available starting at '639141650522323127'.
+[cartographer_node-1] [INFO] [1779007229.275178733] [cartographer logger]: I0517 17:40:29.000000 71881 collated_trajectory_builder.cc:81] scan rate: unknown
+[cartographer_node-1] [INFO] [1779007229.275276013] [cartographer logger]: I0517 17:40:29.000000 71881 local_trajectory_builder_2d.cc:187] Extrapolator not yet initialized.
+[cartographer_node-1] [INFO] [1779007229.301661806] [cartographer logger]: I0517 17:40:29.000000 71881 local_trajectory_builder_2d.cc:461] Extrapolator not yet initialized.
+[cartographer_node-1] [INFO] [1779007229.301736617] [cartographer logger]: I0517 17:40:29.000000 71881 pose_extrapolator.cc:218] Loaded pose extrapolator config from /home/symoon/Desktop/F1/Local_SLAM_Complete/local_SLAM_imu_wheel_ver5/parameter_trials/field_recommended.yaml imu_weight=0.2 imu_delta_min=0.3 wheelodom_weight=0.01 process_noise=0.001 measurement_noise_scan_default=1.5e-06 measurement_noise_odom_default=0.0002
+[cartographer_node-1] [INFO] [1779007229.301748407] [cartographer logger]: I0517 17:40:29.000000 71881 pose_extrapolator.cc:154] fusion is active
+[cartographer_node-1] [INFO] [1779007229.317835162] [cartographer logger]: I0517 17:40:29.000000 71881 local_trajectory_builder_2d.cc:198] Extrapolator is still initializing.
+[cartographer_node-1] [INFO] [1779007229.319183360] [cartographer logger]: I0517 17:40:29.000000 71881 pose_graph_2d.cc:148] Inserted submap (1, 0).
+[cartographer_node-1] [INFO] [1779007229.321111748] [cartographer logger]: I0517 17:40:29.000000 71898 pose_graph_2d.cc:538] Remaining work items in queue: 0
+[cartographer_node-1] [INFO] [1779007229.403409059] [cartographer logger]: I0517 17:40:29.000000 71896 constraint_builder_2d.cc:294] 1 computations resulted in 0 additional constraints.
+[cartographer_node-1] [INFO] [1779007229.403437668] [cartographer logger]: I0517 17:40:29.000000 71896 constraint_builder_2d.cc:296] Score histogram:
+[cartographer_node-1] Count: 0
+[cartographer_node-1] [INFO] [1779007229.409212324] [cartographer logger]: I0517 17:40:29.000000 71895 pose_graph_2d.cc:538] Remaining work items in queue: 0
+[cartographer_node-1] [INFO] [1779007229.409240540] [cartographer logger]: I0517 17:40:29.000000 71895 constraint_builder_2d.cc:294] 0 computations resulted in 0 additional constraints.
+[cartographer_node-1] [INFO] [1779007229.409253839] [cartographer logger]: I0517 17:40:29.000000 71895 constraint_builder_2d.cc:296] Score histogram:
+[cartographer_node-1] Count: 0
+[cartographer_node-1] [INFO] [1779007229.455497332] [cartographer logger]: I0517 17:40:29.000000 71898 pose_graph_2d.cc:538] Remaining work items in queue: 1
+[cartographer_node-1] [INFO] [1779007229.455520726] [cartographer logger]: I0517 17:40:29.000000 71898 constraint_builder_2d.cc:294] 0 computations resulted in 0 additional constraints.
+[cartographer_node-1] [INFO] [1779007229.455527874] [cartographer logger]: I0517 17:40:29.000000 71898 constraint_builder_2d.cc:296] Score histogram:
+[cartographer_node-1] Count: 0
+[cartographer_node-1] [INFO] [1779007229.501685476] [cartographer logger]: I0517 17:40:29.000000 71895 pose_graph_2d.cc:538] Remaining work items in queue: 2
+[cartographer_node-1] [INFO] [1779007229.501709175] [cartographer logger]: I0517 17:40:29.000000 71895 constraint_builder_2d.cc:294] 0 computations resulted in 0 additional constraints.
+[cartographer_node-1] [INFO] [1779007229.501719959] [cartographer logger]: I0517 17:40:29.000000 71895 constraint_builder_2d.cc:296] Score histogram:
+[cartographer_node-1] Count: 0
+[cartographer_node-1] [INFO] [1779007229.547247350] [cartographer logger]: I0517 17:40:29.000000 71895 pose_graph_2d.cc:538] Remaining work items in queue: 1
+[cartographer_node-1] [INFO] [1779007229.547271518] [cartographer logger]: I0517 17:40:29.000000 71895 constraint_builder_2d.cc:294] 0 computations resulted in 0 additional constraints.
+[cartographer_node-1] [INFO] [1779007229.547281878] [cartographer logger]: I0517 17:40:29.000000 71895 constraint_builder_2d.cc:296] Score histogram:
+[cartographer_node-1] Count: 0
+[cartographer_node-1] [WARN] [1779007229.601094607] [cartographer logger]: W0517 17:40:29.000000 71881 local_trajectory_builder_2d.cc:316] Local SLAM outlier detected (inserting with reduced constraint weight). score=nan translation_residual=0.0352075 rotation_residual=0.0302611 num_filtered_points=0 medium_outlier_streak=1
+[cartographer_node-1] [WARN] [1779007229.601738161] [cartographer logger]: W0517 17:40:29.000000 71881 range_data_collator.cc:82] Dropped 348 earlier points.
+[cartographer_node-1] [INFO] [1779007229.620971042] [cartographer logger]: I0517 17:40:29.000000 71898 pose_graph_2d.cc:538] Remaining work items in queue: 2
+[cartographer_node-1] [INFO] [1779007229.620991806] [cartographer logger]: I0517 17:40:29.000000 71898 constraint_builder_2d.cc:294] 0 computations resulted in 0 additional constraints.
+[cartographer_node-1] [INFO] [1779007229.621001698] [cartographer logger]: I0517 17:40:29.000000 71898 constraint_builder_2d.cc:296] Score histogram:
+[cartographer_node-1] Count: 0
+[cartographer_node-1] [INFO] [1779007229.721577949] [cartographer logger]: I0517 17:40:29.000000 71895 pose_graph_2d.cc:538] Remaining work items in queue: 0
+[cartographer_node-1] [INFO] [1779007229.774627782] [cartographer logger]: I0517 17:40:29.000000 71898 constraint_builder_2d.cc:294] 1 computations resulted in 0 additional constraints.
+[cartographer_node-1] [INFO] [1779007229.774650347] [cartographer logger]: I0517 17:40:29.000000 71898 constraint_builder_2d.cc:296] Score histogram:
+[cartographer_node-1] Count: 0
+[cartographer_node-1] [INFO] [1779007229.780934540] [cartographer logger]: I0517 17:40:29.000000 71897 pose_graph_2d.cc:538] Remaining work items in queue: 0
+[cartographer_node-1] [INFO] [1779007229.780985093] [cartographer logger]: I0517 17:40:29.000000 71897 constraint_builder_2d.cc:294] 0 computations resulted in 0 additional constraints.
+[cartographer_node-1] [INFO] [1779007229.780995466] [cartographer logger]: I0517 17:40:29.000000 71897 constraint_builder_2d.cc:296] Score histogram:
+[cartographer_node-1] Count: 0
+[cartographer_node-1] [INFO] [1779007229.853818989] [cartographer logger]: I0517 17:40:29.000000 71898 pose_graph_2d.cc:538] Remaining work items in queue: 1
+[cartographer_node-1] [INFO] [1779007229.853867594] [cartographer logger]: I0517 17:40:29.000000 71898 constraint_builder_2d.cc:294] 0 computations resulted in 0 additional constraints.
+[cartographer_node-1] [INFO] [1779007229.853878525] [cartographer logger]: I0517 17:40:29.000000 71898 constraint_builder_2d.cc:296] Score histogram:
+[cartographer_node-1] Count: 0
+[cartographer_node-1] [INFO] [1779007229.917821514] [cartographer logger]: I0517 17:40:29.000000 71896 pose_graph_2d.cc:538] Remaining work items in queue: 2
+[cartographer_node-1] [INFO] [1779007229.917847042] [cartographer logger]: I0517 17:40:29.000000 71896 constraint_builder_2d.cc:294] 0 computations resulted in 0 additional constraints.
+[cartographer_node-1] [INFO] [1779007229.917875961] [cartographer logger]: I0517 17:40:29.000000 71896 constraint_builder_2d.cc:296] Score histogram:
+[cartographer_node-1] Count: 0
+[cartographer_node-1] [INFO] [1779007230.006630431] [cartographer logger]: I0517 17:40:30.000000 71896 pose_graph_2d.cc:538] Remaining work items in queue: 1
+[cartographer_node-1] [INFO] [1779007230.006675876] [cartographer logger]: I0517 17:40:30.000000 71896 constraint_builder_2d.cc:294] 0 computations resulted in 0 additional constraints.
+[cartographer_node-1] [INFO] [1779007230.006684948] [cartographer logger]: I0517 17:40:30.000000 71896 constraint_builder_2d.cc:296] Score histogram:
+[cartographer_node-1] Count: 0
+[cartographer_node-1] [INFO] [1779007230.154126270] [cartographer logger]: I0517 17:40:30.000000 71898 pose_graph_2d.cc:538] Remaining work items in queue: 1
+[cartographer_node-1] [INFO] [1779007230.154175922] [cartographer logger]: I0517 17:40:30.000000 71898 constraint_builder_2d.cc:294] 0 computations resulted in 0 additional constraints.
+[cartographer_node-1] [INFO] [1779007230.154186711] [cartographer logger]: I0517 17:40:30.000000 71898 constraint_builder_2d.cc:296] Score histogram:
+[cartographer_node-1] Count: 0
+[cartographer_node-1] [INFO] [1779007230.239909284] [cartographer logger]: I0517 17:40:30.000000 71896 pose_graph_2d.cc:538] Remaining work items in queue: 0
+[cartographer_node-1] [INFO] [1779007230.239938706] [cartographer logger]: I0517 17:40:30.000000 71896 constraint_builder_2d.cc:294] 0 computations resulted in 0 additional constraints.
+[cartographer_node-1] [INFO] [1779007230.239949914] [cartographer logger]: I0517 17:40:30.000000 71896 constraint_builder_2d.cc:296] Score histogram:
+[cartographer_node-1] Count: 0
+[cartographer_node-1] [INFO] [1779007230.319299651] [cartographer logger]: I0517 17:40:30.000000 71897 pose_graph_2d.cc:538] Remaining work items in queue: 0
+[cartographer_node-1] [INFO] [1779007230.330064917] [cartographer logger]: I0517 17:40:30.000000 71895 constraint_builder_2d.cc:294] 1 computations resulted in 0 additional constraints.
+[cartographer_node-1] [INFO] [1779007230.330084255] [cartographer logger]: I0517 17:40:30.000000 71895 constraint_builder_2d.cc:296] Score histogram:
+[cartographer_node-1] Count: 0
+[cartographer_node-1] [INFO] [1779007230.418166498] [cartographer logger]: I0517 17:40:30.000000 71898 pose_graph_2d.cc:538] Remaining work items in queue: 2
+[cartographer_node-1] [INFO] [1779007230.418224966] [cartographer logger]: I0517 17:40:30.000000 71898 constraint_builder_2d.cc:294] 0 computations resulted in 0 additional constraints.
+[cartographer_node-1] [INFO] [1779007230.418246800] [cartographer logger]: I0517 17:40:30.000000 71898 constraint_builder_2d.cc:296] Score histogram:
+[cartographer_node-1] Count: 0
+[cartographer_node-1] [INFO] [1779007230.456234761] [cartographer logger]: I0517 17:40:30.000000 71898 pose_graph_2d.cc:538] Remaining work items in queue: 2
+[cartographer_node-1] [INFO] [1779007230.456257909] [cartographer logger]: I0517 17:40:30.000000 71898 constraint_builder_2d.cc:294] 0 computations resulted in 0 additional constraints.
+[cartographer_node-1] [INFO] [1779007230.456265372] [cartographer logger]: I0517 17:40:30.000000 71898 constraint_builder_2d.cc:296] Score histogram:
+[cartographer_node-1] Count: 0
+[WARNING] [launch]: user interrupted with ctrl-c (SIGINT)
+[INFO] [cartographer_node-1]: sending signal 'SIGINT' to process[cartographer_node-1]
+[cartographer_node-1] [INFO] [1779007234.637248884] [rclcpp]: signal_handler(SIGINT/SIGTERM)
+[cartographer_node-1] [INFO] [1779007234.640834318] [rclcpp]: signal_handler(SIGINT/SIGTERM)
+[cartographer_node-1] [WARN] [1779007234.645696773] [cartographer logger]: W0517 17:40:34.000000 71881 tf_bridge.cpp:53] Lookup would require extrapolation into the future.  Requested time 1778568253.530498 but the latest data is at time 1778568253.503170, when looking up transform from frame [laser] to frame [imu]
+[cartographer_node-1] [INFO] [1779007234.646739929] [cartographer logger]: I0517 17:40:34.000000 71881 node.cpp:583] Shutdown the subscriber of [scan]
+[cartographer_node-1] [INFO] [1779007234.647301594] [cartographer logger]: I0517 17:40:34.000000 71881 node.cpp:583] Shutdown the subscriber of [imu]
+[cartographer_node-1] [INFO] [1779007234.647887554] [cartographer logger]: I0517 17:40:34.000000 71881 node.cpp:583] Shutdown the subscriber of [odom_wheel]
+[cartographer_node-1] [INFO] [1779007234.647947759] [cartographer logger]: I0517 17:40:34.000000 71881 map_builder_bridge.cpp:156] Finishing trajectory with ID '1'...
+[cartographer_node-1] [INFO] [1779007234.654438967] [cartographer logger]: I0517 17:40:34.000000 71896 pose_graph_2d.cc:538] Remaining work items in queue: 1
+[cartographer_node-1] [INFO] [1779007234.654528216] [cartographer logger]: I0517 17:40:34.000000 71896 constraint_builder_2d.cc:294] 0 computations resulted in 0 additional constraints.
+[cartographer_node-1] [INFO] [1779007234.654579364] [cartographer logger]: I0517 17:40:34.000000 71896 constraint_builder_2d.cc:296] Score histogram:
+[cartographer_node-1] Count: 0
+[cartographer_node-1] [WARN] [1779007234.659653739] [cartographer logger]: W0517 17:40:34.000000 71881 node.cpp:787] Can't run final optimization if there are one or more active trajectories. Trying to finish trajectory with ID 1 now.
+[cartographer_node-1] [INFO] [1779007234.659721071] [cartographer logger]: I0517 17:40:34.000000 71881 node.cpp:565] Trajectory 1 already pending to finish.
+[cartographer_node-1] [INFO] [1779007234.659765063] [cartographer logger]: I0517 17:40:34.000000 71881 map_builder_bridge.cpp:165] Running final trajectory optimization...
+[cartographer_node-1] [INFO] [1779007234.682840598] [cartographer logger]: I0517 17:40:34.000000 71896 pose_graph_2d.cc:538] Remaining work items in queue: 2
+[cartographer_node-1] [INFO] [1779007234.682892371] [cartographer logger]: I0517 17:40:34.000000 71896 constraint_builder_2d.cc:294] 0 computations resulted in 0 additional constraints.
+[cartographer_node-1] [INFO] [1779007234.682911320] [cartographer logger]: I0517 17:40:34.000000 71896 constraint_builder_2d.cc:296] Score histogram:
+[cartographer_node-1] Count: 0
+[cartographer_node-1] [INFO] [1779007234.693169560] [cartographer logger]: I0517 17:40:34.000000 71896 pose_graph_2d.cc:538] Remaining work items in queue: 1
+[cartographer_node-1] [INFO] [1779007234.693184993] [cartographer logger]: I0517 17:40:34.000000 71896 constraint_builder_2d.cc:294] 0 computations resulted in 0 additional constraints.
+[cartographer_node-1] [INFO] [1779007234.693193043] [cartographer logger]: I0517 17:40:34.000000 71896 constraint_builder_2d.cc:296] Score histogram:
+[cartographer_node-1] Count: 0
+[cartographer_node-1] [INFO] [1779007234.698897926] [cartographer logger]: I0517 17:40:34.000000 71897 constraint_builder_2d.cc:294] 0 computations resulted in 0 additional constraints.
+[cartographer_node-1] [INFO] [1779007234.698910347] [cartographer logger]: I0517 17:40:34.000000 71897 constraint_builder_2d.cc:296] Score histogram:
+[cartographer_node-1] Count: 0
+[cartographer_node-1] [KOptimizing: Done.     
+[cartographer_node-1] [INFO] [1779007234.700472744] [cartographer logger]: I0517 17:40:34.000000 71898 constraint_builder_2d.cc:294] 0 computations resulted in 0 additional constraints.
+[cartographer_node-1] [INFO] [1779007234.700482944] [cartographer logger]: I0517 17:40:34.000000 71898 constraint_builder_2d.cc:296] Score histogram:
+[cartographer_node-1] Count: 0
+[cartographer_node-1] [KOptimizing: Done.     
+[INFO] [cartographer_node-1]: process has finished cleanly [pid 71881]
