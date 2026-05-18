@@ -372,7 +372,7 @@ LocalTrajectoryBuilder3D::AddAccumulatedRangeData(
   return absl::make_unique<MatchingResult>(MatchingResult{
       time, *pose_estimate, *pose_estimate,
       std::move(filtered_range_data_in_local),
-      0., false,
+      0., false, "GOOD",
       std::move(insertion_result)});
 }
 

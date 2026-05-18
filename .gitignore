@@ -1,6 +1,8 @@
 build/
 log/
 install/
+bag/
+*.db3
 
 *.pbstream
 *.pyc

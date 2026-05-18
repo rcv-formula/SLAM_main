@@ -26,6 +26,7 @@
 #include <memory>
 #include <string>
 
+#include "absl/types/optional.h"
 #include "cartographer/common/time.h"
 #include "cartographer/mapping/2d/submap_2d.h"
 #include "cartographer/mapping/internal/2d/scan_matching/ceres_scan_matcher_2d.h"
@@ -59,6 +60,8 @@ class LocalTrajectoryBuilder2D {
     double rotation_residual = std::numeric_limits<double>::quiet_NaN();
     int num_filtered_points = 0;
     bool was_outlier = false;
+    bool hard_outlier = false;
+    bool sustained_medium_outlier = false;
     int medium_outlier_streak = 0;
   };
 
@@ -74,6 +77,7 @@ class LocalTrajectoryBuilder2D {
     LocalSlamQualityMetrics quality_metrics;
     double scan_match_score;
     bool scan_match_score_valid;
+    std::string localization_health_state;
     // 'nullptr' if dropped by the motion filter.
     std::unique_ptr<const InsertionResult> insertion_result;
   };
@@ -162,6 +166,10 @@ class LocalTrajectoryBuilder2D {
       const scan_matching::FrozenSubmapMatchResult2D& result) const;
   void MaybeLogFrozenSubmapTuningSummary();
 
+  std::string UpdateLocalizationHealthState(
+      const scan_matching::FrozenSubmapMatchResult2D& frozen_match_result,
+      const LocalSlamQualityMetrics& quality_metrics);
+
   const proto::LocalTrajectoryBuilderOptions2D options_;
   ActiveSubmaps2D active_submaps_;
 
@@ -186,6 +194,12 @@ class LocalTrajectoryBuilder2D {
 
   int64_t frozen_submap_match_attempt_count_ = 0;
   FrozenSubmapTuningStats frozen_submap_tuning_stats_;
+  std::string localization_health_state_ = "GOOD";
+  int frozen_match_reject_streak_ = 0;
+  int frozen_match_accept_streak_ = 0;
+  int frozen_match_warning_streak_ = 0;
+  int local_slam_outlier_streak_ = 0;
+  int local_slam_hard_outlier_streak_ = 0;
 
   RangeDataCollator range_data_collator_;
   std::ofstream quality_metrics_csv_;

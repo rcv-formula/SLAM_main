@@ -494,12 +494,114 @@ void PoseGraph2D::DeleteTrajectoriesIfNeeded() {
   }
 }
 
+std::vector<PoseGraph2D::Constraint>
+PoseGraph2D::FilterVerifiedGlobalConstraints(
+    const constraints::ConstraintBuilder2D::Result& result) {
+  constexpr int kRequiredConsistentFrozenConstraints = 2;
+  constexpr double kMaxConsistentTranslation = 0.70;
+  constexpr double kMaxConsistentRotation = 15. * M_PI / 180.;
+  constexpr double kPendingConstraintMaxAgeSec = 12.;
+
+  std::vector<Constraint> accepted_constraints;
+  common::Time newest_time = common::Time::min();
+
+  for (const Constraint& constraint : result) {
+    const bool frozen_inter_trajectory_constraint =
+        constraint.tag == Constraint::INTER_SUBMAP &&
+        constraint.node_id.trajectory_id != constraint.submap_id.trajectory_id &&
+        (IsTrajectoryFrozen(constraint.node_id.trajectory_id) ||
+         IsTrajectoryFrozen(constraint.submap_id.trajectory_id));
+    if (!frozen_inter_trajectory_constraint) {
+      accepted_constraints.push_back(constraint);
+      continue;
+    }
+
+    const auto node_it = data_.trajectory_nodes.find(constraint.node_id);
+    if (node_it == data_.trajectory_nodes.end() ||
+        node_it->data.constant_data == nullptr ||
+        !optimization_problem_->node_data().Contains(constraint.node_id) ||
+        !optimization_problem_->submap_data().Contains(constraint.submap_id)) {
+      continue;
+    }
+
+    const common::Time constraint_time = node_it->data.constant_data->time;
+    newest_time = std::max(newest_time, constraint_time);
+    const transform::Rigid2d implied_node_global =
+        optimization_problem_->submap_data().at(constraint.submap_id).global_pose *
+        transform::Project2D(constraint.pose.zbar_ij);
+    const transform::Rigid2d current_node_global =
+        optimization_problem_->node_data().at(constraint.node_id).global_pose_2d;
+    pending_global_constraints_.push_back(PendingGlobalConstraint{
+        constraint, implied_node_global * current_node_global.inverse(),
+        constraint_time});
+  }
+
+  if (newest_time != common::Time::min()) {
+    std::vector<PendingGlobalConstraint> fresh_pending;
+    for (const auto& pending : pending_global_constraints_) {
+      if (common::ToSeconds(newest_time - pending.time) <=
+          kPendingConstraintMaxAgeSec) {
+        fresh_pending.push_back(pending);
+      }
+    }
+    pending_global_constraints_ = std::move(fresh_pending);
+  }
+
+  std::vector<int> best_cluster;
+  for (int i = 0; i < static_cast<int>(pending_global_constraints_.size());
+       ++i) {
+    std::vector<int> cluster;
+    const auto& reference = pending_global_constraints_[i];
+    for (int j = 0; j < static_cast<int>(pending_global_constraints_.size());
+         ++j) {
+      const transform::Rigid2d delta =
+          reference.local_to_map_correction.inverse() *
+          pending_global_constraints_[j].local_to_map_correction;
+      if (delta.translation().norm() <= kMaxConsistentTranslation &&
+          std::abs(delta.normalized_angle()) <= kMaxConsistentRotation) {
+        cluster.push_back(j);
+      }
+    }
+    if (cluster.size() > best_cluster.size()) {
+      best_cluster = std::move(cluster);
+    }
+  }
+
+  if (best_cluster.size() >= kRequiredConsistentFrozenConstraints) {
+    std::set<int> accepted_indices(best_cluster.begin(), best_cluster.end());
+    for (const int index : best_cluster) {
+      accepted_constraints.push_back(
+          pending_global_constraints_[index].constraint);
+    }
+    std::vector<PendingGlobalConstraint> remaining_pending;
+    for (int i = 0; i < static_cast<int>(pending_global_constraints_.size());
+         ++i) {
+      if (accepted_indices.count(i) == 0) {
+        remaining_pending.push_back(pending_global_constraints_[i]);
+      }
+    }
+    LOG(INFO) << "Accepted " << best_cluster.size()
+              << " consistent frozen-map global constraints for optimization; "
+              << remaining_pending.size() << " remain pending.";
+    pending_global_constraints_ = std::move(remaining_pending);
+  } else if (!pending_global_constraints_.empty()) {
+    LOG_EVERY_N(WARNING, 20)
+        << "Holding " << pending_global_constraints_.size()
+        << " frozen-map global constraints pending consistency confirmation "
+        << "(need " << kRequiredConsistentFrozenConstraints << ").";
+  }
+
+  return accepted_constraints;
+}
+
 void PoseGraph2D::HandleWorkQueue(
     const constraints::ConstraintBuilder2D::Result& result) {
+  constraints::ConstraintBuilder2D::Result accepted_result;
   {
     absl::MutexLock locker(&mutex_);
-    data_.constraints.insert(data_.constraints.end(), result.begin(),
-                             result.end());
+    accepted_result = FilterVerifiedGlobalConstraints(result);
+    data_.constraints.insert(data_.constraints.end(), accepted_result.begin(),
+                             accepted_result.end());
   }
   RunOptimization();
 
@@ -513,7 +615,7 @@ void PoseGraph2D::HandleWorkQueue(
     if (trigger_sec > 0.0) {
       bool got_frozen_constraint = false;
       common::Time latest_constraint_time = common::Time::min();
-      for (const Constraint& c : result) {
+      for (const Constraint& c : accepted_result) {
         if (c.tag == Constraint::INTER_SUBMAP &&
             c.node_id.trajectory_id != c.submap_id.trajectory_id &&
             (IsTrajectoryFrozen(c.node_id.trajectory_id) ||

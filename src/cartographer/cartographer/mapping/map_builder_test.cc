@@ -149,6 +149,7 @@ class MapBuilderTestBase : public T {
                ::cartographer::sensor::RangeData range_data_in_local,
                const double scan_match_score,
                const bool scan_match_score_valid,
+               const std::string localization_health_state,
                const std::unique_ptr<
                    const cartographer::mapping::TrajectoryBuilderInterface::
                        InsertionResult>) {
@@ -157,6 +158,7 @@ class MapBuilderTestBase : public T {
       (void)range_data_in_local;
       (void)scan_match_score;
       (void)scan_match_score_valid;
+      (void)localization_health_state;
       local_slam_result_poses_.push_back(local_pose);
     };
   }

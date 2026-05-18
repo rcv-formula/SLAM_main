@@ -40,7 +40,7 @@ TRAJECTORY_BUILDER_2D.use_imu_data = true
 TRAJECTORY_BUILDER_2D.submaps.grid_options_2d.resolution = 0.05
 TRAJECTORY_BUILDER_2D.submaps.num_range_data = 45
 
-POSE_GRAPH.constraint_builder.global_localization_min_score = 0.60
+POSE_GRAPH.constraint_builder.global_localization_min_score = 0.70
 POSE_GRAPH.constraint_builder.min_score = 0.65
 POSE_GRAPH.constraint_builder.log_matches = false
 POSE_GRAPH.log_residual_histograms = false
@@ -68,12 +68,12 @@ POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher.log_score_distributi
 POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher.score_distribution_csv_path =
     fast_correlative_score_distribution_csv_path
 
-POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher.min_score_distribution_margin = 0.0 --0.05
+POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher.min_score_distribution_margin = 0.05
 
-POSE_GRAPH.global_sampling_ratio = 0.006
+POSE_GRAPH.global_sampling_ratio = 0.02
 POSE_GRAPH.initial_global_sampling_ratio = 0.05
-POSE_GRAPH.initial_global_constraint_search_after_n_seconds = 0.0
-POSE_GRAPH.initial_global_localization_min_score = 0.5
+POSE_GRAPH.initial_global_constraint_search_after_n_seconds = 3.0
+POSE_GRAPH.initial_global_localization_min_score = 0.68
 
 -- 고속 주행에서 pose prediction 오차 수용 + 진동으로 인한 active submap 오차 허용
 TRAJECTORY_BUILDER_2D.real_time_correlative_scan_matcher.linear_search_window = 0.15
@@ -129,7 +129,7 @@ TRAJECTORY_BUILDER_2D.frozen_submap_scan_matcher.max_translation_correction = 0.
 TRAJECTORY_BUILDER_2D.frozen_submap_scan_matcher.max_rotation_correction = math.rad(0.40)
 
 -- frozen 후보를 찾을 때 Real-Time Correlative Scan Matcher를 먼저 사용할지 정합니다.
-TRAJECTORY_BUILDER_2D.frozen_submap_scan_matcher.use_realtime_correlative_scan_matching = true
+TRAJECTORY_BUILDER_2D.frozen_submap_scan_matcher.use_realtime_correlative_scan_matching = false
 
 -- RTC 결과를 Ceres로 한 번 더 refine할지 정합니다.
 TRAJECTORY_BUILDER_2D.frozen_submap_scan_matcher.use_ceres_scan_matching = true
@@ -192,9 +192,9 @@ TRAJECTORY_BUILDER_2D.frozen_submap_scan_matcher.ceres_scan_matcher.ceres_solver
 TRAJECTORY_BUILDER_2D.imu_gravity_time_constant = 12.0
 
 MAP_BUILDER.num_background_threads = 8
-POSE_GRAPH.optimize_every_n_nodes = 1
+POSE_GRAPH.optimize_every_n_nodes = 5
 POSE_GRAPH.constraint_builder.max_constraint_distance = 15.0
-POSE_GRAPH.relocalization_trigger_sec = 6.0
+POSE_GRAPH.relocalization_trigger_sec = 120.0
 POSE_GRAPH.relocalization_recovery_required_successes = 3
 POSE_GRAPH.relocalization_recovery_grace_sec = 4.0
 

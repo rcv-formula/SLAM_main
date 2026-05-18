@@ -19,6 +19,7 @@
 
 #include <chrono>
 #include <memory>
+#include <string>
 
 #include "cartographer/common/time.h"
 #include "cartographer/mapping/3d/submap_3d.h"
@@ -54,6 +55,7 @@ class LocalTrajectoryBuilder3D {
     sensor::RangeData range_data_in_local;
     double scan_match_score;
     bool scan_match_score_valid;
+    std::string localization_health_state;
     // 'nullptr' if dropped by the motion filter.
     std::unique_ptr<const InsertionResult> insertion_result;
   };

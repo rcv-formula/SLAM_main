@@ -40,13 +40,18 @@ template <class SubmapType>
 mapping::TrajectoryBuilderInterface::LocalSlamResultCallback
 MapBuilderContext<SubmapType>::GetLocalSlamResultCallbackForSubscriptions() {
   return [this](int trajectory_id, common::Time time,
-                transform::Rigid3d local_pose, sensor::RangeData range_data,
+                transform::Rigid3d local_pose,
+                transform::Rigid3d published_local_pose,
+                sensor::RangeData range_data,
                 double scan_match_score, bool scan_match_score_valid,
+                std::string localization_health_state,
                 std::unique_ptr<
                     const mapping::TrajectoryBuilderInterface::InsertionResult>
                     insertion_result) {
+    (void)published_local_pose;
     (void)scan_match_score;
     (void)scan_match_score_valid;
+    (void)localization_health_state;
     auto it = client_ids_.find(trajectory_id);
     if (it == client_ids_.end()) {
       LOG(ERROR) << "Unknown trajectory_id " << trajectory_id << ". Ignoring.";

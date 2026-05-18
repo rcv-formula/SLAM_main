@@ -243,6 +243,10 @@ class PoseGraph2D : public PoseGraph {
   void UpdateTrajectoryConnectivity(const Constraint& constraint)
       EXCLUSIVE_LOCKS_REQUIRED(mutex_);
 
+  std::vector<Constraint> FilterVerifiedGlobalConstraints(
+      const constraints::ConstraintBuilder2D::Result& result)
+      EXCLUSIVE_LOCKS_REQUIRED(mutex_);
+
   const proto::PoseGraphOptions options_;
   GlobalSlamOptimizationCallback global_slam_optimization_callback_;
   PoseGraphInterface::LocalizationStatusCallback localization_status_callback_;
@@ -256,6 +260,14 @@ class PoseGraph2D : public PoseGraph {
   int relocalization_recovery_success_count_ GUARDED_BY(mutex_) = 0;
   common::Time relocalization_recovery_grace_until_ GUARDED_BY(mutex_) =
       common::Time::min();
+
+  struct PendingGlobalConstraint {
+    Constraint constraint;
+    transform::Rigid2d local_to_map_correction;
+    common::Time time;
+  };
+  std::vector<PendingGlobalConstraint> pending_global_constraints_
+      GUARDED_BY(mutex_);
 
   mutable absl::Mutex mutex_;
   absl::Mutex work_queue_mutex_;

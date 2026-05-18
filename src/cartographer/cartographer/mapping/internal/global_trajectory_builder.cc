@@ -86,6 +86,7 @@ class GlobalTrajectoryBuilder : public mapping::TrajectoryBuilderInterface {
           std::move(matching_result->range_data_in_local),
           matching_result->scan_match_score,
           matching_result->scan_match_score_valid,
+          matching_result->localization_health_state,
           std::move(insertion_result));
     }
   }

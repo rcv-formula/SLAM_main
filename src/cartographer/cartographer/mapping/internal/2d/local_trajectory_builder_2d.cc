@@ -400,7 +400,147 @@ bool LocalTrajectoryBuilder2D::IsLocalSlamOutlier(
       options_.outlier_medium_required_consecutive() > 0 &&
       consecutive_medium_outlier_count_ >=
           options_.outlier_medium_required_consecutive();
+  quality_metrics->hard_outlier = hard_outlier;
+  quality_metrics->sustained_medium_outlier = sustained_medium_outlier;
   return hard_outlier || sustained_medium_outlier;
+}
+
+std::string LocalTrajectoryBuilder2D::UpdateLocalizationHealthState(
+    const scan_matching::FrozenSubmapMatchResult2D& frozen_match_result,
+    const LocalSlamQualityMetrics& quality_metrics) {
+  constexpr double kCorrectionWarningRatio = 0.7;
+  constexpr int kUnstableRejectCount = 12;
+  constexpr int kLostHardOutlierCount = 80;
+  constexpr int kLostOutlierCount = 240;
+  constexpr int kRecoveryRequiredSuccesses = 3;
+
+  const auto previous_state = localization_health_state_;
+  if (quality_metrics.was_outlier) {
+    ++local_slam_outlier_streak_;
+  } else {
+    local_slam_outlier_streak_ = 0;
+  }
+  if (quality_metrics.hard_outlier) {
+    ++local_slam_hard_outlier_streak_;
+  } else {
+    local_slam_hard_outlier_streak_ = 0;
+  }
+
+  const auto& frozen_options = options_.frozen_submap_scan_matcher_options();
+  const bool frozen_matcher_active =
+      frozen_options.enabled() && frozen_match_result.attempted;
+  if (frozen_matcher_active) {
+    if (frozen_match_result.accepted) {
+      ++frozen_match_accept_streak_;
+      frozen_match_reject_streak_ = 0;
+    } else {
+      ++frozen_match_reject_streak_;
+      frozen_match_accept_streak_ = 0;
+    }
+  } else if (!frozen_options.enabled()) {
+    frozen_match_accept_streak_ = 0;
+    frozen_match_reject_streak_ = 0;
+  }
+
+  const double correction_warning_ratio =
+      kCorrectionWarningRatio;
+  const bool translation_correction_warning =
+      frozen_match_result.matched_submap_id.has_value() &&
+      frozen_options.max_translation_correction() > 0. &&
+      frozen_match_result.translation_correction >
+          correction_warning_ratio *
+              frozen_options.max_translation_correction();
+  const bool rotation_correction_warning =
+      frozen_match_result.matched_submap_id.has_value() &&
+      frozen_options.max_rotation_correction() > 0. &&
+      frozen_match_result.rotation_correction >
+          correction_warning_ratio * frozen_options.max_rotation_correction();
+  const bool frozen_warning =
+      translation_correction_warning || rotation_correction_warning;
+  if (frozen_matcher_active && frozen_warning) {
+    ++frozen_match_warning_streak_;
+  } else {
+    frozen_match_warning_streak_ = 0;
+  }
+  const bool unstable_signal =
+      quality_metrics.was_outlier ||
+      frozen_match_reject_streak_ >= kUnstableRejectCount ||
+      frozen_match_warning_streak_ >= kUnstableRejectCount;
+  const bool lost_signal =
+      local_slam_hard_outlier_streak_ >= kLostHardOutlierCount ||
+      local_slam_outlier_streak_ >= kLostOutlierCount;
+  const bool recovery_signal =
+      !quality_metrics.was_outlier && local_slam_outlier_streak_ == 0 &&
+      (!frozen_matcher_active ||
+       (frozen_match_result.accepted && !frozen_warning));
+
+  if (lost_signal) {
+    localization_health_state_ = "LOST";
+  } else if (!frozen_options.enabled() &&
+             (previous_state == "LOST" || previous_state == "RECOVERING")) {
+    localization_health_state_ =
+        local_slam_outlier_streak_ == 0 ? "GOOD" : "RECOVERING";
+  } else if (previous_state == "LOST" || previous_state == "RECOVERING") {
+    if (recovery_signal) {
+      localization_health_state_ =
+          frozen_match_accept_streak_ >= kRecoveryRequiredSuccesses
+              ? "GOOD"
+              : "RECOVERING";
+    } else if (lost_signal) {
+      localization_health_state_ = "LOST";
+    } else if (unstable_signal) {
+      localization_health_state_ = "UNSTABLE";
+    } else {
+      localization_health_state_ = "GOOD";
+    }
+  } else if (unstable_signal) {
+    localization_health_state_ = "UNSTABLE";
+  } else {
+    localization_health_state_ = "GOOD";
+  }
+
+  if (localization_health_state_ != previous_state) {
+    std::ostringstream stream;
+    stream << std::fixed << std::setprecision(4);
+    stream << "Localization health changed: " << previous_state << " -> "
+           << localization_health_state_
+           << " frozen_status="
+           << FrozenSubmapMatchStatusToString(frozen_match_result.status)
+           << " accepted=" << frozen_match_result.accepted
+           << " reject_streak=" << frozen_match_reject_streak_
+           << " accept_streak=" << frozen_match_accept_streak_
+           << " warning_streak=" << frozen_match_warning_streak_
+           << " outlier_streak=" << local_slam_outlier_streak_
+           << " hard_outlier_streak=" << local_slam_hard_outlier_streak_
+           << " hard_outlier=" << quality_metrics.hard_outlier
+           << " sustained_medium_outlier="
+           << quality_metrics.sustained_medium_outlier
+           << " local_residual=" << quality_metrics.translation_residual
+           << "m/" << RadiansToDegrees(quality_metrics.rotation_residual)
+           << "deg";
+    if (frozen_match_result.attempted) {
+      stream << " candidates="
+             << frozen_match_result.num_candidates_in_search_radius << "/"
+             << frozen_match_result.num_candidates_evaluated
+             << " score=" << frozen_match_result.best_score
+             << " margin="
+             << (frozen_match_result.best_score -
+                 frozen_match_result.second_best_score)
+             << " variance=" << frozen_match_result.top_k_score_variance
+             << " correction=" << frozen_match_result.translation_correction
+             << "m/"
+             << RadiansToDegrees(frozen_match_result.rotation_correction)
+             << "deg";
+    }
+    if (localization_health_state_ == "LOST" ||
+        localization_health_state_ == "UNSTABLE") {
+      LOG(WARNING) << stream.str();
+    } else {
+      LOG(INFO) << stream.str();
+    }
+  }
+
+  return localization_health_state_;
 }
 
 std::unique_ptr<LocalTrajectoryBuilder2D::MatchingResult>
@@ -548,6 +688,7 @@ LocalTrajectoryBuilder2D::AddAccumulatedRangeData(
   const bool publish_filtered_odom_test_mode =
       options_.frozen_submap_scan_matcher_options()
           .test_mode_publish_filtered_odom();
+  scan_matching::FrozenSubmapMatchResult2D frozen_match_result;
   if (options_.frozen_submap_scan_matcher_options().enabled() &&
       frozen_submap_data_provider_) {
     if (frozen_submap_scan_matcher_ == nullptr) {
@@ -555,7 +696,7 @@ LocalTrajectoryBuilder2D::AddAccumulatedRangeData(
           absl::make_unique<scan_matching::FrozenSubmapScanMatcher2D>(
               options_.frozen_submap_scan_matcher_options());
     }
-    const auto frozen_match_result = frozen_submap_scan_matcher_->Match(
+    frozen_match_result = frozen_submap_scan_matcher_->Match(
         frozen_submap_data_provider_(), *pose_estimate_2d,
         filtered_gravity_aligned_point_cloud);
     if (options_.frozen_submap_scan_matcher_options().tuning_log_enabled() &&
@@ -564,23 +705,26 @@ LocalTrajectoryBuilder2D::AddAccumulatedRangeData(
       MaybeLogFrozenSubmapTuningDetail(frozen_match_result);
       MaybeLogFrozenSubmapTuningSummary();
     }
-    if (frozen_match_result.accepted) {
-      published_pose_estimate_2d = frozen_match_result.filtered_tracking_to_local;
-      if (!publish_filtered_odom_test_mode &&
-          options_.frozen_submap_scan_matcher_options().apply_mode() ==
-          scan_matching::proto::FrozenSubmapScanMatcherOptions2D::
-              FULL_PIPELINE) {
-        pipeline_pose_estimate_2d =
-            frozen_match_result.filtered_tracking_to_local;
-      }
+  }
+  quality_metrics.was_outlier = IsLocalSlamOutlier(&quality_metrics);
+  const std::string localization_health_state =
+      UpdateLocalizationHealthState(frozen_match_result, quality_metrics);
+
+  if (frozen_match_result.accepted) {
+    published_pose_estimate_2d = frozen_match_result.filtered_tracking_to_local;
+    if (!publish_filtered_odom_test_mode &&
+        options_.frozen_submap_scan_matcher_options().apply_mode() ==
+            scan_matching::proto::FrozenSubmapScanMatcherOptions2D::
+                FULL_PIPELINE) {
+      pipeline_pose_estimate_2d = frozen_match_result.filtered_tracking_to_local;
     }
   }
+
   const transform::Rigid3d pipeline_pose_estimate =
       transform::Embed3D(pipeline_pose_estimate_2d) * gravity_alignment;
   const transform::Rigid3d published_pose_estimate =
       transform::Embed3D(published_pose_estimate_2d) * gravity_alignment;
   extrapolator_->AddPose(time, pipeline_pose_estimate);
-  quality_metrics.was_outlier = IsLocalSlamOutlier(&quality_metrics);
 
   sensor::RangeData range_data_in_local =
       TransformRangeData(gravity_aligned_range_data,
@@ -593,6 +737,9 @@ LocalTrajectoryBuilder2D::AddAccumulatedRangeData(
         << " translation_residual=" << quality_metrics.translation_residual
         << " rotation_residual=" << quality_metrics.rotation_residual
         << " num_filtered_points=" << quality_metrics.num_filtered_points
+        << " hard_outlier=" << quality_metrics.hard_outlier
+        << " sustained_medium_outlier="
+        << quality_metrics.sustained_medium_outlier
         << " medium_outlier_streak=" << quality_metrics.medium_outlier_streak;
   }
   std::unique_ptr<InsertionResult> insertion_result = InsertIntoSubmap(
@@ -632,6 +779,7 @@ LocalTrajectoryBuilder2D::AddAccumulatedRangeData(
                      quality_metrics,
                      latest_scan_match_score_,
                      latest_scan_match_score_valid_,
+                     localization_health_state,
                      std::move(insertion_result)});
 }
 

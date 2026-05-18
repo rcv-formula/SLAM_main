@@ -63,6 +63,7 @@ class TrajectoryBuilderInterface {
                          sensor::RangeData /* in local frame */,
                          double /* real-time correlative score */,
                          bool /* score valid */,
+                         std::string /* localization health state */,
                          std::unique_ptr<const InsertionResult>)>;
 
   struct SensorId {

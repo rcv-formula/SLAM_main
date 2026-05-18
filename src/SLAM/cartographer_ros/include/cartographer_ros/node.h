@@ -46,6 +46,7 @@
 #include "cartographer_ros_msgs/srv/write_state.hpp"
 #include "nav_msgs/msg/odometry.hpp"
 #include "std_msgs/msg/bool.hpp"
+#include "std_msgs/msg/string.hpp"
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/imu.hpp>
 #include <sensor_msgs/msg/laser_scan.hpp>
@@ -200,6 +201,8 @@ class Node {
   ::rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr scan_matched_point_cloud_publisher_;
   ::rclcpp::Publisher<::cartographer_ros_msgs::msg::ScanMatchScore>::SharedPtr scan_match_score_publisher_;
   ::rclcpp::Publisher<::std_msgs::msg::Bool>::SharedPtr localization_status_publisher_;
+  ::rclcpp::Publisher<::std_msgs::msg::String>::SharedPtr localization_health_publisher_;
+  ::rclcpp::Publisher<::visualization_msgs::msg::MarkerArray>::SharedPtr localization_health_marker_publisher_;
   // These ros service servers need to live for the lifetime of the node.
   ::rclcpp::Service<cartographer_ros_msgs::srv::SubmapQuery>::SharedPtr submap_query_server_;
   ::rclcpp::Service<cartographer_ros_msgs::srv::TrajectoryQuery>::SharedPtr trajectory_query_server;

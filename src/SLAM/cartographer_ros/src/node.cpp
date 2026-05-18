@@ -41,6 +41,8 @@
 #include "cartographer_ros_msgs/msg/status_code.hpp"
 #include "cartographer_ros_msgs/msg/status_response.hpp"
 #include "std_msgs/msg/bool.hpp"
+#include "std_msgs/msg/color_rgba.hpp"
+#include "std_msgs/msg/string.hpp"
 #include "geometry_msgs/msg/point_stamped.hpp"
 #include "glog/logging.h"
 #include "nav_msgs/msg/odometry.hpp"
@@ -85,6 +87,28 @@ std::string TrajectoryStateToString(const TrajectoryState trajectory_state) {
       return "DELETED";
   }
   return "";
+}
+
+std_msgs::msg::ColorRGBA ColorForLocalizationHealthState(
+    const std::string& state) {
+  std_msgs::msg::ColorRGBA color;
+  color.a = 1.0;
+  if (state == "GOOD") {
+    color.g = 1.0;
+  } else if (state == "UNSTABLE") {
+    color.r = 1.0;
+    color.g = 0.65;
+  } else if (state == "LOST") {
+    color.r = 1.0;
+  } else if (state == "RECOVERING") {
+    color.g = 0.8;
+    color.b = 1.0;
+  } else {
+    color.r = 1.0;
+    color.g = 1.0;
+    color.b = 1.0;
+  }
+  return color;
 }
 
 }  // namespace
@@ -137,6 +161,12 @@ Node::Node(
   localization_status_publisher_ =
       node_->create_publisher<std_msgs::msg::Bool>(
           kLocalizationStatusTopic, rclcpp::QoS(1).transient_local());
+  localization_health_publisher_ =
+      node_->create_publisher<std_msgs::msg::String>(
+          kLocalizationHealthTopic, 10);
+  localization_health_marker_publisher_ =
+      node_->create_publisher<::visualization_msgs::msg::MarkerArray>(
+          kLocalizationHealthMarkerTopic, 10);
 
   // Wire localization status callback from pose graph
   map_builder_bridge_->GetPoseGraph()->SetLocalizationStatusCallback(
@@ -376,6 +406,35 @@ void Node::PublishLocalTrajectoryData() {
     }
     const Rigid3d filtered_tracking_to_map =
         trajectory_data.local_to_map * published_tracking_to_local;
+
+    if (localization_health_publisher_->get_subscription_count() > 0) {
+      std_msgs::msg::String msg;
+      msg.data = trajectory_data.local_slam_data->localization_health_state;
+      localization_health_publisher_->publish(msg);
+    }
+
+    if (localization_health_marker_publisher_->get_subscription_count() > 0) {
+      visualization_msgs::msg::MarkerArray marker_array;
+      visualization_msgs::msg::Marker marker;
+      marker.header.frame_id = node_options_.map_frame;
+      marker.header.stamp = stamped_transform.header.stamp;
+      marker.ns = "localization_health";
+      marker.id = entry.first;
+      marker.type = visualization_msgs::msg::Marker::TEXT_VIEW_FACING;
+      marker.action = visualization_msgs::msg::Marker::ADD;
+      marker.pose = ToGeometryMsgPose(filtered_tracking_to_map);
+      marker.pose.position.z += 1.0;
+      marker.pose.orientation.x = 0.0;
+      marker.pose.orientation.y = 0.0;
+      marker.pose.orientation.z = 0.0;
+      marker.pose.orientation.w = 1.0;
+      marker.scale.z = 0.45;
+      marker.color = ColorForLocalizationHealthState(
+          trajectory_data.local_slam_data->localization_health_state);
+      marker.text = trajectory_data.local_slam_data->localization_health_state;
+      marker_array.markers.push_back(marker);
+      localization_health_marker_publisher_->publish(marker_array);
+    }
 
     if (trajectory_data.published_to_tracking != nullptr) {
       if (node_options_.publish_to_tf) {
