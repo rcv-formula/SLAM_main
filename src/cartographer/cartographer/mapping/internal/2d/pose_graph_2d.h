@@ -155,6 +155,8 @@ class PoseGraph2D : public PoseGraph {
       PoseGraphInterface::GlobalSlamOptimizationCallback callback) override;
   void SetLocalizationStatusCallback(
       PoseGraphInterface::LocalizationStatusCallback callback) override;
+  void ForceRelocalization(int trajectory_id,
+                           const std::string& reason) override;
   transform::Rigid3d GetInterpolatedGlobalTrajectoryPose(
       int trajectory_id, const common::Time time) const
       EXCLUSIVE_LOCKS_REQUIRED(mutex_);

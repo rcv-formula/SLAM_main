@@ -18,6 +18,7 @@
 #define CARTOGRAPHER_MAPPING_POSE_GRAPH_INTERFACE_H_
 
 #include <chrono>
+#include <string>
 #include <vector>
 
 #include "absl/types/optional.h"
@@ -167,6 +168,11 @@ class PoseGraphInterface {
   // Only meaningful in pure localization mode.
   virtual void SetLocalizationStatusCallback(
       LocalizationStatusCallback callback) {}
+
+  // Forces pure localization to re-enter the global localization path.
+  // Implementations may ignore this outside localization mode.
+  virtual void ForceRelocalization(int trajectory_id,
+                                   const std::string& reason) {}
 };
 
 }  // namespace mapping

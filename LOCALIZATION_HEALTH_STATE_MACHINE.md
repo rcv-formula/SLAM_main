@@ -12,7 +12,8 @@
 /localization_health_marker  RViz TEXT_VIEW_FACING marker
 ```
 
-RViz marker에는 상태 텍스트만 표시합니다.
+RViz marker와 `/localization_health`에는 최종 localization 상태를 표시합니다.
+최종 상태는 local SLAM health와 pose graph localization status를 합성합니다.
 
 ```text
 GOOD
@@ -20,6 +21,22 @@ UNSTABLE
 LOST
 RECOVERING
 ```
+
+합성 규칙:
+
+```text
+pose graph localization_status == LOST
+  -> localization_health = LOST
+
+local SLAM health == LOST
+  -> localization_health = LOST
+
+그 외
+  -> localization_health = local SLAM health
+```
+
+따라서 local scan matching이 자기 submap 기준으로 안정적이어도, frozen map과
+아직 연결되지 않은 상태라면 RViz와 `/localization_health`는 `LOST`로 표시합니다.
 
 상세 원인, score, margin, correction, streak 값은 RViz가 아니라 상태 전이
 로그로 확인합니다.
@@ -48,10 +65,11 @@ GOOD / RECOVERING   LOG(INFO)
 
 ## Runtime 영향
 
-상태 머신은 pose, extrapolator, submap insertion, frozen matcher correction,
-pose graph optimization에 개입하지 않습니다.
+상태 머신은 pose, extrapolator, submap insertion, frozen matcher correction에는
+직접 개입하지 않습니다.
 
-즉 상태가 `LOST`가 되어도 아래 동작은 기존 Cartographer 흐름 그대로입니다.
+즉 상태가 `LOST`가 되어도 아래 local SLAM 동작은 기존 Cartographer 흐름
+그대로입니다.
 
 ```text
 scan matching 결과 publish
@@ -62,7 +80,24 @@ FULL_PIPELINE 적용
 pose graph node 생성
 ```
 
-이 문서는 상태를 어떻게 계산하고 확인하는지만 설명합니다.
+단, local SLAM health가 `LOST`로 전이되면 pose graph에 강제
+relocalization 요청을 보냅니다. 이 요청은 local pose를 즉시 되돌리지 않고,
+pose graph 상태만 `kLost`로 전환하여 initial localization과 같은 frozen map
+global localization 경로를 다시 사용하게 합니다.
+
+동작:
+
+```text
+local SLAM health: GOOD/UNSTABLE/RECOVERING -> LOST
+  -> PoseGraph::ForceRelocalization()
+  -> pose graph localization_status = kLost
+  -> pending frozen-map global constraint 초기화
+  -> 이후 frozen map global constraint 탐색을 initial localization 방식으로 수행
+  -> 일관된 constraint가 확인되면 optimization에 반영
+```
+
+처음부터 `LOST`인 경우에는 별도 강제 요청을 보내지 않습니다. pose graph는
+초기 상태가 이미 `kLost`이므로 initial localization 경로를 사용합니다.
 
 단, frozen map과 새 trajectory 사이의 global constraint는 false attach 방지를
 위해 pose graph에 들어가기 전에 별도 검증을 거칩니다. 이 검증은 상태 표시가

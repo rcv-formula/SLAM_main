@@ -1572,6 +1572,33 @@ void PoseGraph2D::SetLocalizationStatusCallback(
   }
 }
 
+void PoseGraph2D::ForceRelocalization(const int trajectory_id,
+                                      const std::string& reason) {
+  PoseGraphInterface::LocalizationStatusCallback callback;
+  bool fire_callback = false;
+  {
+    absl::MutexLock locker(&mutex_);
+    if (data_.trajectories_state.count(trajectory_id) == 0 ||
+        IsTrajectoryFrozen(trajectory_id)) {
+      return;
+    }
+    pending_global_constraints_.clear();
+    relocalization_recovery_success_count_ = 0;
+    relocalization_recovery_grace_until_ = common::Time::min();
+    last_frozen_constraint_time_ = common::Time::min();
+    if (localization_status_ != LocalizationStatus::kLost) {
+      localization_status_ = LocalizationStatus::kLost;
+      callback = localization_status_callback_;
+      fire_callback = true;
+    }
+  }
+  LOG(WARNING) << "Forced relocalization for trajectory " << trajectory_id
+               << ": " << reason;
+  if (fire_callback && callback) {
+    callback(PoseGraphInterface::LocalizationStatus::kLost);
+  }
+}
+
 void PoseGraph2D::RegisterMetrics(metrics::FamilyFactory* family_factory) {
   auto* latency = family_factory->NewGaugeFamily(
       "mapping_2d_pose_graph_work_queue_delay",

@@ -554,8 +554,23 @@ void MapBuilderBridge::OnLocalSlamResult(
                                              scan_match_score,
                                              scan_match_score_valid,
                                              localization_health_state});
-  absl::MutexLock lock(&mutex_);
-  local_slam_data_[trajectory_id] = std::move(local_slam_data);
+  bool force_relocalization = false;
+  {
+    absl::MutexLock lock(&mutex_);
+    const auto previous_health_state =
+        last_localization_health_state_.find(trajectory_id);
+    force_relocalization =
+        localization_health_state == "LOST" &&
+        previous_health_state != last_localization_health_state_.end() &&
+        previous_health_state->second != "LOST";
+    last_localization_health_state_[trajectory_id] =
+        localization_health_state;
+    local_slam_data_[trajectory_id] = std::move(local_slam_data);
+  }
+  if (force_relocalization) {
+    map_builder_->pose_graph()->ForceRelocalization(
+        trajectory_id, "localization_health transitioned to LOST");
+  }
 }
 
 }  // namespace cartographer_ros

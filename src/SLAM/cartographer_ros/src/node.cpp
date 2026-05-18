@@ -111,6 +111,14 @@ std_msgs::msg::ColorRGBA ColorForLocalizationHealthState(
   return color;
 }
 
+std::string ComposeLocalizationHealthState(const std::string& local_state,
+                                           const bool pose_graph_lost) {
+  if (pose_graph_lost || local_state == "LOST") {
+    return "LOST";
+  }
+  return local_state;
+}
+
 }  // namespace
 
 Node::Node(
@@ -406,10 +414,14 @@ void Node::PublishLocalTrajectoryData() {
     }
     const Rigid3d filtered_tracking_to_map =
         trajectory_data.local_to_map * published_tracking_to_local;
+    const std::string localization_health_state =
+        ComposeLocalizationHealthState(
+            trajectory_data.local_slam_data->localization_health_state,
+            pose_graph_localization_lost_.load());
 
     if (localization_health_publisher_->get_subscription_count() > 0) {
       std_msgs::msg::String msg;
-      msg.data = trajectory_data.local_slam_data->localization_health_state;
+      msg.data = localization_health_state;
       localization_health_publisher_->publish(msg);
     }
 
@@ -429,9 +441,8 @@ void Node::PublishLocalTrajectoryData() {
       marker.pose.orientation.z = 0.0;
       marker.pose.orientation.w = 1.0;
       marker.scale.z = 0.45;
-      marker.color = ColorForLocalizationHealthState(
-          trajectory_data.local_slam_data->localization_health_state);
-      marker.text = trajectory_data.local_slam_data->localization_health_state;
+      marker.color = ColorForLocalizationHealthState(localization_health_state);
+      marker.text = localization_health_state;
       marker_array.markers.push_back(marker);
       localization_health_marker_publisher_->publish(marker_array);
     }
@@ -1055,6 +1066,7 @@ void Node::OnLocalizationStatusChanged(
     carto::mapping::PoseGraphInterface::LocalizationStatus status) {
   const bool lost =
       (status == carto::mapping::PoseGraphInterface::LocalizationStatus::kLost);
+  pose_graph_localization_lost_.store(lost);
   LOG(WARNING) << "Localization status: " << (lost ? "LOST" : "GOOD");
   std_msgs::msg::Bool msg;
   msg.data = lost;

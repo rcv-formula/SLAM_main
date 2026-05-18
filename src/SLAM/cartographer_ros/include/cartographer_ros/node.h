@@ -17,6 +17,7 @@
 #ifndef CARTOGRAPHER_ROS_CARTOGRAPHER_ROS_NODE_H
 #define CARTOGRAPHER_ROS_CARTOGRAPHER_ROS_NODE_H
 
+#include <atomic>
 #include <map>
 #include <memory>
 #include <set>
@@ -203,6 +204,7 @@ class Node {
   ::rclcpp::Publisher<::std_msgs::msg::Bool>::SharedPtr localization_status_publisher_;
   ::rclcpp::Publisher<::std_msgs::msg::String>::SharedPtr localization_health_publisher_;
   ::rclcpp::Publisher<::visualization_msgs::msg::MarkerArray>::SharedPtr localization_health_marker_publisher_;
+  std::atomic<bool> pose_graph_localization_lost_{true};
   // These ros service servers need to live for the lifetime of the node.
   ::rclcpp::Service<cartographer_ros_msgs::srv::SubmapQuery>::SharedPtr submap_query_server_;
   ::rclcpp::Service<cartographer_ros_msgs::srv::TrajectoryQuery>::SharedPtr trajectory_query_server;
