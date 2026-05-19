@@ -1,0 +1,23 @@
+Straight stability report: metrics_data/straight_stability_20260518_232344_ver5base_imu06/local_quality.csv
+========================================================================
+score: 0.0 / 100
+straight rows: 4287 / 7872 (54.5%), segments: 29
+
+Stability metrics, lower is better
+  lateral step p95/rms/max: 0.0304 / 0.0139 / 0.0995 m
+  yaw step p95/rms/max: 0.00363 / 0.00289 / 0.14718 rad
+  step length p95/max: 0.0652 / 3.8394 m
+  backward step ratio: 30.17%
+  prediction correction p95/rms/max: 0.0363 / 0.0171 / 0.1847 m
+  prediction yaw correction p95: 0.00367 rad
+  fitted-line residual p95/rms/max: 0.2704 / 0.1175 / 0.4082 m
+
+Score penalties
+  backward: -20.0
+  jump: -8.2
+  lateral_step: -25.4
+  line_residual: -40.0
+  prediction_correction: -11.3
+  yaw_step: -7.3
+
+Wrote JSON: metrics_data/straight_stability_20260518_232344_ver5base_imu06/straight_stability.json

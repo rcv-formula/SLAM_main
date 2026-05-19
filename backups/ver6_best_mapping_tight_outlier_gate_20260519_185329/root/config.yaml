@@ -1,0 +1,102 @@
+# cartographer_node가 시작할 때 한 번 읽습니다.
+# 값을 바꾼 뒤에는 launch만 다시 시작하면 됩니다. C++ 재빌드는 필요 없습니다.
+
+# 로컬 위치 이동량 예측에서 IMU 속도 변화량을 얼마나 반영할지 정합니다.
+# 현재 의미: 스캔/로컬 포즈 속도 + 0.2 * IMU 속도 변화량.
+imu_weight: 0.2
+
+# IMU 속도 변화량을 버릴지 판단하는 기준입니다.
+# 적분된 IMU 속도 변화량의 크기가 이 값보다 크면 튄 값으로 보고 무시합니다.
+imu_delta_min: 0.3
+
+# 로컬 위치 이동량 예측에서 휠 오돔 보정을 얼마나 반영할지 정합니다.
+# 현재 테스트는 wheel odom을 믿지 않고 Cartographer scan+IMU 쪽만 보정합니다.
+# 이 값은 휠 yaw(회전각)를 켜는 값이 아닙니다.
+wheelodom_weight: 0.0
+
+# 특징점이 부족한 긴 직선 구간에서만 자동으로 켜지는 매핑 보수 모드입니다.
+# scan point cloud가 한 방향으로 길게 늘어진 상태가 enter_streak만큼 지속되면 켜지고,
+# 특징이 돌아오면 exit_streak 뒤에 꺼집니다.
+adaptive_straight_enabled: 1
+adaptive_straight_eigen_ratio_threshold: 6.6
+adaptive_straight_min_points: 180
+adaptive_straight_min_score: 0.20
+adaptive_straight_max_score: 0.98
+adaptive_straight_enter_streak: 4
+adaptive_straight_exit_streak: 12
+
+# 보수 모드에서도 wheel odom 보정은 끕니다.
+# 이번 테스트는 Cartographer 내부 scan+IMU와 step limiter만 사용합니다.
+featureless_max_scan_to_odom_ratio: 100.0
+featureless_wheelodom_weight: 0.0
+featureless_imu_weight: 1.00
+
+# 최종 scan pose는 ver5 기준을 유지하되, 직선 구간에서만 IMU prediction을 섞습니다.
+# 긴 직선에서 scan matcher가 진행 방향으로 너무 앞에 붙는 현상을 막기 위해
+# 진행 방향 scan 보정은 작게 받고, lateral/yaw 보정은 유지합니다.
+featureless_scan_longitudinal_blend: 0.68
+featureless_scan_lateral_blend: 0.66
+featureless_scan_yaw_blend: 0.70
+
+# 직선 모드 중이라도 곡선/복귀 구간처럼 scan correction이 커지는 순간에는
+# scan을 더 믿어서 벽/곡선에 다시 붙입니다.
+featureless_curve_translation_residual_threshold: 999.0
+featureless_curve_rotation_residual_threshold: 999.0
+featureless_curve_scan_longitudinal_blend: 0.68
+featureless_curve_scan_lateral_blend: 0.66
+featureless_curve_scan_yaw_blend: 0.70
+
+featureless_max_step_m: 0.076
+
+# 직선/특징 부족 구간에 들어간 첫 LiDAR scan correction을 anchor로 잡고,
+# 그 구간 동안 이후 scan correction 대신 같은 correction을 유지합니다.
+# 직선 초반 첫 scan은 맞고 이후 다시 맞추면서 흔들릴 때 켭니다.
+featureless_entry_scan_anchor_enabled: 0
+
+# anchor처럼 첫 correction에 고정하지 않고, 직선 구간에서 scan correction만
+# low-pass 합니다. 0.30은 새 scan correction 30%, 이전 correction 70% 반영입니다.
+featureless_scan_correction_lpf_enabled: 1
+featureless_scan_correction_lpf_alpha: 0.23
+featureless_scan_correction_lpf_max_update_m: 0.0
+featureless_scan_correction_lpf_max_update_yaw: 0.0
+
+# 포즈 그래프에서 휠 오돔 이동 잔차에 주는 가중치입니다.
+# 값을 키우면 전역 최적화가 휠 이동량을 더 강하게 따라갑니다.
+# 기존 good setting 기준값입니다.
+odometry_translation_weight: 1000.0
+
+# 포즈 그래프에서 휠 오돔 각도/yaw 잔차에 주는 가중치입니다.
+# 현재 값 0.0은 휠 yaw가 불안정해서 직접 yaw 잔차를 끈 상태입니다.
+odometry_rotation_weight: 0.0
+
+# 전역 매칭/포즈 그래프 튜닝값입니다.
+# 0312 기준 pure_wheel locked 값은 PURE_WHEEL_LOCALIZATION_LOCKED_PARAMS.md에 보관했습니다.
+# Recovery trial: 평소 안정값은 유지하고, 깨졌을 때 다시 붙는 속도를 높이기 위해
+# global 후보 탐색 범위와 샘플링만 넓힙니다.
+global_localization_min_score: 0.62
+constraint_min_score: 0.95
+global_constraint_search_after_n_seconds: 0
+max_submaps_to_keep: 5
+global_linear_search_window: 0.12
+global_angular_search_window_deg: 3.0
+global_sampling_ratio: 0.012
+constraint_builder_sampling_ratio: 0.90
+loop_closure_translation_weight: 100.0
+loop_closure_rotation_weight: 100.0
+max_constraint_distance: 15.0
+optimize_every_n_nodes: 1
+
+# pure_wheel은 안정된 pure_launch의 scan matcher 값을 기준으로 맞춥니다.
+# wheel odom은 위의 약한 prior로만 보조하고, scan matching 자체는 pure_launch와 같은
+# 보수적인 search/constraint 조건을 사용합니다.
+ceres_occupied_space_weight: 15.0
+ceres_translation_weight: 30.0
+ceres_rotation_weight: 30.0
+
+# Outlier 기준 테스트값.
+outlier_max_translation_residual: 0.075
+outlier_max_rotation_residual: 0.015
+outlier_required_failures: 1
+outlier_medium_translation_residual: 0.045
+outlier_medium_rotation_residual: 0.009
+outlier_medium_required_consecutive: 2

@@ -1,0 +1,23 @@
+Straight stability report: /home/symoon/Desktop/F1/Local_SLAM_Complete/local_SLAM_imu_wheel_ver6/metrics_data/straight_stability_20260518_232425/local_quality.csv
+========================================================================
+score: 0.0 / 100
+straight rows: 2403 / 4366 (55.0%), segments: 16
+
+Stability metrics, lower is better
+  lateral step p95/rms/max: 0.0299 / 0.0134 / 0.0674 m
+  yaw step p95/rms/max: 0.00352 / 0.00176 / 0.00860 rad
+  step length p95/max: 0.0626 / 0.2983 m
+  backward step ratio: 31.88%
+  prediction correction p95/rms/max: 0.0388 / 0.0193 / 0.1525 m
+  prediction yaw correction p95: 0.00358 rad
+  fitted-line residual p95/rms/max: 0.3220 / 0.1360 / 0.4303 m
+
+Score penalties
+  backward: -20.0
+  jump: -7.8
+  lateral_step: -24.9
+  line_residual: -40.0
+  prediction_correction: -12.1
+  yaw_step: -7.0
+
+Wrote JSON: /home/symoon/Desktop/F1/Local_SLAM_Complete/local_SLAM_imu_wheel_ver6/metrics_data/straight_stability_20260518_232425/straight_stability.json
