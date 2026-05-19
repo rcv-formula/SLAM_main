@@ -125,6 +125,7 @@ class ClientServerTestBase : public T {
     number_of_insertion_results_ = 0;
     local_slam_result_callback_ =
         [this](int, common::Time, transform::Rigid3d local_pose,
+               transform::Rigid3d, bool, bool,
                sensor::RangeData,
                std::unique_ptr<
                    const mapping::TrajectoryBuilderInterface::InsertionResult>

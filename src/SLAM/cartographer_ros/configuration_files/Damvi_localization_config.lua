@@ -96,6 +96,7 @@ TRAJECTORY_BUILDER_2D.frozen_submap_scan_matcher.enabled = false
 -- 보정된 pose를 어디까지 반영할지 정합니다.
 -- "FULL_PIPELINE": local SLAM 내부 pose, extrapolator, submap 삽입, publish까지 모두 반영
 -- "PUBLISH_ONLY": 내부 local SLAM은 기존 pose 유지, 최종 publish/odom 성격의 pose만 보정
+-- "OFFSET_DECAY": threshold를 통과한 frozen 보정량을 offset으로 저장하고 시간/거리 기준으로 서서히 줄이며 publish pose에만 반영
 TRAJECTORY_BUILDER_2D.frozen_submap_scan_matcher.apply_mode = "FULL_PIPELINE"
 
 -- 현재 map pose 주변에서 frozen submap 후보를 찾는 반경입니다. 단위는 m입니다.
@@ -122,6 +123,21 @@ TRAJECTORY_BUILDER_2D.frozen_submap_scan_matcher.max_translation_correction = 0.
 -- raw local pose 대비 frozen 보정 rotation이 이 값보다 크면 버립니다. 단위는 rad입니다.
 TRAJECTORY_BUILDER_2D.frozen_submap_scan_matcher.max_rotation_correction = math.rad(0.40)
 
+-- OFFSET_DECAY 모드에서 현재 반영 중인 offset이 새 target offset으로 매 scan 이동하는 비율입니다.
+-- 0이면 offset을 갱신하지 않고, 1이면 accepted match의 offset을 즉시 모두 반영합니다.
+TRAJECTORY_BUILDER_2D.frozen_submap_scan_matcher.offset_decay_blend_alpha = 0.10
+
+-- OFFSET_DECAY 모드에서 시간이 지날수록 offset을 지수적으로 줄이는 time constant(sec)입니다.
+-- 0이면 시간 기반 decay를 끕니다.
+TRAJECTORY_BUILDER_2D.frozen_submap_scan_matcher.offset_decay_time_constant_sec = 5.0
+
+-- OFFSET_DECAY 모드에서 raw local pose가 이동한 거리만큼 offset을 지수적으로 줄이는 distance constant(m)입니다.
+-- 0이면 거리 기반 decay를 끕니다.
+TRAJECTORY_BUILDER_2D.frozen_submap_scan_matcher.offset_decay_distance_constant_m = 2.0
+
+-- pose graph global optimization이 끝나 local_to_map이 갱신되면 OFFSET_DECAY offset을 초기화할지 정합니다.
+TRAJECTORY_BUILDER_2D.frozen_submap_scan_matcher.offset_decay_reset_on_global_optimization = true
+
 -- frozen 후보를 찾을 때 Real-Time Correlative Scan Matcher를 먼저 사용할지 정합니다.
 TRAJECTORY_BUILDER_2D.frozen_submap_scan_matcher.use_realtime_correlative_scan_matching = true
 
@@ -132,6 +148,11 @@ TRAJECTORY_BUILDER_2D.frozen_submap_scan_matcher.use_ceres_scan_matching = true
 -- true면 frozen matcher는 내부적으로 항상 PUBLISH_ONLY처럼 동작하고,
 -- 기존 /odom 경로는 raw pose 기준으로 유지하면서 /filtered_odom 비교 경로를 따로 제공합니다.
 TRAJECTORY_BUILDER_2D.frozen_submap_scan_matcher.test_mode_publish_filtered_odom = false
+
+-- /filtered_odom 출력 방식입니다.
+-- false면 매 publish 주기마다 계속 내보내며, 점수 threshold를 넘지 못한 frozen 후보도 표시합니다.
+-- true면 threshold를 통과해 offset 계산에 실제로 쓰이는 accepted frozen 결과가 새로 생긴 순간에만 간헐적으로 내보냅니다.
+TRAJECTORY_BUILDER_2D.frozen_submap_scan_matcher.filtered_odom_publish_only_on_accept = false
 
 -- frozen matcher 튜닝용 로그 전체 on/off입니다.
 TRAJECTORY_BUILDER_2D.frozen_submap_scan_matcher.tuning_log_enabled = false

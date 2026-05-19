@@ -23,6 +23,7 @@
 #include <functional>
 #include <memory>
 
+#include "absl/types/optional.h"
 #include "cartographer/common/time.h"
 #include "cartographer/mapping/2d/submap_2d.h"
 #include "cartographer/mapping/internal/2d/scan_matching/ceres_scan_matcher_2d.h"
@@ -55,6 +56,8 @@ class LocalTrajectoryBuilder2D {
     common::Time time;
     transform::Rigid3d local_pose;
     transform::Rigid3d published_local_pose;
+    bool frozen_match_candidate_available = false;
+    bool frozen_match_accepted = false;
     sensor::RangeData range_data_in_local;
     // 'nullptr' if dropped by the motion filter.
     std::unique_ptr<const InsertionResult> insertion_result;
@@ -133,7 +136,6 @@ class LocalTrajectoryBuilder2D {
   void MaybeLogFrozenSubmapTuningDetail(
       const scan_matching::FrozenSubmapMatchResult2D& result) const;
   void MaybeLogFrozenSubmapTuningSummary();
-
   const proto::LocalTrajectoryBuilderOptions2D options_;
   ActiveSubmaps2D active_submaps_;
 

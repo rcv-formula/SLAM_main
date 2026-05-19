@@ -83,6 +83,8 @@ class GlobalTrajectoryBuilder : public mapping::TrajectoryBuilderInterface {
       local_slam_result_callback_(
           trajectory_id_, matching_result->time, matching_result->local_pose,
           matching_result->published_local_pose,
+          matching_result->frozen_match_candidate_available,
+          matching_result->frozen_match_accepted,
           std::move(matching_result->range_data_in_local),
           std::move(insertion_result));
     }

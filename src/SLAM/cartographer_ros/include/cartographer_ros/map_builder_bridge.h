@@ -57,6 +57,8 @@ class MapBuilderBridge {
       ::cartographer::common::Time time;
       ::cartographer::transform::Rigid3d local_pose;
       ::cartographer::transform::Rigid3d published_local_pose;
+      bool frozen_match_candidate_available = false;
+      bool frozen_match_accepted = false;
       ::cartographer::sensor::RangeData range_data_in_local;
     };
     std::shared_ptr<const LocalSlamData> local_slam_data;
@@ -109,6 +111,8 @@ class MapBuilderBridge {
                          const ::cartographer::transform::Rigid3d local_pose,
                          const ::cartographer::transform::Rigid3d
                              published_local_pose,
+                         bool frozen_match_candidate_available,
+                         bool frozen_match_accepted,
                          ::cartographer::sensor::RangeData range_data_in_local)
       LOCKS_EXCLUDED(mutex_);
 

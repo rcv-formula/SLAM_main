@@ -17,6 +17,7 @@
 #ifndef CARTOGRAPHER_ROS_CARTOGRAPHER_ROS_NODE_H
 #define CARTOGRAPHER_ROS_CARTOGRAPHER_ROS_NODE_H
 
+#include <cstdint>
 #include <map>
 #include <memory>
 #include <set>
@@ -25,9 +26,13 @@
 #include <vector>
 
 #include "absl/synchronization/mutex.h"
+#include "absl/types/optional.h"
 #include "cartographer/common/fixed_ratio_sampler.h"
+#include "cartographer/common/time.h"
 #include "cartographer/mapping/map_builder_interface.h"
 #include "cartographer/mapping/pose_extrapolator.h"
+#include "cartographer/mapping/proto/scan_matching/frozen_submap_scan_matcher_options_2d.pb.h"
+#include "cartographer/transform/rigid_transform.h"
 #include "cartographer_ros/map_builder_bridge.h"
 #include "cartographer_ros/metrics/family_factory.h"
 #include "cartographer_ros/node_constants.h"
@@ -162,6 +167,14 @@ class Node {
   void AddExtrapolator(int trajectory_id, const TrajectoryOptions& options);
   void AddSensorSamplers(int trajectory_id, const TrajectoryOptions& options);
   void PublishLocalTrajectoryData();
+  cartographer::transform::Rigid3d ComputeOffsetTrackingToMap(
+      int trajectory_id, cartographer::common::Time time,
+      const cartographer::transform::Rigid3d& raw_tracking_to_map,
+      const cartographer::transform::Rigid3d& filtered_tracking_to_map,
+      bool has_new_offset_target,
+      const cartographer::transform::Rigid3d& local_to_map,
+      const cartographer::mapping::scan_matching::proto::
+          FrozenSubmapScanMatcherOptions2D& frozen_options);
   void PublishTrajectoryNodeList();
   void PublishLandmarkPosesList();
   void PublishConstraintList();
@@ -192,6 +205,7 @@ class Node {
   ::rclcpp::Publisher<::visualization_msgs::msg::MarkerArray>::SharedPtr constraint_list_publisher_;
   ::rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr tracked_pose_publisher_;
   ::rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr filtered_tracked_pose_publisher_;
+  ::rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr offset_tracked_pose_publisher_;
   ::rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr scan_matched_point_cloud_publisher_;
   // These ros service servers need to live for the lifetime of the node.
   ::rclcpp::Service<cartographer_ros_msgs::srv::SubmapQuery>::SharedPtr submap_query_server_;
@@ -225,6 +239,16 @@ class Node {
   // These are keyed with 'trajectory_id'.
   std::map<int, ::cartographer::mapping::PoseExtrapolator> extrapolators_;
   std::map<int, ::cartographer::mapping::PoseExtrapolator> raw_extrapolators_;
+  struct OffsetOdomState {
+    cartographer::transform::Rigid2d current_offset =
+        cartographer::transform::Rigid2d::Identity();
+    cartographer::transform::Rigid2d target_offset =
+        cartographer::transform::Rigid2d::Identity();
+    absl::optional<cartographer::common::Time> last_time;
+    absl::optional<cartographer::transform::Rigid2d> last_raw_tracking_to_map;
+    absl::optional<cartographer::transform::Rigid2d> last_local_to_map;
+  };
+  std::map<int, OffsetOdomState> offset_odom_states_;
   std::map<int, builtin_interfaces::msg::Time> last_published_tf_stamps_;
   std::unordered_map<int, TrajectorySensorSamplers> sensor_samplers_;
   std::unordered_map<int, std::vector<Subscriber>> subscribers_;

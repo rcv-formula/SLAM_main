@@ -66,6 +66,10 @@ TRAJECTORY_BUILDER_2D = {
     min_score_variance = 0.0004,
     max_translation_correction = 0.20,
     max_rotation_correction = math.rad(3.0),
+    offset_decay_blend_alpha = 0.10,
+    offset_decay_time_constant_sec = 5.0,
+    offset_decay_distance_constant_m = 2.0,
+    offset_decay_reset_on_global_optimization = true,
     real_time_correlative_scan_matcher = {
       linear_search_window = 0.15,
       angular_search_window = math.rad(3.0),
@@ -89,6 +93,7 @@ TRAJECTORY_BUILDER_2D = {
     tuning_log_summary_every_n_scans = 100,
     tuning_log_top_candidates = 3,
     test_mode_publish_filtered_odom = false,
+    filtered_odom_publish_only_on_accept = false,
   },
 
   motion_filter = {

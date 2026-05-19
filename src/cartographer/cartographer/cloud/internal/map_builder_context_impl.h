@@ -40,7 +40,10 @@ template <class SubmapType>
 mapping::TrajectoryBuilderInterface::LocalSlamResultCallback
 MapBuilderContext<SubmapType>::GetLocalSlamResultCallbackForSubscriptions() {
   return [this](int trajectory_id, common::Time time,
-                transform::Rigid3d local_pose, sensor::RangeData range_data,
+                transform::Rigid3d local_pose,
+                transform::Rigid3d /* published_local_pose */,
+                bool /* frozen_match_candidate_available */,
+                bool /* frozen_match_accepted */, sensor::RangeData range_data,
                 std::unique_ptr<
                     const mapping::TrajectoryBuilderInterface::InsertionResult>
                     insertion_result) {

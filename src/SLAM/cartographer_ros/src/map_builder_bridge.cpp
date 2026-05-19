@@ -128,12 +128,16 @@ int MapBuilderBridge::AddTrajectory(
       [this](const int trajectory_id, const ::cartographer::common::Time time,
              const Rigid3d local_pose,
              const Rigid3d published_local_pose,
+             const bool frozen_match_candidate_available,
+             const bool frozen_match_accepted,
              ::cartographer::sensor::RangeData range_data_in_local,
              const std::unique_ptr<
                  const ::cartographer::mapping::TrajectoryBuilderInterface::
                      InsertionResult>) {
         OnLocalSlamResult(trajectory_id, time, local_pose,
-                          published_local_pose, range_data_in_local);
+                          published_local_pose,
+                          frozen_match_candidate_available,
+                          frozen_match_accepted, range_data_in_local);
       });
   LOG(INFO) << "Added trajectory with ID '" << trajectory_id << "'.";
 
@@ -538,11 +542,15 @@ void MapBuilderBridge::OnLocalSlamResult(
     const int trajectory_id, const ::cartographer::common::Time time,
     const Rigid3d local_pose,
     const Rigid3d published_local_pose,
+    const bool frozen_match_candidate_available,
+    const bool frozen_match_accepted,
     ::cartographer::sensor::RangeData range_data_in_local) {
   std::shared_ptr<const LocalTrajectoryData::LocalSlamData> local_slam_data =
       std::make_shared<LocalTrajectoryData::LocalSlamData>(
           LocalTrajectoryData::LocalSlamData{time, local_pose,
                                              published_local_pose,
+                                             frozen_match_candidate_available,
+                                             frozen_match_accepted,
                                              std::move(range_data_in_local)});
   absl::MutexLock lock(&mutex_);
   local_slam_data_[trajectory_id] = std::move(local_slam_data);
