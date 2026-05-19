@@ -42,6 +42,8 @@ MapBuilderContext<SubmapType>::GetLocalSlamResultCallbackForSubscriptions() {
   return [this](int trajectory_id, common::Time time,
                 transform::Rigid3d local_pose,
                 transform::Rigid3d published_local_pose,
+                bool frozen_match_candidate_available,
+                bool frozen_match_accepted,
                 sensor::RangeData range_data,
                 double scan_match_score, bool scan_match_score_valid,
                 std::string localization_health_state,
@@ -49,6 +51,8 @@ MapBuilderContext<SubmapType>::GetLocalSlamResultCallbackForSubscriptions() {
                     const mapping::TrajectoryBuilderInterface::InsertionResult>
                     insertion_result) {
     (void)published_local_pose;
+    (void)frozen_match_candidate_available;
+    (void)frozen_match_accepted;
     (void)scan_match_score;
     (void)scan_match_score_valid;
     (void)localization_health_state;

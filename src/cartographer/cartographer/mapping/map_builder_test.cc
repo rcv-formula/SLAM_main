@@ -146,6 +146,8 @@ class MapBuilderTestBase : public T {
     return [=](const int trajectory_id, const ::cartographer::common::Time time,
                const ::cartographer::transform::Rigid3d local_pose,
                const ::cartographer::transform::Rigid3d published_local_pose,
+               const bool /* frozen_match_candidate_available */,
+               const bool /* frozen_match_accepted */,
                ::cartographer::sensor::RangeData range_data_in_local,
                const double scan_match_score,
                const bool scan_match_score_valid,

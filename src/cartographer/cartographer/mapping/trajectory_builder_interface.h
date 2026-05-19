@@ -60,6 +60,8 @@ class TrajectoryBuilderInterface {
       std::function<void(int /* trajectory ID */, common::Time,
                          transform::Rigid3d /* pipeline/local pose estimate */,
                          transform::Rigid3d /* published/filtered pose estimate */,
+                         bool /* frozen match candidate available */,
+                         bool /* frozen match accepted */,
                          sensor::RangeData /* in local frame */,
                          double /* real-time correlative score */,
                          bool /* score valid */,

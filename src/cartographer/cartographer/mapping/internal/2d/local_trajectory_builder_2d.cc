@@ -77,6 +77,8 @@ const char* FrozenApplyModeToString(
       return "FULL_PIPELINE";
     case scan_matching::proto::FrozenSubmapScanMatcherOptions2D::PUBLISH_ONLY:
       return "PUBLISH_ONLY";
+    case scan_matching::proto::FrozenSubmapScanMatcherOptions2D::OFFSET_DECAY:
+      return "OFFSET_DECAY";
     default:
       return "UNKNOWN";
   }
@@ -685,40 +687,51 @@ LocalTrajectoryBuilder2D::AddAccumulatedRangeData(
   }
   transform::Rigid2d pipeline_pose_estimate_2d = *pose_estimate_2d;
   transform::Rigid2d published_pose_estimate_2d = *pose_estimate_2d;
+  bool frozen_match_candidate_available = false;
+  bool frozen_match_accepted = false;
+  const auto& frozen_options = options_.frozen_submap_scan_matcher_options();
   const bool publish_filtered_odom_test_mode =
-      options_.frozen_submap_scan_matcher_options()
-          .test_mode_publish_filtered_odom();
+      frozen_options.test_mode_publish_filtered_odom();
+  const bool filtered_odom_publish_only_on_accept =
+      frozen_options.filtered_odom_publish_only_on_accept();
   scan_matching::FrozenSubmapMatchResult2D frozen_match_result;
-  if (options_.frozen_submap_scan_matcher_options().enabled() &&
-      frozen_submap_data_provider_) {
+  if (frozen_options.enabled() && frozen_submap_data_provider_) {
     if (frozen_submap_scan_matcher_ == nullptr) {
       frozen_submap_scan_matcher_ =
           absl::make_unique<scan_matching::FrozenSubmapScanMatcher2D>(
-              options_.frozen_submap_scan_matcher_options());
+              frozen_options);
     }
+    const auto frozen_query_result = frozen_submap_data_provider_();
     frozen_match_result = frozen_submap_scan_matcher_->Match(
-        frozen_submap_data_provider_(), *pose_estimate_2d,
+        frozen_query_result, *pose_estimate_2d,
         filtered_gravity_aligned_point_cloud);
-    if (options_.frozen_submap_scan_matcher_options().tuning_log_enabled() &&
-        frozen_match_result.attempted) {
+    if (frozen_options.tuning_log_enabled() && frozen_match_result.attempted) {
       AccumulateFrozenSubmapTuningStats(frozen_match_result);
       MaybeLogFrozenSubmapTuningDetail(frozen_match_result);
       MaybeLogFrozenSubmapTuningSummary();
+    }
+    frozen_match_candidate_available =
+        frozen_match_result.matched_submap_id.has_value();
+    frozen_match_accepted = frozen_match_result.accepted;
+    const bool should_publish_frozen_candidate =
+        frozen_match_candidate_available &&
+        (frozen_match_accepted ||
+         (publish_filtered_odom_test_mode &&
+          !filtered_odom_publish_only_on_accept));
+    if (should_publish_frozen_candidate) {
+      published_pose_estimate_2d = frozen_match_result.filtered_tracking_to_local;
+    }
+    if (frozen_match_accepted && !publish_filtered_odom_test_mode &&
+        frozen_options.apply_mode() ==
+            scan_matching::proto::FrozenSubmapScanMatcherOptions2D::
+                FULL_PIPELINE) {
+      pipeline_pose_estimate_2d =
+          frozen_match_result.filtered_tracking_to_local;
     }
   }
   quality_metrics.was_outlier = IsLocalSlamOutlier(&quality_metrics);
   const std::string localization_health_state =
       UpdateLocalizationHealthState(frozen_match_result, quality_metrics);
-
-  if (frozen_match_result.accepted) {
-    published_pose_estimate_2d = frozen_match_result.filtered_tracking_to_local;
-    if (!publish_filtered_odom_test_mode &&
-        options_.frozen_submap_scan_matcher_options().apply_mode() ==
-            scan_matching::proto::FrozenSubmapScanMatcherOptions2D::
-                FULL_PIPELINE) {
-      pipeline_pose_estimate_2d = frozen_match_result.filtered_tracking_to_local;
-    }
-  }
 
   const transform::Rigid3d pipeline_pose_estimate =
       transform::Embed3D(pipeline_pose_estimate_2d) * gravity_alignment;
@@ -775,6 +788,7 @@ LocalTrajectoryBuilder2D::AddAccumulatedRangeData(
   last_thread_cpu_time_seconds_ = thread_cpu_time_seconds;
   return absl::make_unique<MatchingResult>(
       MatchingResult{time, pipeline_pose_estimate, published_pose_estimate,
+                     frozen_match_candidate_available, frozen_match_accepted,
                      std::move(range_data_in_local),
                      quality_metrics,
                      latest_scan_match_score_,

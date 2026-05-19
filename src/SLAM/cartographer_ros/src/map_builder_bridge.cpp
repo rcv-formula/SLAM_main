@@ -128,6 +128,8 @@ int MapBuilderBridge::AddTrajectory(
       [this](const int trajectory_id, const ::cartographer::common::Time time,
              const Rigid3d local_pose,
              const Rigid3d published_local_pose,
+             const bool frozen_match_candidate_available,
+             const bool frozen_match_accepted,
              ::cartographer::sensor::RangeData range_data_in_local,
              const double scan_match_score,
              const bool scan_match_score_valid,
@@ -137,6 +139,8 @@ int MapBuilderBridge::AddTrajectory(
                      InsertionResult>) {
         OnLocalSlamResult(trajectory_id, time, local_pose,
                           published_local_pose,
+                          frozen_match_candidate_available,
+                          frozen_match_accepted,
                           std::move(range_data_in_local), scan_match_score,
                           scan_match_score_valid, localization_health_state);
       });
@@ -543,6 +547,8 @@ void MapBuilderBridge::OnLocalSlamResult(
     const int trajectory_id, const ::cartographer::common::Time time,
     const Rigid3d local_pose,
     const Rigid3d published_local_pose,
+    const bool frozen_match_candidate_available,
+    const bool frozen_match_accepted,
     ::cartographer::sensor::RangeData range_data_in_local,
     const double scan_match_score, const bool scan_match_score_valid,
     const std::string localization_health_state) {
@@ -550,6 +556,8 @@ void MapBuilderBridge::OnLocalSlamResult(
       std::make_shared<LocalTrajectoryData::LocalSlamData>(
           LocalTrajectoryData::LocalSlamData{time, local_pose,
                                              published_local_pose,
+                                             frozen_match_candidate_available,
+                                             frozen_match_accepted,
                                              std::move(range_data_in_local),
                                              scan_match_score,
                                              scan_match_score_valid,

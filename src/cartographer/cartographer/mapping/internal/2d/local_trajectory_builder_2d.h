@@ -73,6 +73,8 @@ class LocalTrajectoryBuilder2D {
     common::Time time;
     transform::Rigid3d local_pose;
     transform::Rigid3d published_local_pose;
+    bool frozen_match_candidate_available = false;
+    bool frozen_match_accepted = false;
     sensor::RangeData range_data_in_local;
     LocalSlamQualityMetrics quality_metrics;
     double scan_match_score;

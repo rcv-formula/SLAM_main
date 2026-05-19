@@ -370,7 +370,7 @@ LocalTrajectoryBuilder3D::AddAccumulatedRangeData(
   last_wall_time_ = wall_time;
   last_thread_cpu_time_seconds_ = thread_cpu_time_seconds;
   return absl::make_unique<MatchingResult>(MatchingResult{
-      time, *pose_estimate, *pose_estimate,
+      time, *pose_estimate, *pose_estimate, false, false,
       std::move(filtered_range_data_in_local),
       0., false, "GOOD",
       std::move(insertion_result)});

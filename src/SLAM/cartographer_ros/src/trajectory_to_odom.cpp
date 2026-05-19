@@ -32,10 +32,15 @@ public:
         filtered_subscription_ = this->create_subscription<geometry_msgs::msg::PoseStamped>(
             "/filtered_tracked_pose", 20,
             std::bind(&TrackedPoseToOdom::filteredTrackedPoseCallback, this, _1));
+        offset_subscription_ = this->create_subscription<geometry_msgs::msg::PoseStamped>(
+            "/offset_tracked_pose", 20,
+            std::bind(&TrackedPoseToOdom::offsetTrackedPoseCallback, this, _1));
 
         publisher_ = this->create_publisher<nav_msgs::msg::Odometry>("/odom", 20);
         filtered_publisher_ =
             this->create_publisher<nav_msgs::msg::Odometry>("/filtered_odom", 20);
+        offset_publisher_ =
+            this->create_publisher<nav_msgs::msg::Odometry>("/offset_odom", 20);
 
         if (!this->get_parameter("use_sim_time", use_sim_time_)) {
             RCLCPP_INFO(this->get_logger(), "\033[33muse_sim_time NOT SET. Defaulting to false.\033[0m");
@@ -55,6 +60,12 @@ private:
         const geometry_msgs::msg::PoseStamped::SharedPtr msg)
     {
         publishOdometry(*msg, filtered_publisher_, "/filtered_odom");
+    }
+
+    void offsetTrackedPoseCallback(
+        const geometry_msgs::msg::PoseStamped::SharedPtr msg)
+    {
+        publishOdometry(*msg, offset_publisher_, "/offset_odom");
     }
 
     void publishOdometry(
@@ -101,8 +112,10 @@ private:
 
     rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr subscription_;
     rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr filtered_subscription_;
+    rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr offset_subscription_;
     rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr publisher_;
     rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr filtered_publisher_;
+    rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr offset_publisher_;
 
     tf2_ros::Buffer tf_buffer_;
     tf2_ros::TransformListener tf_listener_;

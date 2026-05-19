@@ -16,7 +16,9 @@
 
 #include "cartographer_ros/node.h"
 
+#include <algorithm>
 #include <chrono>
+#include <cmath>
 #include <string>
 #include <vector>
 
@@ -119,6 +121,36 @@ std::string ComposeLocalizationHealthState(const std::string& local_state,
   return local_state;
 }
 
+carto::transform::Rigid2d ScaleOffset(const carto::transform::Rigid2d& offset,
+                                      const double scale) {
+  return carto::transform::Rigid2d(
+      offset.translation() * scale,
+      carto::common::NormalizeAngleDifference(offset.rotation().angle()) *
+          scale);
+}
+
+carto::transform::Rigid2d BlendOffsets(
+    const carto::transform::Rigid2d& from,
+    const carto::transform::Rigid2d& to,
+    const double alpha) {
+  return carto::transform::Rigid2d(
+      from.translation() + alpha * (to.translation() - from.translation()),
+      from.rotation().angle() +
+          alpha * carto::common::NormalizeAngleDifference(
+                      to.rotation().angle() - from.rotation().angle()));
+}
+
+bool Rigid2dChanged(const carto::transform::Rigid2d& lhs,
+                    const carto::transform::Rigid2d& rhs) {
+  constexpr double kTranslationEpsilon = 1e-6;
+  constexpr double kRotationEpsilon = 1e-6;
+  return (lhs.translation() - rhs.translation()).norm() >
+             kTranslationEpsilon ||
+         std::abs(carto::common::NormalizeAngleDifference(
+             lhs.rotation().angle() - rhs.rotation().angle())) >
+             kRotationEpsilon;
+}
+
 }  // namespace
 
 Node::Node(
@@ -158,6 +190,9 @@ Node::Node(
     filtered_tracked_pose_publisher_ =
         node_->create_publisher<::geometry_msgs::msg::PoseStamped>(
             kFilteredTrackedPoseTopic, 10);
+    offset_tracked_pose_publisher_ =
+        node_->create_publisher<::geometry_msgs::msg::PoseStamped>(
+            kOffsetTrackedPoseTopic, 10);
   }
 
   scan_matched_point_cloud_publisher_ =
@@ -310,7 +345,69 @@ void Node::AddSensorSamplers(const int trajectory_id,
       std::forward_as_tuple(
           options.rangefinder_sampling_ratio, options.odometry_sampling_ratio,
           options.fixed_frame_pose_sampling_ratio, options.imu_sampling_ratio,
-          options.landmarks_sampling_ratio));
+      options.landmarks_sampling_ratio));
+}
+
+Rigid3d Node::ComputeOffsetTrackingToMap(
+    const int trajectory_id,
+    const carto::common::Time time,
+    const Rigid3d& raw_tracking_to_map,
+    const Rigid3d& filtered_tracking_to_map,
+    const bool has_new_offset_target,
+    const Rigid3d& local_to_map,
+    const carto::mapping::scan_matching::proto::
+        FrozenSubmapScanMatcherOptions2D& frozen_options) {
+  auto& state = offset_odom_states_[trajectory_id];
+  const carto::transform::Rigid2d raw_tracking_to_map_2d =
+      carto::transform::Project2D(raw_tracking_to_map);
+  const carto::transform::Rigid2d filtered_tracking_to_map_2d =
+      carto::transform::Project2D(filtered_tracking_to_map);
+  const carto::transform::Rigid2d local_to_map_2d =
+      carto::transform::Project2D(local_to_map);
+
+  if (frozen_options.offset_decay_reset_on_global_optimization() &&
+      state.last_local_to_map.has_value() &&
+      Rigid2dChanged(state.last_local_to_map.value(), local_to_map_2d)) {
+    state.current_offset = carto::transform::Rigid2d::Identity();
+    state.target_offset = carto::transform::Rigid2d::Identity();
+    state.last_time.reset();
+    state.last_raw_tracking_to_map.reset();
+  }
+  state.last_local_to_map = local_to_map_2d;
+
+  double decay_factor = 1.;
+  if (state.last_time.has_value() &&
+      frozen_options.offset_decay_time_constant_sec() > 0.) {
+    const double delta_time_seconds =
+        std::max(0., carto::common::ToSeconds(time - state.last_time.value()));
+    decay_factor *=
+        std::exp(-delta_time_seconds /
+                 frozen_options.offset_decay_time_constant_sec());
+  }
+  if (state.last_raw_tracking_to_map.has_value() &&
+      frozen_options.offset_decay_distance_constant_m() > 0.) {
+    const double delta_distance =
+        (raw_tracking_to_map_2d.translation() -
+         state.last_raw_tracking_to_map.value().translation())
+            .norm();
+    decay_factor *= std::exp(
+        -delta_distance / frozen_options.offset_decay_distance_constant_m());
+  }
+
+  state.current_offset = ScaleOffset(state.current_offset, decay_factor);
+  state.target_offset = ScaleOffset(state.target_offset, decay_factor);
+  if (has_new_offset_target) {
+    state.target_offset =
+        filtered_tracking_to_map_2d * raw_tracking_to_map_2d.inverse();
+    state.current_offset =
+        BlendOffsets(state.current_offset, state.target_offset,
+                     frozen_options.offset_decay_blend_alpha());
+  }
+  state.last_time = time;
+  state.last_raw_tracking_to_map = raw_tracking_to_map_2d;
+
+  return carto::transform::Embed3D(state.current_offset *
+                                   raw_tracking_to_map_2d);
 }
 
 void Node::PublishLocalTrajectoryData() {
@@ -322,10 +419,11 @@ void Node::PublishLocalTrajectoryData() {
     const bool filtered_odom_test_mode =
         raw_extrapolators_.count(entry.first) > 0;
     auto raw_extrapolator_it = raw_extrapolators_.find(entry.first);
+    const bool has_new_local_slam_result =
+        trajectory_data.local_slam_data->time != extrapolator.GetLastPoseTime();
     // We only publish a point cloud if it has changed. It is not needed at high
     // frequency, and republishing it would be computationally wasteful.
-    if (trajectory_data.local_slam_data->time !=
-        extrapolator.GetLastPoseTime()) {
+    if (has_new_local_slam_result) {
       if (scan_match_score_publisher_->get_subscription_count() > 0) {
         cartographer_ros_msgs::msg::ScanMatchScore score_msg;
         score_msg.header.frame_id = node_options_.map_frame;
@@ -412,8 +510,38 @@ void Node::PublishLocalTrajectoryData() {
       }();
       tracking_to_map = trajectory_data.local_to_map * tracking_to_local;
     }
-    const Rigid3d filtered_tracking_to_map =
+    const Rigid3d direct_filtered_tracking_to_map =
         trajectory_data.local_to_map * published_tracking_to_local;
+    const Rigid3d filtered_tracking_to_map = direct_filtered_tracking_to_map;
+    const auto& trajectory_builder_options =
+        trajectory_data.trajectory_options.trajectory_builder_options;
+    const auto* frozen_options =
+        trajectory_builder_options.has_trajectory_builder_2d_options()
+            ? &trajectory_builder_options.trajectory_builder_2d_options()
+                   .frozen_submap_scan_matcher_options()
+            : nullptr;
+    const bool filtered_odom_publish_only_on_accept =
+        frozen_options != nullptr &&
+        frozen_options->filtered_odom_publish_only_on_accept();
+    const bool publish_filtered_odom =
+        filtered_odom_test_mode &&
+        (!filtered_odom_publish_only_on_accept ||
+         (has_new_local_slam_result &&
+          trajectory_data.local_slam_data->frozen_match_accepted));
+    const bool offset_odom_mode =
+        filtered_odom_test_mode && frozen_options != nullptr &&
+        frozen_options->enabled() && frozen_options->apply_mode() ==
+            carto::mapping::scan_matching::proto::
+                FrozenSubmapScanMatcherOptions2D::OFFSET_DECAY;
+    absl::optional<Rigid3d> offset_tracking_to_map;
+    if (offset_odom_mode) {
+      offset_tracking_to_map = ComputeOffsetTrackingToMap(
+          entry.first, now, tracking_to_map, filtered_tracking_to_map,
+          has_new_local_slam_result &&
+              trajectory_data.local_slam_data->frozen_match_accepted,
+          trajectory_data.local_to_map, *frozen_options);
+    }
+
     const std::string localization_health_state =
         ComposeLocalizationHealthState(
             trajectory_data.local_slam_data->localization_health_state,
@@ -483,11 +611,18 @@ void Node::PublishLocalTrajectoryData() {
         pose_msg.header.stamp = stamped_transform.header.stamp;
         pose_msg.pose = ToGeometryMsgPose(tracking_to_map);
         tracked_pose_publisher_->publish(pose_msg);
-        if (filtered_odom_test_mode) {
+        if (publish_filtered_odom) {
           ::geometry_msgs::msg::PoseStamped filtered_pose_msg;
           filtered_pose_msg.header = pose_msg.header;
           filtered_pose_msg.pose = ToGeometryMsgPose(filtered_tracking_to_map);
           filtered_tracked_pose_publisher_->publish(filtered_pose_msg);
+        }
+        if (offset_tracking_to_map.has_value()) {
+          ::geometry_msgs::msg::PoseStamped offset_pose_msg;
+          offset_pose_msg.header = pose_msg.header;
+          offset_pose_msg.pose =
+              ToGeometryMsgPose(offset_tracking_to_map.value());
+          offset_tracked_pose_publisher_->publish(offset_pose_msg);
         }
       }
     }

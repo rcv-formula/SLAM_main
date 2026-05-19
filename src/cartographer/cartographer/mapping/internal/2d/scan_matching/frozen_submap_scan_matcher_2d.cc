@@ -142,6 +142,23 @@ proto::FrozenSubmapScanMatcherOptions2D CreateFrozenSubmapScanMatcherOptions2D(
       parameter_dictionary->GetDouble("max_translation_correction"));
   options.set_max_rotation_correction(
       parameter_dictionary->GetDouble("max_rotation_correction"));
+  options.set_offset_decay_blend_alpha(
+      parameter_dictionary->HasKey("offset_decay_blend_alpha")
+          ? parameter_dictionary->GetDouble("offset_decay_blend_alpha")
+          : 0.10);
+  options.set_offset_decay_time_constant_sec(
+      parameter_dictionary->HasKey("offset_decay_time_constant_sec")
+          ? parameter_dictionary->GetDouble("offset_decay_time_constant_sec")
+          : 5.0);
+  options.set_offset_decay_distance_constant_m(
+      parameter_dictionary->HasKey("offset_decay_distance_constant_m")
+          ? parameter_dictionary->GetDouble("offset_decay_distance_constant_m")
+          : 2.0);
+  options.set_offset_decay_reset_on_global_optimization(
+      parameter_dictionary->HasKey("offset_decay_reset_on_global_optimization")
+          ? parameter_dictionary->GetBool(
+                "offset_decay_reset_on_global_optimization")
+          : true);
   options.set_tuning_log_enabled(
       parameter_dictionary->HasKey("tuning_log_enabled")
           ? parameter_dictionary->GetBool("tuning_log_enabled")
@@ -172,6 +189,11 @@ proto::FrozenSubmapScanMatcherOptions2D CreateFrozenSubmapScanMatcherOptions2D(
       parameter_dictionary->HasKey("test_mode_publish_filtered_odom")
           ? parameter_dictionary->GetBool("test_mode_publish_filtered_odom")
           : false);
+  options.set_filtered_odom_publish_only_on_accept(
+      parameter_dictionary->HasKey("filtered_odom_publish_only_on_accept")
+          ? parameter_dictionary->GetBool(
+                "filtered_odom_publish_only_on_accept")
+          : false);
 
   *options.mutable_real_time_correlative_scan_matcher_options() =
       mapping::scan_matching::CreateRealTimeCorrelativeScanMatcherOptions(
@@ -190,6 +212,10 @@ proto::FrozenSubmapScanMatcherOptions2D CreateFrozenSubmapScanMatcherOptions2D(
   CHECK_GE(options.min_score_variance(), 0.);
   CHECK_GE(options.max_translation_correction(), 0.);
   CHECK_GE(options.max_rotation_correction(), 0.);
+  CHECK_GE(options.offset_decay_blend_alpha(), 0.);
+  CHECK_LE(options.offset_decay_blend_alpha(), 1.);
+  CHECK_GE(options.offset_decay_time_constant_sec(), 0.);
+  CHECK_GE(options.offset_decay_distance_constant_m(), 0.);
   CHECK_GE(options.tuning_log_detail_every_n_scans(), 0);
   CHECK_GE(options.tuning_log_summary_every_n_scans(), 0);
   CHECK_GE(options.tuning_log_top_candidates(), 0);
@@ -304,6 +330,9 @@ FrozenSubmapMatchResult2D FrozenSubmapScanMatcher2D::Match(
   PopulateSelectedCandidate(best_candidate, raw_tracking_to_map, &result);
   PopulateCandidateDebugInfo(candidate_evaluations, raw_tracking_to_map,
                              options_.tuning_log_top_candidates(), &result);
+  result.filtered_tracking_to_map = best_candidate.tracking_to_map;
+  result.filtered_tracking_to_local =
+      query.local_to_map.inverse() * best_candidate.tracking_to_map;
 
   if (options_.use_realtime_correlative_scan_matching()) {
     if (result.best_score < options_.min_realtime_correlative_score()) {
@@ -336,9 +365,6 @@ FrozenSubmapMatchResult2D FrozenSubmapScanMatcher2D::Match(
 
   result.accepted = true;
   result.status = FrozenSubmapMatchStatus2D::kAccepted;
-  result.filtered_tracking_to_map = best_candidate.tracking_to_map;
-  result.filtered_tracking_to_local =
-      query.local_to_map.inverse() * best_candidate.tracking_to_map;
   return result;
 }
 

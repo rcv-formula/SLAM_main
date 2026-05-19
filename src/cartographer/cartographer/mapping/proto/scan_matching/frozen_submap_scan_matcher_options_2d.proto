@@ -19,11 +19,12 @@ package cartographer.mapping.scan_matching.proto;
 import "cartographer/mapping/proto/scan_matching/ceres_scan_matcher_options_2d.proto";
 import "cartographer/mapping/proto/scan_matching/real_time_correlative_scan_matcher_options.proto";
 
-// NEXT ID: 23
+// NEXT ID: 28
 message FrozenSubmapScanMatcherOptions2D {
   enum ApplyMode {
     FULL_PIPELINE = 0;
     PUBLISH_ONLY = 1;
+    OFFSET_DECAY = 2;
   }
 
   reserved 21;
@@ -56,4 +57,11 @@ message FrozenSubmapScanMatcherOptions2D {
   int32 tuning_log_summary_every_n_scans = 19;
   int32 tuning_log_top_candidates = 20;
   bool test_mode_publish_filtered_odom = 22;
+
+  double offset_decay_blend_alpha = 23;
+  double offset_decay_time_constant_sec = 24;
+  double offset_decay_distance_constant_m = 25;
+  bool offset_decay_reset_on_global_optimization = 26;
+
+  bool filtered_odom_publish_only_on_accept = 27;
 }
