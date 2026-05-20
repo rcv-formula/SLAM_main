@@ -34,7 +34,7 @@ def generate_launch_description():
         ),
         DeclareLaunchArgument(
             'cartographer_odom_topic',
-            default_value='odometry/filtered',
+            default_value='odom_wheel',
             description='Topic remapped to Cartographer odom_wheel input.',
         ),
         DeclareLaunchArgument(

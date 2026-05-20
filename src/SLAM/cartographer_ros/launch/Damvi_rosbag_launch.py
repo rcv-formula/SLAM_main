@@ -87,7 +87,7 @@ def generate_launch_description():
         ),
         DeclareLaunchArgument(
             'use_ekf',
-            default_value='true',
+            default_value='false',
             description='Run robot_localization EKF for diagnostics.',
         ),
         DeclareLaunchArgument(
@@ -97,7 +97,7 @@ def generate_launch_description():
         ),
         DeclareLaunchArgument(
             'cartographer_odom_topic',
-            default_value='odometry/filtered',
+            default_value='odom_wheel',
             description='Topic remapped to Cartographer odom_wheel input.',
         ),
         DeclareLaunchArgument(

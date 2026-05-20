@@ -23,6 +23,7 @@ def generate_launch_description():
     pbstream_file = LaunchConfiguration('pbstream_file')
     use_sim_time = LaunchConfiguration('use_sim_time')
     fusion_extrapolator = LaunchConfiguration('fusion_extrapolator')
+    cartographer_odom_topic = LaunchConfiguration('cartographer_odom_topic')
 
     return LaunchDescription([
         DeclareLaunchArgument(
@@ -34,6 +35,11 @@ def generate_launch_description():
             'fusion_extrapolator',
             default_value='true',
             description='Enable fusion-based extrapolator when true',
+        ),
+        DeclareLaunchArgument(
+            'cartographer_odom_topic',
+            default_value='odom_wheel',
+            description='Topic remapped to Cartographer odom_wheel input',
         ),
         SetEnvironmentVariable(
             name='FUSION_EXTRPOLATOR',
@@ -62,13 +68,14 @@ def generate_launch_description():
             remappings=[
                 ('scan', 'scan'),
                 ('imu', 'imu/data'),
+                ('odom_wheel', cartographer_odom_topic),
                 ('tf', 'tf'),
                 ('tf_static', 'tf_static'),
             ],
             parameters=[
                 {'use_sim_time': use_sim_time},
                 {'provide_odom_frame': True},
-                {'use_odometry': False},
+                {'use_odometry': True},
                 {'publish_frame_projected_to_2d': True},
             ],
         ),
