@@ -16,9 +16,15 @@
 
 #include "cartographer_ros/sensor_bridge.h"
 
+#include <algorithm>
+#include <cctype>
+#include <cstdlib>
+#include <string>
+
 #include "absl/memory/memory.h"
 #include "cartographer_ros/msg_conversion.h"
 #include "cartographer_ros/time_conversion.h"
+#include "glog/logging.h"
 
 namespace cartographer_ros {
 
@@ -35,6 +41,35 @@ const std::string& CheckNoLeadingSlash(const std::string& frame_id) {
                                   "http://wiki.ros.org/tf2/Migration.";
   }
   return frame_id;
+}
+
+bool EnvFlag(const char* name, const bool default_value) {
+  const char* value = std::getenv(name);
+  if (value == nullptr) {
+    return default_value;
+  }
+  std::string normalized(value);
+  std::transform(normalized.begin(), normalized.end(), normalized.begin(),
+                 [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+  if (normalized == "1" || normalized == "true" || normalized == "on") {
+    return true;
+  }
+  if (normalized == "0" || normalized == "false" || normalized == "off") {
+    return false;
+  }
+  return default_value;
+}
+
+double EnvDouble(const char* name, const double default_value) {
+  const char* value = std::getenv(name);
+  if (value == nullptr) {
+    return default_value;
+  }
+  try {
+    return std::stod(value);
+  } catch (...) {
+    return default_value;
+  }
 }
 
 }  // namespace
@@ -56,9 +91,38 @@ std::unique_ptr<carto::sensor::OdometryData> SensorBridge::ToOdometryData(
   if (sensor_to_tracking == nullptr) {
     return nullptr;
   }
+  const bool wheel_odom_twist_only = EnvFlag("WHEEL_ODOM_TWIST_ONLY", true);
+  LOG_EVERY_N(INFO, 200)
+      << "Wheel odom input mode: "
+      << (wheel_odom_twist_only ? "twist.linear.x integration"
+                                : "nav_msgs/Odometry pose delta");
+  if (wheel_odom_twist_only) {
+    const double wheel_odom_linear_scale =
+        EnvDouble("WHEEL_ODOM_LINEAR_SCALE", 2.6);
+    if (wheel_twist_last_time_.has_value()) {
+      const double dt = carto::common::ToSeconds(time - wheel_twist_last_time_.value());
+      if (dt > 0.) {
+        wheel_twist_distance_ +=
+            wheel_odom_linear_scale * msg->twist.twist.linear.x * dt;
+      }
+    }
+    wheel_twist_last_time_ = time;
+    Eigen::Vector3d linear_velocity =
+        sensor_to_tracking->rotation() * ToEigen(msg->twist.twist.linear);
+    linear_velocity.x() *= wheel_odom_linear_scale;
+    return absl::make_unique<carto::sensor::OdometryData>(
+        carto::sensor::OdometryData{
+            time, Rigid3d::Translation(Eigen::Vector3d(wheel_twist_distance_, 0., 0.)) *
+                      sensor_to_tracking->inverse(),
+            linear_velocity,
+            sensor_to_tracking->rotation() * ToEigen(msg->twist.twist.angular)});
+  }
   return absl::make_unique<carto::sensor::OdometryData>(
       carto::sensor::OdometryData{
-          time, ToRigid3d(msg->pose.pose) * sensor_to_tracking->inverse()});
+          time,
+          ToRigid3d(msg->pose.pose) * sensor_to_tracking->inverse(),
+          sensor_to_tracking->rotation() * ToEigen(msg->twist.twist.linear),
+          sensor_to_tracking->rotation() * ToEigen(msg->twist.twist.angular)});
 }
 
 void SensorBridge::HandleOdometryMessage(
@@ -66,9 +130,7 @@ void SensorBridge::HandleOdometryMessage(
   std::unique_ptr<carto::sensor::OdometryData> odometry_data =
       ToOdometryData(msg);
   if (odometry_data != nullptr) {
-    trajectory_builder_->AddSensorData(
-        sensor_id,
-        carto::sensor::OdometryData{odometry_data->time, odometry_data->pose});
+    trajectory_builder_->AddSensorData(sensor_id, *odometry_data);
   }
 }
 

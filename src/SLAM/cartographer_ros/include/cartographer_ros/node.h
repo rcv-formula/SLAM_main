@@ -44,6 +44,7 @@
 #include "cartographer_ros_msgs/msg/submap_list.hpp"
 #include "cartographer_ros_msgs/srv/submap_query.hpp"
 #include "cartographer_ros_msgs/srv/write_state.hpp"
+#include "ackermann_msgs/msg/ackermann_drive_stamped.hpp"
 #include "nav_msgs/msg/odometry.hpp"
 #include "std_msgs/msg/bool.hpp"
 #include <rclcpp/rclcpp.hpp>
@@ -55,6 +56,7 @@
 #include <tf2_ros/transform_broadcaster.h>
 #include <tf2_ros/buffer.h>
 #include <tf2_ros/transform_listener.h>
+#include <visualization_msgs/msg/marker_array.hpp>
 
 namespace cartographer_ros {
 
@@ -115,6 +117,9 @@ class Node {
       const sensor_msgs::msg::MultiEchoLaserScan::ConstSharedPtr& msg);
   void HandlePointCloud2Message(int trajectory_id, const std::string& sensor_id,
                                 const sensor_msgs::msg::PointCloud2::ConstSharedPtr& msg);
+  void HandleCommandMessage(
+      int trajectory_id, const std::string& sensor_id,
+      const ackermann_msgs::msg::AckermannDriveStamped::ConstSharedPtr& msg);
 
   // Serializes the complete Node state.
   void SerializeState(const std::string& filename,
@@ -168,6 +173,19 @@ class Node {
   void PublishTrajectoryNodeList();
   void PublishLandmarkPosesList();
   void PublishConstraintList();
+  void MaybePublishMotionMismatchMarker(
+      int trajectory_id, const builtin_interfaces::msg::Time& stamp,
+      const cartographer::transform::Rigid3d& tracking_to_map);
+  void MaybePublishFrontWeakMarker(
+      int trajectory_id, const builtin_interfaces::msg::Time& stamp,
+      const cartographer::transform::Rigid3d& tracking_to_map,
+      const cartographer::mapping::TrajectoryBuilderInterface::
+          LocalSlamDebugData& debug_data);
+  void MaybePublishDeltaMismatchMarker(
+      int trajectory_id, const builtin_interfaces::msg::Time& stamp,
+      const cartographer::transform::Rigid3d& tracking_to_map,
+      const cartographer::mapping::TrajectoryBuilderInterface::
+          LocalSlamDebugData& debug_data);
   bool ValidateTrajectoryOptions(const TrajectoryOptions& options);
   bool ValidateTopicNames(const TrajectoryOptions& options);
   cartographer_ros_msgs::msg::StatusResponse FinishTrajectoryUnderLock(
@@ -199,6 +217,7 @@ class Node {
   ::rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr scan_matched_point_cloud_publisher_;
   ::rclcpp::Publisher<::cartographer_ros_msgs::msg::ScanMatchScore>::SharedPtr scan_match_score_publisher_;
   ::rclcpp::Publisher<::std_msgs::msg::Bool>::SharedPtr localization_status_publisher_;
+  ::rclcpp::Publisher<::visualization_msgs::msg::MarkerArray>::SharedPtr motion_mismatch_marker_publisher_;
   // These ros service servers need to live for the lifetime of the node.
   ::rclcpp::Service<cartographer_ros_msgs::srv::SubmapQuery>::SharedPtr submap_query_server_;
   ::rclcpp::Service<cartographer_ros_msgs::srv::TrajectoryQuery>::SharedPtr trajectory_query_server;
@@ -228,13 +247,25 @@ class Node {
     ::cartographer::common::FixedRatioSampler landmark_sampler;
   };
 
+  struct LatestMotionInput {
+    builtin_interfaces::msg::Time stamp;
+    double value = 0.;
+    bool valid = false;
+  };
+
   // These are keyed with 'trajectory_id'.
   std::map<int, ::cartographer::mapping::PoseExtrapolator> extrapolators_;
   std::map<int, builtin_interfaces::msg::Time> last_published_tf_stamps_;
+  std::map<int, LatestMotionInput> latest_wheel_forward_velocity_;
+  std::map<int, LatestMotionInput> latest_command_speed_;
+  std::map<int, builtin_interfaces::msg::Time> last_motion_mismatch_marker_stamp_;
+  std::map<int, builtin_interfaces::msg::Time> last_front_weak_marker_stamp_;
+  std::map<int, builtin_interfaces::msg::Time> last_delta_mismatch_marker_stamp_;
   std::unordered_map<int, TrajectorySensorSamplers> sensor_samplers_;
   std::unordered_map<int, std::vector<Subscriber>> subscribers_;
   std::unordered_set<std::string> subscribed_topics_;
   std::unordered_set<int> trajectories_scheduled_for_finish_;
+  int next_motion_mismatch_marker_id_ = 0;
 
   // The timer for publishing local trajectory data (i.e. pose transforms and
   // range data point clouds) is a regular timer which is not triggered when

@@ -20,8 +20,9 @@
 #include <deque>
 #include <memory>
 
+#include "boost/circular_buffer.hpp"
+#include "absl/types/optional.h"
 #include "cartographer/common/time.h"
-#include "cartographer/mapping/imu_tracker.h"
 #include "cartographer/mapping/pose_extrapolator_interface.h"
 #include "cartographer/sensor/imu_data.h"
 #include "cartographer/sensor/odometry_data.h"
@@ -61,120 +62,59 @@ class PoseExtrapolator : public PoseExtrapolatorInterface {
   // Returns the current gravity alignment estimate as a rotation from
   // the tracking frame into a gravity aligned frame.
   Eigen::Quaterniond EstimateGravityOrientation(common::Time time) override;
-  //////////////////////reliability of sensor data ///////////////////
-  void ScanMatchScore(double score);
-  double scan_match_score = 1.0;
-  void Reliability_sensor();
-  double yaw_speed = 0.0;
-  ////////////////////////////////////////////////////
-
-  // Fusion extrapolator control: true = fusion logic, false = original behavior
-  void set_fusion_extrpolator(bool enabled) { fusion_extrpolator = enabled; }
-  bool fusion_extrpolator_enabled() const { return fusion_extrpolator; }
+  void ScanMatchScore(double /*score*/) {}
+  bool HasOdometryData() const { return !odometry_data_.empty(); }
+  Eigen::Vector3d GetOdometryLinearVelocity() const {
+    return odometry_data_.empty() ? Eigen::Vector3d::Zero()
+                                  : odometry_data_.back().linear_velocity;
+  }
+  double GetOdometryForwardVelocity() const {
+    return odometry_data_.empty() ? 0.
+                                  : odometry_data_.back().linear_velocity.x();
+  }
+  bool IsAdaptiveOdometryBlendEnabled() const {
+    return adaptive_odometry_blend_;
+  }
+  double GetAdaptiveOdometryWeight() const;
 
  private:
-  void UpdateVelocitiesFromPoses();
-  void TrimImuData();
-  void TrimOdometryData();
-  void AdvanceImuTracker(common::Time time, ImuTracker* imu_tracker) const;
-  Eigen::Quaterniond ExtrapolateRotation(common::Time time,
-                                         ImuTracker* imu_tracker) const;
-  Eigen::Vector3d ExtrapolateTranslation(common::Time time);
-
-  ///////////////////////////////////////////////////
-  // Fusion state for scan- and odom-derived planar velocities.
-  bool velocity_filter_initalized = false;
-  // Default true: enable fusion logic. Set false to run original behavior.
-  bool fusion_extrpolator = true;
-  // true: IMU+scan+wheel fusion, false: 기존 pose 추정
-
-
-  common::Time last_velocity_time = common::Time::min();
-  Eigen::Vector2d fusion_linear_velocity = Eigen::Vector2d::Zero();
-  Eigen::Matrix2d velocity_covariance =
-      Eigen::Matrix2d::Identity() * 1e-2;
-
-//setting Q = 1e-3
-//straight line: R_scan = 1.5e-6, R_odom = 1.0e-3
-//curve line: R_scan = 5.0e-7, R_odom = 1.0e-3
-  Eigen::Matrix2d process_noise = Eigen::Matrix2d::Identity() * 1e-3;
-  Eigen::Matrix2d measurement_noise_scan =
-      Eigen::Matrix2d::Identity() * 1.5e-6;
-  Eigen::Matrix2d measurement_noise_odom =
-      Eigen::Matrix2d::Identity() * 2.0e-4;
-
-  Eigen::Vector3d translation_fusion(
-      common::Time time, const Eigen::Vector3d* linear_velocity_scan,
-      const Eigen::Vector3d* linear_velocity_odom);
-
-
-// Q= 1e-3이면:
-
-// - q = 2e-5
-// - 5% 반영 -> R_odom ≈ 2.0e-4
-// - 10% 반영 -> R_odom ≈ 1.2e-4
-// - 1% 반영 -> R_odom ≈ 1.0e-3
-// - 평소 구간: scan **95% R_scan = 1.5e-6**
-// - 직선 구간: scan **80~85% R_scan = 5.5 e-6**
-// - 곡선 구간: scan **97~99% 5.0e-7**
-
-// Q = 2e-3이면:
-
-// - q = 4e-5
-// - 5% 반영 -> R_odom ≈ 4.0e-4
-// - 10% 반영 -> R_odom ≈ 2.5e-4
-// - 1% 반영 -> R_odom ≈ 2.0e-3
-// - 평소 구간: scan **95% R_scan = 2.5e-6**
-// - 직선 구간: scan **80~85% R_scan = 1.1 e-5**
-// - 곡선 구간: scan **97~99%  1.0e-6**
-
-
-//////////////////////////////////////////////////////////////////
-
-
-///////////////////////IMU condiser translation velocity //////////////////
-Eigen::Vector3d imu_delta_velocity = Eigen::Vector3d::Zero(); // imu 기반으로 계산한 속도 변화량을 저장
-Eigen::Vector3d prev_linear_acceleration = Eigen::Vector3d::Zero(); // 이전 가속도 값을 저장
-bool imu_velocity_initalized = false;
-common::Time last_imu_time = common::Time::min(); // imu가 이전에 측정한 시간을 뜻한다
-
-// 튜닝 완료
-// double imu_weight = 0.2;//예측 속도에 미칠 imu의 영향
-// // double imu_weight = 0.2;//예측 속도에 미칠 imu의 
-// // double imu_delta_clip = 0.2; // 너무 강한 보정이 들어갈 경우 clip 한다
-// double imu_delta_min = 0.3; // 너무 작은 보정이 들어갈 경우 제거할 임계값
-//double wheelodom_weight = 0.2;
-
-// 튜닝 중
-double imu_weight = 0.2;//예측 속도에 미칠 imu의 영향
-// double imu_weight = 0.2;//예측 속도에 미칠 imu의 
-// double imu_delta_clip = 0.2; // 너무 강한 보정이 들어갈 경우 clip 한다
-double imu_delta_min = 0.4; // 너무 작은 보정이 들어갈 경우 제거할 임계값
-double wheelodom_weight = 0.01;
-Eigen::Vector3d translation_imu_wheel(const Eigen::Vector3d* linear_velocity_scan, const Eigen::Vector3d* linear_velocity_odom);
-////////////////////////////////////////////////////////////////////////
-
-
-
-  const common::Duration pose_queue_duration_;
   struct TimedPose {
     common::Time time;
     transform::Rigid3d pose;
   };
-  std::deque<TimedPose> timed_pose_queue_;
+  struct Extrapolation {
+    common::Time time;
+    transform::Rigid3d pose;
+    transform::Rigid3d motion;
+  };
+
+  transform::Rigid3d Odom(common::Time time) const;
+  void UpdateVelocityFromPoses();
+  double ComputeAdaptiveOdometryWeight() const;
+
+  common::Duration pose_queue_duration_;
+  std::unique_ptr<TimedPose> reference_pose_;
+  Extrapolation cached_extrapolated_pose_;
+  std::deque<TimedPose> pose_queue_;
   Eigen::Vector3d linear_velocity_from_poses_ = Eigen::Vector3d::Zero();
   Eigen::Vector3d angular_velocity_from_poses_ = Eigen::Vector3d::Zero();
-
-  const double gravity_time_constant_;
-  std::deque<sensor::ImuData> imu_data_;
-  std::unique_ptr<ImuTracker> imu_tracker_;
-  std::unique_ptr<ImuTracker> odometry_imu_tracker_;
-  std::unique_ptr<ImuTracker> extrapolation_imu_tracker_;
-  TimedPose cached_extrapolated_pose_;
-
-  std::deque<sensor::OdometryData> odometry_data_;
-  Eigen::Vector3d linear_velocity_from_odometry_ = Eigen::Vector3d::Zero();
-  Eigen::Vector3d angular_velocity_from_odometry_ = Eigen::Vector3d::Zero();
+  double latest_imu_angular_velocity_z_ = 0.;
+  double integrated_imu_yaw_ = 0.;
+  double last_pose_integrated_imu_yaw_ = 0.;
+  absl::optional<common::Time> last_imu_time_;
+  bool has_imu_data_ = false;
+  bool adaptive_odometry_blend_ = false;
+  bool adaptive_odometry_longitudinal_only_ = true;
+  double adaptive_odometry_full_weight_yaw_rate_ = 0.05;
+  double adaptive_odometry_zero_weight_yaw_rate_ = 0.20;
+  double adaptive_odometry_min_weight_ = 0.;
+  double adaptive_odometry_max_weight_ = 1.;
+  bool adaptive_odometry_mismatch_override_ = true;
+  double adaptive_odometry_mismatch_ratio_ = 0.35;
+  double adaptive_odometry_min_forward_delta_ = 0.005;
+  double adaptive_odometry_mismatch_force_weight_ = 1.;
+  double last_adaptive_odometry_weight_ = 1.;
+  boost::circular_buffer<sensor::OdometryData> odometry_data_;
 };
 
 }  // namespace mapping

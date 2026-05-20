@@ -53,6 +53,18 @@ class TrajectoryBuilderInterface {
     std::vector<std::shared_ptr<const Submap>> insertion_submaps;
   };
 
+  struct LocalSlamDebugData {
+    bool front_weak = false;
+    int front_point_count = 0;
+    double front_point_fraction = 0.;
+    bool longitudinal_replacement_active = false;
+    double longitudinal_blend_weight = 0.;
+    bool straight_longitudinal_mismatch = false;
+    double scan_match_delta_forward = 0.;
+    double wheel_twist_expected_delta = 0.;
+    double command_expected_delta = 0.;
+  };
+
   // A callback which is called after local SLAM processes an accumulated
   // 'sensor::RangeData'. If the data was inserted into a submap, reports the
   // assigned 'NodeId', otherwise 'nullptr' if the data was filtered out.
@@ -62,6 +74,7 @@ class TrajectoryBuilderInterface {
                          sensor::RangeData /* in local frame */,
                          double /* real-time correlative score */,
                          bool /* score valid */,
+                         LocalSlamDebugData /* debug data */,
                          std::unique_ptr<const InsertionResult>)>;
 
   struct SensorId {

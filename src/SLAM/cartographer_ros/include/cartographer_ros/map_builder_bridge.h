@@ -59,6 +59,8 @@ class MapBuilderBridge {
       ::cartographer::sensor::RangeData range_data_in_local;
       double scan_match_score;
       bool scan_match_score_valid;
+      ::cartographer::mapping::TrajectoryBuilderInterface::LocalSlamDebugData
+          debug_data;
     };
     std::shared_ptr<const LocalSlamData> local_slam_data;
     cartographer::transform::Rigid3d local_to_map;
@@ -114,7 +116,9 @@ class MapBuilderBridge {
                          const ::cartographer::transform::Rigid3d local_pose,
                          ::cartographer::sensor::RangeData range_data_in_local,
                          double scan_match_score,
-                         bool scan_match_score_valid)
+                         bool scan_match_score_valid,
+                         ::cartographer::mapping::TrajectoryBuilderInterface::
+                             LocalSlamDebugData debug_data)
       LOCKS_EXCLUDED(mutex_);
 
   absl::Mutex mutex_;

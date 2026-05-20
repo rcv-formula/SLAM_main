@@ -20,6 +20,7 @@
 #include "cartographer/common/time.h"
 #include "cartographer/sensor/proto/sensor.pb.h"
 #include "cartographer/transform/rigid_transform.h"
+#include "Eigen/Core"
 
 namespace cartographer {
 namespace sensor {
@@ -27,6 +28,8 @@ namespace sensor {
 struct OdometryData {
   common::Time time;
   transform::Rigid3d pose;
+  Eigen::Vector3d linear_velocity = Eigen::Vector3d::Zero();
+  Eigen::Vector3d angular_velocity = Eigen::Vector3d::Zero();
 };
 
 // Converts 'odometry_data' to a proto::OdometryData.

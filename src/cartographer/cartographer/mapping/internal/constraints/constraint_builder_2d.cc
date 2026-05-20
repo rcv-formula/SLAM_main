@@ -17,11 +17,14 @@
 #include "cartographer/mapping/internal/constraints/constraint_builder_2d.h"
 
 #include <cmath>
+#include <cstdlib>
+#include <fstream>
 #include <functional>
 #include <iomanip>
 #include <iostream>
 #include <limits>
 #include <memory>
+#include <mutex>
 #include <sstream>
 #include <string>
 #include <tuple>
@@ -51,6 +54,112 @@ static auto* kQueueLengthMetric = metrics::Gauge::Null();
 static auto* kConstraintScoresMetric = metrics::Histogram::Null();
 static auto* kGlobalConstraintScoresMetric = metrics::Histogram::Null();
 static auto* kNumSubmapScanMatchersMetric = metrics::Gauge::Null();
+
+bool EnvBool(const char* name, const bool default_value) {
+  const char* value = std::getenv(name);
+  if (value == nullptr) {
+    return default_value;
+  }
+  const std::string text(value);
+  if (text == "1" || text == "true" || text == "TRUE" || text == "on") {
+    return true;
+  }
+  if (text == "0" || text == "false" || text == "FALSE" || text == "off") {
+    return false;
+  }
+  return default_value;
+}
+
+double EnvDouble(const char* name, const double default_value) {
+  const char* value = std::getenv(name);
+  if (value == nullptr) {
+    return default_value;
+  }
+  char* end = nullptr;
+  const double parsed = std::strtod(value, &end);
+  return end == value ? default_value : parsed;
+}
+
+std::mutex* GetConstraintMetricsCsvMutex() {
+  static auto* const mutex = new std::mutex;
+  return mutex;
+}
+
+std::ofstream* GetConstraintMetricsCsv() {
+  static auto* const csv = []() -> std::ofstream* {
+    const char* path = std::getenv("POSE_GRAPH_CONSTRAINT_METRICS_CSV_PATH");
+    if (path == nullptr || std::string(path).empty()) {
+      return nullptr;
+    }
+    auto* stream = new std::ofstream(path, std::ios::out | std::ios::app);
+    if (!stream->is_open()) {
+      LOG(WARNING) << "Failed to open pose graph constraint metrics CSV: "
+                   << path;
+      delete stream;
+      return nullptr;
+    }
+    if (stream->tellp() == 0) {
+      *stream
+          << "status,match_full_submap,submap_trajectory_id,submap_index,"
+             "node_trajectory_id,node_index,point_count,is_outlier,"
+             "score,min_score,initial_pose_x,initial_pose_y,initial_pose_yaw,"
+             "fast_pose_x,fast_pose_y,fast_pose_yaw,ceres_pose_x,ceres_pose_y,"
+             "ceres_pose_yaw,constraint_x,constraint_y,constraint_yaw,"
+             "initial_to_final_translation,initial_to_final_yaw,"
+             "fcsm_candidate_count,fcsm_top1,fcsm_top2,fcsm_top1_top2_margin,"
+             "fcsm_near_top_0p02,ambiguous_downweighted,weight_scale,"
+             "translation_weight,rotation_weight\n";
+      stream->flush();
+    }
+    stream->precision(17);
+    return stream;
+  }();
+  return csv;
+}
+
+void MaybeWriteConstraintMetricsCsv(
+    const char* status, const bool match_full_submap,
+    const SubmapId& submap_id, const NodeId& node_id,
+    const TrajectoryNode::Data* const constant_data, const float score,
+    const double min_score, const transform::Rigid2d& initial_pose,
+    const transform::Rigid2d& fast_pose, const transform::Rigid2d& ceres_pose,
+    const transform::Rigid2d& constraint_transform, const double weight_scale,
+    const double translation_weight, const double rotation_weight,
+    const scan_matching::FastCorrelativeScanMatcher2D::ScoreDistributionSummary&
+        score_summary,
+    const bool ambiguous_downweighted) {
+  std::ofstream* const csv = GetConstraintMetricsCsv();
+  if (csv == nullptr) {
+    return;
+  }
+  const transform::Rigid2d initial_to_final = initial_pose.inverse() * ceres_pose;
+  std::lock_guard<std::mutex> lock(*GetConstraintMetricsCsvMutex());
+  *csv << status << ',' << (match_full_submap ? 1 : 0) << ','
+       << submap_id.trajectory_id << ',' << submap_id.submap_index << ','
+       << node_id.trajectory_id << ',' << node_id.node_index << ','
+       << constant_data->filtered_gravity_aligned_point_cloud.size() << ','
+       << (constant_data->is_outlier ? 1 : 0) << ',' << score << ','
+       << min_score << ',' << initial_pose.translation().x() << ','
+       << initial_pose.translation().y() << ','
+       << initial_pose.rotation().angle() << ','
+       << fast_pose.translation().x() << ',' << fast_pose.translation().y()
+       << ',' << fast_pose.rotation().angle() << ','
+       << ceres_pose.translation().x() << ',' << ceres_pose.translation().y()
+       << ',' << ceres_pose.rotation().angle() << ','
+       << constraint_transform.translation().x() << ','
+       << constraint_transform.translation().y() << ','
+       << constraint_transform.rotation().angle() << ','
+       << initial_to_final.translation().norm() << ','
+       << std::abs(initial_to_final.normalized_angle()) << ','
+       << score_summary.candidate_count << ',' << score_summary.top1_score
+       << ',' << score_summary.top2_score << ','
+       << (score_summary.top1_score - score_summary.top2_score) << ','
+       << score_summary.near_top_count_0p02 << ','
+       << (ambiguous_downweighted ? 1 : 0) << ','
+       << weight_scale << ',' << translation_weight << ',' << rotation_weight
+       << '\n';
+  csv->flush();
+}
 
 transform::Rigid2d ComputeSubmapPose(const Submap2D& submap) {
   return transform::Project2D(submap.local_pose());
@@ -207,6 +316,8 @@ void ConstraintBuilder2D::ComputeConstraint(
   // - the ComputeSubmapPose() (map <- submap i)
   float score = 0.;
   transform::Rigid2d pose_estimate = transform::Rigid2d::Identity();
+  scan_matching::FastCorrelativeScanMatcher2D::ScoreDistributionSummary
+      score_summary;
 
   // Compute 'pose_estimate' in three stages:
   // 1. Fast estimate using the fast correlative scan matcher.
@@ -216,25 +327,36 @@ void ConstraintBuilder2D::ComputeConstraint(
     kGlobalConstraintsSearchedMetric->Increment();
     if (submap_scan_matcher.fast_correlative_scan_matcher->MatchFullSubmap(
             constant_data->filtered_gravity_aligned_point_cloud,
-            global_localization_min_score, &score, &pose_estimate)) {
+            global_localization_min_score, &score, &pose_estimate,
+            &score_summary)) {
       CHECK_GT(score, global_localization_min_score);
       CHECK_GE(node_id.trajectory_id, 0);
       CHECK_GE(submap_id.trajectory_id, 0);
       kGlobalConstraintsFoundMetric->Increment();
       kGlobalConstraintScoresMetric->Observe(score);
     } else {
+      MaybeWriteConstraintMetricsCsv(
+          "fast_rejected", match_full_submap, submap_id, node_id,
+          constant_data, score, global_localization_min_score, initial_pose,
+          pose_estimate, pose_estimate, transform::Rigid2d::Identity(), 0.,
+          0., 0., score_summary, false);
       return;
     }
   } else {
     kConstraintsSearchedMetric->Increment();
     if (submap_scan_matcher.fast_correlative_scan_matcher->Match(
             initial_pose, constant_data->filtered_gravity_aligned_point_cloud,
-            options_.min_score(), &score, &pose_estimate)) {
+            options_.min_score(), &score, &pose_estimate, &score_summary)) {
       // We've reported a successful local match.
       CHECK_GT(score, options_.min_score());
       kConstraintsFoundMetric->Increment();
       kConstraintScoresMetric->Observe(score);
     } else {
+      MaybeWriteConstraintMetricsCsv(
+          "fast_rejected", match_full_submap, submap_id, node_id,
+          constant_data, score, options_.min_score(), initial_pose,
+          pose_estimate, pose_estimate, transform::Rigid2d::Identity(), 0.,
+          0., 0., score_summary, false);
       return;
     }
   }
@@ -246,6 +368,7 @@ void ConstraintBuilder2D::ComputeConstraint(
   // Use the CSM estimate as both the initial and previous pose. This has the
   // effect that, in the absence of better information, we prefer the original
   // CSM estimate.
+  const transform::Rigid2d fast_pose_estimate = pose_estimate;
   ceres::Solver::Summary unused_summary;
   ceres_scan_matcher_.Match(pose_estimate.translation(), pose_estimate,
                             constant_data->filtered_gravity_aligned_point_cloud,
@@ -257,13 +380,39 @@ void ConstraintBuilder2D::ComputeConstraint(
   // Outlier nodes are still inserted into submaps (to prevent active submap
   // sparsity), but their constraints are down-weighted so the pose graph
   // optimizer does not trust their imprecise pose estimates strongly.
-  const double weight_scale = constant_data->is_outlier ? 0.1 : 1.0;
+  double weight_scale = constant_data->is_outlier ? 0.1 : 1.0;
+  const transform::Rigid2d initial_to_final =
+      initial_pose.inverse() * pose_estimate;
+  const double top1_top2_margin =
+      score_summary.candidate_count >= 2
+          ? score_summary.top1_score - score_summary.top2_score
+          : std::numeric_limits<double>::infinity();
+  const bool ambiguous_large_constraint =
+      EnvBool("POSE_GRAPH_AMBIGUOUS_CONSTRAINT_DOWNWEIGHT", false) &&
+      initial_to_final.translation().norm() >
+          EnvDouble("POSE_GRAPH_AMBIGUOUS_CONSTRAINT_MIN_TRANSLATION", 0.30) &&
+      top1_top2_margin <
+          EnvDouble("POSE_GRAPH_AMBIGUOUS_CONSTRAINT_MAX_SCORE_MARGIN",
+                    0.001) &&
+      score_summary.near_top_count_0p02 >=
+          EnvDouble("POSE_GRAPH_AMBIGUOUS_CONSTRAINT_MIN_NEAR_TOP_COUNT", 20.);
+  if (ambiguous_large_constraint) {
+    weight_scale *=
+        EnvDouble("POSE_GRAPH_AMBIGUOUS_CONSTRAINT_WEIGHT_SCALE", 0.2);
+  }
   constraint->reset(new Constraint{submap_id,
                                    node_id,
                                    {transform::Embed3D(constraint_transform),
                                     options_.loop_closure_translation_weight() * weight_scale,
                                     options_.loop_closure_rotation_weight() * weight_scale},
                                    Constraint::INTER_SUBMAP});
+  MaybeWriteConstraintMetricsCsv(
+      "accepted", match_full_submap, submap_id, node_id, constant_data, score,
+      match_full_submap ? global_localization_min_score : options_.min_score(),
+      initial_pose, fast_pose_estimate, pose_estimate, constraint_transform,
+      weight_scale, options_.loop_closure_translation_weight() * weight_scale,
+      options_.loop_closure_rotation_weight() * weight_scale, score_summary,
+      ambiguous_large_constraint);
 
   if (options_.log_matches()) {
     std::ostringstream info;
