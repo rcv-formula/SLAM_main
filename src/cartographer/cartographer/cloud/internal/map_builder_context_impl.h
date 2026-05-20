@@ -47,6 +47,7 @@ MapBuilderContext<SubmapType>::GetLocalSlamResultCallbackForSubscriptions() {
                 sensor::RangeData range_data,
                 double scan_match_score, bool scan_match_score_valid,
                 std::string localization_health_state,
+                mapping::TrajectoryBuilderInterface::LocalSlamDebugData,
                 std::unique_ptr<
                     const mapping::TrajectoryBuilderInterface::InsertionResult>
                     insertion_result) {

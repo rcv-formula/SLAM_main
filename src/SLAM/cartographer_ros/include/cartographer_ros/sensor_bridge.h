@@ -92,6 +92,8 @@ class SensorBridge {
       trajectory_builder_;
 
   absl::optional<::cartographer::transform::Rigid3d> ecef_to_local_frame_;
+  absl::optional<::cartographer::common::Time> wheel_twist_last_time_;
+  double wheel_twist_distance_ = 0.;
 };
 
 }  // namespace cartographer_ros

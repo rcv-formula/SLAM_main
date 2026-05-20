@@ -134,6 +134,8 @@ int MapBuilderBridge::AddTrajectory(
              const double scan_match_score,
              const bool scan_match_score_valid,
              const std::string localization_health_state,
+             const ::cartographer::mapping::TrajectoryBuilderInterface::
+                 LocalSlamDebugData debug_data,
              const std::unique_ptr<
                  const ::cartographer::mapping::TrajectoryBuilderInterface::
                      InsertionResult>) {
@@ -142,7 +144,8 @@ int MapBuilderBridge::AddTrajectory(
                           frozen_match_candidate_available,
                           frozen_match_accepted,
                           std::move(range_data_in_local), scan_match_score,
-                          scan_match_score_valid, localization_health_state);
+                          scan_match_score_valid, localization_health_state,
+                          debug_data);
       });
   LOG(INFO) << "Added trajectory with ID '" << trajectory_id << "'.";
 
@@ -551,7 +554,9 @@ void MapBuilderBridge::OnLocalSlamResult(
     const bool frozen_match_accepted,
     ::cartographer::sensor::RangeData range_data_in_local,
     const double scan_match_score, const bool scan_match_score_valid,
-    const std::string localization_health_state) {
+    const std::string localization_health_state,
+    const ::cartographer::mapping::TrajectoryBuilderInterface::
+        LocalSlamDebugData debug_data) {
   std::shared_ptr<const LocalTrajectoryData::LocalSlamData> local_slam_data =
       std::make_shared<LocalTrajectoryData::LocalSlamData>(
           LocalTrajectoryData::LocalSlamData{time, local_pose,
@@ -561,7 +566,8 @@ void MapBuilderBridge::OnLocalSlamResult(
                                              std::move(range_data_in_local),
                                              scan_match_score,
                                              scan_match_score_valid,
-                                             localization_health_state});
+                                             localization_health_state,
+                                             debug_data});
   bool force_relocalization = false;
   {
     absl::MutexLock lock(&mutex_);

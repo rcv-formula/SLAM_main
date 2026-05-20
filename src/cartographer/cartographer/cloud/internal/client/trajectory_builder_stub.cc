@@ -163,9 +163,14 @@ void TrajectoryBuilderStub::RunLocalSlamResultsReader(
                       response.insertion_result().node_id().trajectory_id(),
                       response.insertion_result().node_id().node_index()}})
             : nullptr;
-    local_slam_result_callback(trajectory_id, time, local_pose, local_pose,
-                               range_data,
-                               std::move(insertion_result));
+    local_slam_result_callback(
+        trajectory_id, time, local_pose, local_pose,
+        false /* frozen_match_candidate_available */,
+        false /* frozen_match_accepted */, range_data,
+        0. /* scan_match_score */, false /* scan_match_score_valid */,
+        "" /* localization_health_state */,
+        mapping::TrajectoryBuilderInterface::LocalSlamDebugData{},
+        std::move(insertion_result));
   }
   client->StreamFinish();
 }

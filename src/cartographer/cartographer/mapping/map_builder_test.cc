@@ -152,6 +152,8 @@ class MapBuilderTestBase : public T {
                const double scan_match_score,
                const bool scan_match_score_valid,
                const std::string localization_health_state,
+               const ::cartographer::mapping::TrajectoryBuilderInterface::
+                   LocalSlamDebugData,
                const std::unique_ptr<
                    const cartographer::mapping::TrajectoryBuilderInterface::
                        InsertionResult>) {
