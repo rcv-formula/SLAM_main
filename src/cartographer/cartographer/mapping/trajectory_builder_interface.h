@@ -18,10 +18,12 @@
 #define CARTOGRAPHER_MAPPING_TRAJECTORY_BUILDER_INTERFACE_H_
 
 #include <functional>
+#include <limits>
 #include <memory>
 #include <string>
 
 #include "absl/memory/memory.h"
+#include "absl/types/optional.h"
 #include "cartographer/common/lua_parameter_dictionary.h"
 #include "cartographer/common/port.h"
 #include "cartographer/common/time.h"
@@ -41,6 +43,16 @@ proto::TrajectoryBuilderOptions CreateTrajectoryBuilderOptions(
 
 class LocalSlamResultData;
 
+struct LocalSlamCommandDebugData {
+  common::Time time;
+  double speed = std::numeric_limits<double>::quiet_NaN();
+  double steering_angle = std::numeric_limits<double>::quiet_NaN();
+};
+
+void SetLocalSlamCommandDebugData(common::Time time, double speed,
+                                  double steering_angle);
+absl::optional<LocalSlamCommandDebugData> GetLocalSlamCommandDebugData();
+
 // This interface is used for both 2D and 3D SLAM. Implementations wire up a
 // global SLAM stack, i.e. local SLAM for initial pose estimates, scan matching
 // to detect loop closure, and a sparse pose graph optimization to compute
@@ -51,6 +63,18 @@ class TrajectoryBuilderInterface {
     NodeId node_id;
     std::shared_ptr<const TrajectoryNode::Data> constant_data;
     std::vector<std::shared_ptr<const Submap>> insertion_submaps;
+  };
+
+  struct LocalSlamDebugData {
+    bool front_weak = false;
+    int front_point_count = 0;
+    double front_point_fraction = 0.;
+    bool longitudinal_replacement_active = false;
+    double longitudinal_blend_weight = 0.;
+    bool straight_longitudinal_mismatch = false;
+    double scan_match_delta_forward = 0.;
+    double wheel_twist_expected_delta = 0.;
+    double command_expected_delta = 0.;
   };
 
   // A callback which is called after local SLAM processes an accumulated
@@ -66,6 +90,7 @@ class TrajectoryBuilderInterface {
                          double /* real-time correlative score */,
                          bool /* score valid */,
                          std::string /* localization health state */,
+                         LocalSlamDebugData /* debug data */,
                          std::unique_ptr<const InsertionResult>)>;
 
   struct SensorId {

@@ -16,6 +16,8 @@
 
 #include "cartographer_ros/node_options.h"
 
+#include <cstdlib>
+#include <string>
 #include <vector>
 
 #include "cartographer/common/configuration_file_resolver.h"
@@ -23,10 +25,81 @@
 #include "glog/logging.h"
 
 namespace cartographer_ros {
+namespace {
+
+void SetEnv(const std::string& name, const std::string& value) {
+  setenv(name.c_str(), value.c_str(), 1);
+}
+
+void SetBoolEnvIfPresent(
+    ::cartographer::common::LuaParameterDictionary* const dictionary,
+    const std::string& lua_key, const std::string& env_key) {
+  if (dictionary->HasKey(lua_key)) {
+    SetEnv(env_key, dictionary->GetBool(lua_key) ? "true" : "false");
+  }
+}
+
+void SetDoubleEnvIfPresent(
+    ::cartographer::common::LuaParameterDictionary* const dictionary,
+    const std::string& lua_key, const std::string& env_key) {
+  if (dictionary->HasKey(lua_key)) {
+    SetEnv(env_key, std::to_string(dictionary->GetDouble(lua_key)));
+  }
+}
+
+void ApplyDamviRuntimeOptions(
+    ::cartographer::common::LuaParameterDictionary* const
+        lua_parameter_dictionary) {
+  if (!lua_parameter_dictionary->HasKey("damvi_runtime_options")) {
+    return;
+  }
+  auto runtime_options =
+      lua_parameter_dictionary->GetDictionary("damvi_runtime_options");
+
+  SetBoolEnvIfPresent(runtime_options.get(), "wheel_odom_twist_only",
+                      "WHEEL_ODOM_TWIST_ONLY");
+  SetDoubleEnvIfPresent(runtime_options.get(), "wheel_odom_linear_scale",
+                        "WHEEL_ODOM_LINEAR_SCALE");
+  SetDoubleEnvIfPresent(
+      runtime_options.get(), "longitudinal_prior_occupied_space_weight_scale",
+      "CARTOGRAPHER_LONGITUDINAL_PRIOR_OCCUPIED_SPACE_WEIGHT_SCALE");
+
+  SetBoolEnvIfPresent(runtime_options.get(), "adaptive_odometry_blend",
+                      "CARTOGRAPHER_ADAPTIVE_ODOMETRY_BLEND");
+  SetDoubleEnvIfPresent(
+      runtime_options.get(), "adaptive_odometry_full_weight_yaw_rate",
+      "CARTOGRAPHER_ADAPTIVE_ODOMETRY_FULL_WEIGHT_YAW_RATE");
+  SetDoubleEnvIfPresent(
+      runtime_options.get(), "adaptive_odometry_zero_weight_yaw_rate",
+      "CARTOGRAPHER_ADAPTIVE_ODOMETRY_ZERO_WEIGHT_YAW_RATE");
+  SetDoubleEnvIfPresent(runtime_options.get(), "adaptive_odometry_min_weight",
+                        "CARTOGRAPHER_ADAPTIVE_ODOMETRY_MIN_WEIGHT");
+  SetDoubleEnvIfPresent(runtime_options.get(), "adaptive_odometry_max_weight",
+                        "CARTOGRAPHER_ADAPTIVE_ODOMETRY_MAX_WEIGHT");
+  SetBoolEnvIfPresent(
+      runtime_options.get(), "adaptive_odometry_mismatch_override",
+      "CARTOGRAPHER_ADAPTIVE_ODOMETRY_MISMATCH_OVERRIDE");
+  SetDoubleEnvIfPresent(runtime_options.get(),
+                        "adaptive_odometry_mismatch_ratio",
+                        "CARTOGRAPHER_ADAPTIVE_ODOMETRY_MISMATCH_RATIO");
+  SetDoubleEnvIfPresent(
+      runtime_options.get(), "adaptive_odometry_min_forward_delta",
+      "CARTOGRAPHER_ADAPTIVE_ODOMETRY_MIN_FORWARD_DELTA");
+  SetDoubleEnvIfPresent(
+      runtime_options.get(), "adaptive_odometry_mismatch_force_weight",
+      "CARTOGRAPHER_ADAPTIVE_ODOMETRY_MISMATCH_FORCE_WEIGHT");
+  SetBoolEnvIfPresent(runtime_options.get(),
+                      "adaptive_odometry_longitudinal_only",
+                      "CARTOGRAPHER_ADAPTIVE_ODOMETRY_LONGITUDINAL_ONLY");
+}
+
+}  // namespace
 
 NodeOptions CreateNodeOptions(
     ::cartographer::common::LuaParameterDictionary* const
         lua_parameter_dictionary) {
+  ApplyDamviRuntimeOptions(lua_parameter_dictionary);
+
   NodeOptions options;
   options.map_builder_options =
       ::cartographer::mapping::CreateMapBuilderOptions(

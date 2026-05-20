@@ -23,6 +23,7 @@ def generate_launch_description():
     pbstream_file = '/home/cartographer/SLAM_local-loss/src/SLAM/cartographer_ros/pbstream/0508.pbstream'
     rosbag_file = LaunchConfiguration('bagfiles')
     use_sim_time = LaunchConfiguration('use_sim_time')
+    cartographer_odom_topic = LaunchConfiguration('cartographer_odom_topic')
     fault_start_sec = LaunchConfiguration('fault_start_sec')
     fault_duration_sec = LaunchConfiguration('fault_duration_sec')
     fault_mode = LaunchConfiguration('fault_mode')
@@ -38,6 +39,11 @@ def generate_launch_description():
             'use_sim_time',
             default_value='true',
             description='Use simulation time if true'
+        ),
+        DeclareLaunchArgument(
+            'cartographer_odom_topic',
+            default_value='odom_wheel',
+            description='Topic remapped to Cartographer odom_wheel input',
         ),
         DeclareLaunchArgument(
             'fault_start_sec',
@@ -77,13 +83,14 @@ def generate_launch_description():
             remappings=[
                 ('scan', 'scan'),
                 ('imu', 'imu/data'),
+                ('odom_wheel', cartographer_odom_topic),
                 ('tf', 'tf'),
                 ('tf_static', 'tf_static'),
             ],
             parameters=[
                 {'use_sim_time': use_sim_time},
                 {'provide_odom_frame': True},
-                {'use_odometry': False},
+                {'use_odometry': True},
                 {'publish_frame_projected_to_2d': True},
             ],
         ),

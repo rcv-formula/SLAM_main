@@ -9,3 +9,4 @@ bag/
 __pycache__/
 .vscode
 frozen_tuning_results/
+*.csv

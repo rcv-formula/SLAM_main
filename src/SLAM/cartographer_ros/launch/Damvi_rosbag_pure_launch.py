@@ -20,6 +20,7 @@ def generate_launch_description():
     pbstream_file = LaunchConfiguration('pbstream_file')
     rosbag_file = LaunchConfiguration('bagfiles')
     use_sim_time = LaunchConfiguration('use_sim_time')
+    cartographer_odom_topic = LaunchConfiguration('cartographer_odom_topic')
 
     return LaunchDescription([
         
@@ -38,6 +39,11 @@ def generate_launch_description():
             default_value='true',
             description='Use simulation time if true'
         ),
+        DeclareLaunchArgument(
+            'cartographer_odom_topic',
+            default_value='odom_wheel',
+            description='Topic remapped to Cartographer odom_wheel input',
+        ),
         Node(
             package='cartographer_ros',
             executable='cartographer_node',
@@ -55,13 +61,14 @@ def generate_launch_description():
             remappings=[
                 ('scan', 'scan'),
                 ('imu', 'imu/data'),
+                ('odom_wheel', cartographer_odom_topic),
                 ('tf', 'tf'),
                 ('tf_static', 'tf_static'),
             ],
             parameters=[
                 {"use_sim_time": use_sim_time},
                 {"provide_odom_frame": True},
-                {"use_odometry": False},
+                {"use_odometry": True},
                 {"publish_frame_projected_to_2d": True}
             ],
         ),

@@ -18,6 +18,7 @@ cmake_minimum_required(VERSION 3.5)
 project(cartographer_ros)
 
 find_package(ament_cmake REQUIRED)
+find_package(ackermann_msgs REQUIRED)
 
 # Default to C++17
 set(CMAKE_CXX_STANDARD 17)
@@ -86,6 +87,7 @@ add_library(${PROJECT_NAME}
 
 set(dependencies
   builtin_interfaces
+  ackermann_msgs
   cartographer
   cartographer_ros_msgs
   geometry_msgs
