@@ -1,6 +1,0 @@
-# Trial: reduce local wheel velocity correction from 1% to 0.5%.
-imu_weight: 0.2
-imu_delta_min: 0.3
-wheelodom_weight: 0.005
-odometry_translation_weight: 1000.0
-odometry_rotation_weight: 0.0

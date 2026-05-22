@@ -1,6 +1,0 @@
-# Current local wheel correction with stronger pose graph odom prior.
-imu_weight: 0.2
-imu_delta_min: 0.3
-wheelodom_weight: 0.01
-odometry_translation_weight: 5000.0
-odometry_rotation_weight: 0.0

@@ -1,6 +1,0 @@
-# Outlier rerun refinement: small IMU decrease with current pose graph odom prior.
-imu_weight: 0.15
-imu_delta_min: 0.25
-wheelodom_weight: 0.01
-odometry_translation_weight: 3000.0
-odometry_rotation_weight: 0.0

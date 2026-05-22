@@ -58,6 +58,10 @@ TRAJECTORY_BUILDER_2D = {
     occupied_space_weight = 1.,
     translation_weight = 10.,
     rotation_weight = 40.,
+    longitudinal_translation_weight = 0.,
+    longitudinal_translation_min_speed = 0.05,
+    longitudinal_translation_max_yaw_rate = 0.15,
+    longitudinal_prior_wheel_delta_scale = 1.,
     ceres_solver_options = {
       use_nonmonotonic_steps = false,
       max_num_iterations = 20,
@@ -71,7 +75,6 @@ TRAJECTORY_BUILDER_2D = {
     max_angle_radians = math.rad(1.),
   },
 
-  -- TODO(schwoere,wohe): Remove this constant. This is only kept for ROS.
   imu_gravity_time_constant = 10.,
   pose_extrapolator = {
     use_imu_based = false,

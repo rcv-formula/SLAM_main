@@ -18,13 +18,19 @@ package cartographer.mapping.scan_matching.proto;
 
 import "cartographer/common/proto/ceres_solver_options.proto";
 
-// NEXT ID: 10
+// NEXT ID: 14
 message CeresScanMatcherOptions2D {
   // Scaling parameters for each cost functor.
   double occupied_space_weight = 1;
   double translation_weight = 2;
   double rotation_weight = 3;
-
+  // Extra one-dimensional prior along an odometry delta direction. This is
+  // useful in long corridors where scan matching is weak in the direction of
+  // travel.
+  double longitudinal_translation_weight = 10;
+  double longitudinal_translation_min_speed = 11;
+  double longitudinal_translation_max_yaw_rate = 12;
+  double longitudinal_prior_wheel_delta_scale = 13;
   // Configure the Ceres solver. See the Ceres documentation for more
   // information: https://code.google.com/p/ceres-solver/
   common.proto.CeresSolverOptions ceres_solver_options = 9;

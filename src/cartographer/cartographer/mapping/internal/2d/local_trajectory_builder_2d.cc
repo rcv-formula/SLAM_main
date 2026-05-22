@@ -17,128 +17,98 @@
 #include "cartographer/mapping/internal/2d/local_trajectory_builder_2d.h"
 
 #include <algorithm>
-#include <cctype>
 #include <cmath>
 #include <cstdlib>
-#include <exception>
 #include <fstream>
 #include <iomanip>
 #include <limits>
 #include <memory>
 #include <string>
-#include <unordered_map>
 
-#include "Eigen/Eigenvalues"
 #include "absl/memory/memory.h"
-#include "cartographer/common/math.h"
+#include "absl/synchronization/mutex.h"
 #include "cartographer/metrics/family_factory.h"
 #include "cartographer/sensor/range_data.h"
-#include "glog/logging.h"
 
 namespace cartographer {
 namespace mapping {
 
 namespace {
 
-std::string Trim(const std::string& value) {
-  size_t begin = 0;
-  while (begin < value.size() &&
-         std::isspace(static_cast<unsigned char>(value[begin]))) {
-    ++begin;
+constexpr double kFrontWeakMinDistance = 4.0;
+constexpr double kFrontWeakHalfWidth = 1.5;
+constexpr int kFrontWeakMaxPointCount = 15;
+constexpr double kFrontWeakMaxPointFraction = 0.03;
+constexpr double kMotionLossMaxScanVelocityRatio = 0.35;
+constexpr int kMotionLossPriorHoldScans = 3;
+constexpr int kStraightMismatchMinConsecutiveScans = 1;
+constexpr double kStraightLongitudinalWeightMultiplier = 4.0;
+constexpr double kLongitudinalBlendAcceptableScanRatio = 0.70;
+constexpr double kLongitudinalBlendYawPenaltyMax = 0.50;
+constexpr double kLongitudinalBlendDefaultYawPenaltyEnd = 0.80;
+constexpr double kMinLongitudinalBlendWeight = 1e-3;
+
+double EnvDouble(const char* name, const double default_value) {
+  const char* value = std::getenv(name);
+  if (value == nullptr || std::string(value).empty()) {
+    return default_value;
   }
-  size_t end = value.size();
-  while (end > begin &&
-         std::isspace(static_cast<unsigned char>(value[end - 1]))) {
-    --end;
-  }
-  return value.substr(begin, end - begin);
+  char* end = nullptr;
+  const double result = std::strtod(value, &end);
+  return end == value ? default_value : result;
 }
 
-std::unordered_map<std::string, double> LoadFlatDoubleConfig(
-    const std::string& config_path) {
-  std::unordered_map<std::string, double> values;
-  std::ifstream file(config_path);
-  if (!file.is_open()) {
-    LOG(WARNING) << "Could not open adaptive mapping config: " << config_path;
-    return values;
+bool EnvBool(const char* name, const bool default_value) {
+  const char* value = std::getenv(name);
+  if (value == nullptr) {
+    return default_value;
   }
-
-  std::string line;
-  int line_number = 0;
-  while (std::getline(file, line)) {
-    ++line_number;
-    const size_t comment_position = line.find('#');
-    if (comment_position != std::string::npos) {
-      line = line.substr(0, comment_position);
-    }
-    line = Trim(line);
-    if (line.empty()) {
-      continue;
-    }
-    const size_t colon_position = line.find(':');
-    if (colon_position == std::string::npos) {
-      continue;
-    }
-    const std::string key = Trim(line.substr(0, colon_position));
-    std::string raw_value = Trim(line.substr(colon_position + 1));
-    if (key.empty() || raw_value.empty()) {
-      continue;
-    }
-    if (raw_value.size() >= 2 &&
-        ((raw_value.front() == '"' && raw_value.back() == '"') ||
-         (raw_value.front() == '\'' && raw_value.back() == '\''))) {
-      raw_value = raw_value.substr(1, raw_value.size() - 2);
-    }
-    try {
-      size_t parsed_chars = 0;
-      const double parsed_value = std::stod(raw_value, &parsed_chars);
-      if (!Trim(raw_value.substr(parsed_chars)).empty()) {
-        continue;
-      }
-      values[key] = parsed_value;
-    } catch (const std::exception& exception) {
-      LOG(WARNING) << "Ignoring invalid adaptive mapping config value at "
-                   << config_path << ":" << line_number << " for " << key
-                   << ": " << raw_value << " (" << exception.what() << ")";
-    }
+  const std::string text(value);
+  if (text == "1" || text == "true" || text == "TRUE" || text == "on") {
+    return true;
   }
-  return values;
+  if (text == "0" || text == "false" || text == "FALSE" || text == "off") {
+    return false;
+  }
+  return default_value;
 }
 
-double ConfigValue(const std::unordered_map<std::string, double>& config,
-                   const std::string& key, const double fallback) {
-  const auto it = config.find(key);
-  return it == config.end() ? fallback : it->second;
+double Clamp(const double value, const double min, const double max) {
+  return std::max(min, std::min(max, value));
 }
 
-double ComputePlanarDegeneracyRatio(const sensor::PointCloud& point_cloud) {
-  if (point_cloud.size() < 3) {
-    return 0.;
+double SmoothStep(const double edge0, const double edge1, const double value) {
+  if (edge1 <= edge0) {
+    return value < edge0 ? 0. : 1.;
   }
-  Eigen::Vector2d mean = Eigen::Vector2d::Zero();
-  for (const auto& point : point_cloud) {
-    mean += point.position.head<2>().cast<double>();
-  }
-  mean /= static_cast<double>(point_cloud.size());
+  const double x = Clamp((value - edge0) / (edge1 - edge0), 0., 1.);
+  return x * x * (3. - 2. * x);
+}
 
-  Eigen::Matrix2d covariance = Eigen::Matrix2d::Zero();
-  for (const auto& point : point_cloud) {
-    const Eigen::Vector2d centered =
-        point.position.head<2>().cast<double>() - mean;
-    covariance += centered * centered.transpose();
-  }
-  covariance /= static_cast<double>(point_cloud.size());
+absl::Mutex* CommandDebugMutex() {
+  static auto* const mutex = new absl::Mutex;
+  return mutex;
+}
 
-  const Eigen::SelfAdjointEigenSolver<Eigen::Matrix2d> solver(covariance);
-  if (solver.info() != Eigen::Success) {
-    return 0.;
-  }
-  const double small = std::max(1e-6, solver.eigenvalues()(0));
-  const double large = std::max(0., solver.eigenvalues()(1));
-  return large / small;
+absl::optional<LocalSlamCommandDebugData>* LatestCommandDebugData() {
+  static auto* const command =
+      new absl::optional<LocalSlamCommandDebugData>;
+  return command;
 }
 
 }  // namespace
+
+void SetLocalSlamCommandDebugData(const common::Time time, const double speed,
+                                  const double steering_angle) {
+  absl::MutexLock lock(CommandDebugMutex());
+  *LatestCommandDebugData() =
+      LocalSlamCommandDebugData{time, speed, steering_angle};
+}
+
+absl::optional<LocalSlamCommandDebugData> GetLocalSlamCommandDebugData() {
+  absl::MutexLock lock(CommandDebugMutex());
+  return *LatestCommandDebugData();
+}
 
 static auto* kLocalSlamLatencyMetric = metrics::Gauge::Null();
 static auto* kLocalSlamRealTimeRatio = metrics::Gauge::Null();
@@ -159,7 +129,6 @@ LocalTrajectoryBuilder2D::LocalTrajectoryBuilder2D(
           options_.real_time_correlative_scan_matcher_options()),
       ceres_scan_matcher_(options_.ceres_scan_matcher_options()),
       range_data_collator_(expected_range_sensor_ids) {
-  LoadAdaptiveStraightConfigFromYaml();
   quality_metrics_csv_enabled_ = InitializeQualityMetricsCsvWriter();
 }
 
@@ -186,8 +155,29 @@ std::unique_ptr<transform::Rigid2d> LocalTrajectoryBuilder2D::ScanMatch(
   if (active_submaps_.submaps().empty()) {
     quality_metrics->translation_residual = 0.;
     quality_metrics->rotation_residual = 0.;
+    quality_metrics->num_filtered_points =
+        static_cast<int>(filtered_gravity_aligned_point_cloud.size());
     return absl::make_unique<transform::Rigid2d>(pose_prediction);
   }
+  quality_metrics->num_filtered_points =
+      static_cast<int>(filtered_gravity_aligned_point_cloud.size());
+  int front_point_count = 0;
+  for (const sensor::RangefinderPoint& point :
+       filtered_gravity_aligned_point_cloud) {
+    if (point.position.x() > kFrontWeakMinDistance &&
+        std::abs(point.position.y()) < kFrontWeakHalfWidth) {
+      ++front_point_count;
+    }
+  }
+  quality_metrics->front_point_count = front_point_count;
+  quality_metrics->front_point_fraction =
+      filtered_gravity_aligned_point_cloud.empty()
+          ? 0.
+          : static_cast<double>(front_point_count) /
+                static_cast<double>(filtered_gravity_aligned_point_cloud.size());
+  quality_metrics->front_weak =
+      front_point_count <= kFrontWeakMaxPointCount ||
+      quality_metrics->front_point_fraction <= kFrontWeakMaxPointFraction;
   std::shared_ptr<const Submap2D> matching_submap =
       active_submaps_.submaps().front();
   // The online correlative scan matcher will refine the initial estimate for
@@ -210,23 +200,251 @@ std::unique_ptr<transform::Rigid2d> LocalTrajectoryBuilder2D::ScanMatch(
 
   auto pose_observation = absl::make_unique<transform::Rigid2d>();
   ceres::Solver::Summary summary;
-  ceres_scan_matcher_.Match(pose_prediction.translation(), initial_ceres_pose,
-                            filtered_gravity_aligned_point_cloud,
-                            *matching_submap->grid(), pose_observation.get(),
-                            &summary);
+  double longitudinal_translation_weight = 0.;
+  double occupied_space_weight_scale = 1.;
+  Eigen::Vector2d longitudinal_target_heading(
+      std::cos(pose_prediction.rotation().angle()),
+      std::sin(pose_prediction.rotation().angle()));
+  Eigen::Vector2d longitudinal_target_translation =
+      pose_prediction.translation();
+  const double dt_since_last_pose =
+      last_pose_estimate_time_.has_value()
+          ? common::ToSeconds(time - last_pose_estimate_time_.value())
+          : 0.;
+  quality_metrics->motion_loss_prior_hold_count =
+      longitudinal_motion_loss_prior_hold_count_;
+  double wheel_velocity = std::numeric_limits<double>::quiet_NaN();
+  if (extrapolator_ && extrapolator_->HasOdometryData()) {
+    wheel_velocity = extrapolator_->GetOdometryForwardVelocity();
+    quality_metrics->wheel_forward_velocity = wheel_velocity;
+    if (dt_since_last_pose > 0.) {
+      quality_metrics->wheel_twist_expected_delta =
+          wheel_velocity * dt_since_last_pose;
+    }
+  }
+  const double base_longitudinal_translation_weight =
+      options_.ceres_scan_matcher_options().longitudinal_translation_weight();
+  quality_metrics->longitudinal_prior_wheel_delta_scale =
+      options_.ceres_scan_matcher_options()
+          .longitudinal_prior_wheel_delta_scale();
+  if (last_pose_estimate_time_.has_value() &&
+      last_pose_estimate_2d_.has_value() &&
+      std::isfinite(quality_metrics->wheel_twist_expected_delta) &&
+      std::isfinite(wheel_velocity)) {
+    quality_metrics->odom_prior_translation =
+        std::abs(quality_metrics->wheel_twist_expected_delta);
+    quality_metrics->odom_prior_yaw_rate =
+        std::isfinite(quality_metrics->imu_delta_yaw_rate)
+            ? std::abs(quality_metrics->imu_delta_yaw_rate)
+            : std::abs(latest_imu_angular_velocity_z_);
+  }
+  quality_metrics->longitudinal_prior_active =
+      longitudinal_translation_weight > 0.;
+  quality_metrics->longitudinal_prior_weight =
+      longitudinal_translation_weight;
+  quality_metrics->ceres_occupied_space_weight_scale =
+      occupied_space_weight_scale;
+  const double rotation_weight =
+      options_.ceres_scan_matcher_options().rotation_weight();
+  quality_metrics->ceres_rotation_weight = rotation_weight;
+  ceres_scan_matcher_.Match(
+      pose_prediction.translation(), longitudinal_target_heading,
+      longitudinal_target_translation,
+      longitudinal_translation_weight, occupied_space_weight_scale,
+      rotation_weight, initial_ceres_pose, filtered_gravity_aligned_point_cloud,
+      *matching_submap->grid(), pose_observation.get(), &summary);
   if (pose_observation) {
+    bool straight_longitudinal_mismatch = false;
+    if (last_pose_estimate_time_.has_value() &&
+        last_pose_estimate_2d_.has_value() && dt_since_last_pose > 0. &&
+        std::isfinite(quality_metrics->wheel_twist_expected_delta) &&
+        std::isfinite(wheel_velocity)) {
+      const transform::Rigid2d& last_pose = last_pose_estimate_2d_.value();
+      const double imu_delta_yaw =
+          std::isfinite(quality_metrics->imu_delta_yaw)
+              ? quality_metrics->imu_delta_yaw
+              : 0.;
+      const double imu_mid_heading_angle =
+          last_pose.rotation().angle() + 0.5 * imu_delta_yaw;
+      const Eigen::Vector2d imu_mid_heading(
+          std::cos(imu_mid_heading_angle), std::sin(imu_mid_heading_angle));
+      const double preliminary_scan_forward_delta =
+          (pose_observation->translation() - last_pose.translation())
+              .dot(imu_mid_heading);
+      quality_metrics->trigger_scan_forward_delta =
+          preliminary_scan_forward_delta;
+      const double wheel_delta = quality_metrics->wheel_twist_expected_delta;
+      const double wheel_speed = std::abs(wheel_velocity);
+      const double yaw_rate =
+          std::isfinite(quality_metrics->imu_delta_yaw_rate)
+              ? std::abs(quality_metrics->imu_delta_yaw_rate)
+              : std::abs(latest_imu_angular_velocity_z_);
+      const bool robot_moves_forward =
+          wheel_delta > 0. &&
+          wheel_speed >= options_.ceres_scan_matcher_options()
+                             .longitudinal_translation_min_speed();
+      const double target_delta =
+          options_.ceres_scan_matcher_options()
+              .longitudinal_prior_wheel_delta_scale() *
+          wheel_delta;
+      const double scan_ratio =
+          target_delta > 1e-6 ? preliminary_scan_forward_delta / target_delta
+                              : 1.;
+      const double ratio_blend_weight =
+          robot_moves_forward
+              ? Clamp((kLongitudinalBlendAcceptableScanRatio - scan_ratio) /
+                          kLongitudinalBlendAcceptableScanRatio,
+                      0., 1.)
+              : 0.;
+      const double yaw_penalty_start =
+          options_.ceres_scan_matcher_options()
+              .longitudinal_translation_max_yaw_rate();
+      const double yaw_penalty_end = EnvDouble(
+          "CARTOGRAPHER_LONGITUDINAL_BLEND_YAW_PENALTY_END",
+          kLongitudinalBlendDefaultYawPenaltyEnd);
+      const double yaw_penalty = kLongitudinalBlendYawPenaltyMax *
+                                 SmoothStep(yaw_penalty_start,
+                                            yaw_penalty_end, yaw_rate);
+      const double longitudinal_blend_weight =
+          Clamp(ratio_blend_weight * (1. - yaw_penalty), 0., 1.);
+      const bool scan_lost_forward_motion =
+          robot_moves_forward &&
+          ratio_blend_weight > kMinLongitudinalBlendWeight;
+      const bool strict_straight_longitudinal_mismatch =
+          longitudinal_blend_weight > kMinLongitudinalBlendWeight;
+      if (strict_straight_longitudinal_mismatch) {
+        ++straight_longitudinal_mismatch_streak_;
+      } else if (!robot_moves_forward || !scan_lost_forward_motion) {
+        straight_longitudinal_mismatch_streak_ = 0;
+        longitudinal_motion_loss_prior_hold_count_ = 0;
+      } else {
+        straight_longitudinal_mismatch_streak_ = 0;
+      }
+      const bool confirmed_straight_longitudinal_mismatch =
+          strict_straight_longitudinal_mismatch &&
+          straight_longitudinal_mismatch_streak_ >=
+              kStraightMismatchMinConsecutiveScans;
+      if (confirmed_straight_longitudinal_mismatch) {
+        longitudinal_motion_loss_prior_hold_count_ =
+            kMotionLossPriorHoldScans;
+      }
+      const bool hold_allows_prior =
+          robot_moves_forward && scan_lost_forward_motion &&
+          longitudinal_motion_loss_prior_hold_count_ > 0;
+      straight_longitudinal_mismatch =
+          strict_straight_longitudinal_mismatch || hold_allows_prior;
+      quality_metrics->straight_longitudinal_mismatch =
+          straight_longitudinal_mismatch;
+      quality_metrics->straight_longitudinal_mismatch_streak =
+          straight_longitudinal_mismatch_streak_;
+      quality_metrics->motion_loss_prior_hold_count =
+          longitudinal_motion_loss_prior_hold_count_;
+      const bool apply_straight_longitudinal_prior =
+          base_longitudinal_translation_weight > 0. &&
+          longitudinal_blend_weight > kMinLongitudinalBlendWeight;
+      if (apply_straight_longitudinal_prior) {
+        longitudinal_target_heading = imu_mid_heading;
+        longitudinal_target_translation =
+            last_pose.translation() + target_delta * longitudinal_target_heading;
+        longitudinal_translation_weight =
+            base_longitudinal_translation_weight *
+            kStraightLongitudinalWeightMultiplier * longitudinal_blend_weight;
+        occupied_space_weight_scale = std::max(
+            0.05,
+            1. - longitudinal_blend_weight *
+                     (1. - EnvDouble(
+                                "CARTOGRAPHER_LONGITUDINAL_PRIOR_OCCUPIED_SPACE_WEIGHT_SCALE",
+                                0.35)));
+        quality_metrics->longitudinal_prior_target_delta = target_delta;
+        quality_metrics->longitudinal_prior_active = true;
+        quality_metrics->longitudinal_blend_weight =
+            longitudinal_blend_weight;
+        quality_metrics->longitudinal_prior_weight =
+            longitudinal_translation_weight;
+        quality_metrics->ceres_occupied_space_weight_scale =
+            occupied_space_weight_scale;
+        initial_ceres_pose = *pose_observation;
+        ceres_scan_matcher_.Match(
+            pose_prediction.translation(), longitudinal_target_heading,
+            longitudinal_target_translation, longitudinal_translation_weight,
+            occupied_space_weight_scale, rotation_weight, initial_ceres_pose,
+            filtered_gravity_aligned_point_cloud, *matching_submap->grid(),
+            pose_observation.get(), &summary);
+        const Eigen::Vector2d lateral_axis(-longitudinal_target_heading.y(),
+                                           longitudinal_target_heading.x());
+        const double target_longitudinal =
+            longitudinal_target_translation.dot(longitudinal_target_heading);
+        const double ceres_longitudinal =
+            pose_observation->translation().dot(longitudinal_target_heading);
+        const double blended_longitudinal =
+            (1. - longitudinal_blend_weight) * ceres_longitudinal +
+            longitudinal_blend_weight * target_longitudinal;
+        const double ceres_lateral =
+            pose_observation->translation().dot(lateral_axis);
+        const Eigen::Vector2d corrected_translation =
+            blended_longitudinal * longitudinal_target_heading +
+            ceres_lateral * lateral_axis;
+        *pose_observation = transform::Rigid2d(corrected_translation,
+                                               pose_observation->rotation());
+        quality_metrics->longitudinal_replacement_active = true;
+      }
+      if (!confirmed_straight_longitudinal_mismatch &&
+          hold_allows_prior && longitudinal_motion_loss_prior_hold_count_ > 0) {
+        --longitudinal_motion_loss_prior_hold_count_;
+      }
+      quality_metrics->motion_loss_prior_hold_count =
+          longitudinal_motion_loss_prior_hold_count_;
+    }
+    if (EnvBool("CARTOGRAPHER_CLAMP_LOCAL_LATERAL_RESIDUAL", false)) {
+      const Eigen::Vector2d heading(
+          std::cos(pose_prediction.rotation().angle()),
+          std::sin(pose_prediction.rotation().angle()));
+      const Eigen::Vector2d lateral(-heading.y(), heading.x());
+      const Eigen::Vector2d residual =
+          pose_observation->translation() - pose_prediction.translation();
+      const double lateral_residual = residual.dot(lateral);
+      const double max_lateral_residual = std::max(
+          0., EnvDouble("CARTOGRAPHER_LOCAL_LATERAL_RESIDUAL_MAX", 0.03));
+      if (std::abs(lateral_residual) > max_lateral_residual) {
+        const double longitudinal_residual = residual.dot(heading);
+        const double clamped_lateral_residual =
+            Clamp(lateral_residual, -max_lateral_residual,
+                  max_lateral_residual);
+        const Eigen::Vector2d corrected_translation =
+            pose_prediction.translation() +
+            longitudinal_residual * heading +
+            clamped_lateral_residual * lateral;
+        *pose_observation = transform::Rigid2d(corrected_translation,
+                                               pose_observation->rotation());
+        LOG_EVERY_N(INFO, 100)
+            << "Clamped local SLAM lateral residual from "
+            << lateral_residual << " to " << clamped_lateral_residual
+            << " m.";
+      }
+    }
     quality_metrics->ceres_final_cost = summary.final_cost;
     kCeresScanMatcherCostMetric->Observe(summary.final_cost);
     const double residual_distance =
-        (pose_observation->translation() - pose_prediction.translation())
-            .norm();
+        (pose_observation->translation() - pose_prediction.translation()).norm();
     quality_metrics->translation_residual = residual_distance;
     kScanMatcherResidualDistanceMetric->Observe(residual_distance);
     const double residual_angle =
-        std::abs(pose_observation->rotation().angle() -
-                 pose_prediction.rotation().angle());
-    quality_metrics->rotation_residual = residual_angle;
-    kScanMatcherResidualAngleMetric->Observe(residual_angle);
+        std::atan2(std::sin(pose_observation->rotation().angle() -
+                            pose_prediction.rotation().angle()),
+                   std::cos(pose_observation->rotation().angle() -
+                            pose_prediction.rotation().angle()));
+    const Eigen::Vector2d heading(
+        std::cos(pose_prediction.rotation().angle()),
+        std::sin(pose_prediction.rotation().angle()));
+    const Eigen::Vector2d lateral(-heading.y(), heading.x());
+    const Eigen::Vector2d residual =
+        pose_observation->translation() - pose_prediction.translation();
+    quality_metrics->longitudinal_residual = residual.dot(heading);
+    quality_metrics->lateral_residual = residual.dot(lateral);
+    quality_metrics->yaw_residual = residual_angle;
+    quality_metrics->rotation_residual = std::abs(residual_angle);
+    kScanMatcherResidualAngleMetric->Observe(
+        quality_metrics->rotation_residual);
   }
   return pose_observation;
 }
@@ -239,6 +457,12 @@ bool LocalTrajectoryBuilder2D::IsLocalSlamOutlier(
   }
 
   int failure_count = 0;
+  if (options_.outlier_min_correlative_score() > 0. &&
+      !std::isnan(quality_metrics->real_time_correlative_score) &&
+      quality_metrics->real_time_correlative_score <
+          options_.outlier_min_correlative_score()) {
+    ++failure_count;
+  }
   if (!std::isnan(quality_metrics->translation_residual) &&
       quality_metrics->translation_residual >
           options_.outlier_max_translation_residual()) {
@@ -247,6 +471,11 @@ bool LocalTrajectoryBuilder2D::IsLocalSlamOutlier(
   if (!std::isnan(quality_metrics->rotation_residual) &&
       quality_metrics->rotation_residual >
           options_.outlier_max_rotation_residual()) {
+    ++failure_count;
+  }
+  if (options_.outlier_min_num_filtered_points() > 0 &&
+      quality_metrics->num_filtered_points <
+          options_.outlier_min_num_filtered_points()) {
     ++failure_count;
   }
 
@@ -276,297 +505,51 @@ bool LocalTrajectoryBuilder2D::IsLocalSlamOutlier(
   return hard_outlier || sustained_medium_outlier;
 }
 
-void LocalTrajectoryBuilder2D::LoadAdaptiveStraightConfigFromYaml() {
-  const char* config_path_env = std::getenv("MAPPING_ADAPTIVE_CONFIG");
-  if (config_path_env == nullptr || std::string(config_path_env).empty()) {
-    config_path_env = std::getenv("POSE_EXTRAPOLATOR_CONFIG");
+absl::optional<transform::Rigid2d> LocalTrajectoryBuilder2D::InterpolateOdometry2D(
+    const common::Time time) const {
+  if (odometry_history_.size() < 2 || time < odometry_history_.front().time ||
+      time > odometry_history_.back().time) {
+    return absl::nullopt;
   }
-  if (config_path_env == nullptr || std::string(config_path_env).empty()) {
-    config_path_env = std::getenv("WHEEL_ODOM_CONFIG");
+  auto it = std::lower_bound(
+      odometry_history_.begin(), odometry_history_.end(), time,
+      [](const sensor::OdometryData& odometry_data,
+         const common::Time time) { return odometry_data.time < time; });
+  if (it == odometry_history_.begin()) {
+    return transform::Project2D(it->pose);
   }
-  if (config_path_env == nullptr || std::string(config_path_env).empty()) {
-    LOG(INFO) << "MAPPING_ADAPTIVE_CONFIG/POSE_EXTRAPOLATOR_CONFIG is not set. "
-              << "Using built-in adaptive straight mapping defaults.";
-    return;
+  if (it == odometry_history_.end()) {
+    return transform::Project2D(odometry_history_.back().pose);
   }
-
-  const auto config = LoadFlatDoubleConfig(config_path_env);
-  if (config.empty()) {
-    return;
+  const sensor::OdometryData& after = *it;
+  const sensor::OdometryData& before = *(it - 1);
+  const double duration = common::ToSeconds(after.time - before.time);
+  if (duration <= 0.) {
+    return transform::Project2D(before.pose);
   }
-  adaptive_straight_enabled_ =
-      ConfigValue(config, "adaptive_straight_enabled",
-                  adaptive_straight_enabled_ ? 1. : 0.) != 0.;
-  adaptive_straight_eigen_ratio_threshold_ =
-      ConfigValue(config, "adaptive_straight_eigen_ratio_threshold",
-                  adaptive_straight_eigen_ratio_threshold_);
-  adaptive_straight_min_points_ = static_cast<int>(
-      ConfigValue(config, "adaptive_straight_min_points",
-                  adaptive_straight_min_points_));
-  adaptive_straight_min_score_ =
-      ConfigValue(config, "adaptive_straight_min_score",
-                  adaptive_straight_min_score_);
-  adaptive_straight_max_score_ =
-      ConfigValue(config, "adaptive_straight_max_score",
-                  adaptive_straight_max_score_);
-  adaptive_straight_enter_streak_ = static_cast<int>(
-      ConfigValue(config, "adaptive_straight_enter_streak",
-                  adaptive_straight_enter_streak_));
-  adaptive_straight_exit_streak_ = static_cast<int>(
-      ConfigValue(config, "adaptive_straight_exit_streak",
-                  adaptive_straight_exit_streak_));
-  featureless_scan_longitudinal_blend_ =
-      ConfigValue(config, "featureless_scan_longitudinal_blend",
-                  featureless_scan_longitudinal_blend_);
-  featureless_scan_lateral_blend_ =
-      ConfigValue(config, "featureless_scan_lateral_blend",
-                  featureless_scan_lateral_blend_);
-  featureless_scan_yaw_blend_ =
-      ConfigValue(config, "featureless_scan_yaw_blend",
-                  featureless_scan_yaw_blend_);
-  featureless_curve_translation_residual_threshold_ =
-      ConfigValue(config, "featureless_curve_translation_residual_threshold",
-                  featureless_curve_translation_residual_threshold_);
-  featureless_curve_rotation_residual_threshold_ =
-      ConfigValue(config, "featureless_curve_rotation_residual_threshold",
-                  featureless_curve_rotation_residual_threshold_);
-  featureless_curve_scan_longitudinal_blend_ =
-      ConfigValue(config, "featureless_curve_scan_longitudinal_blend",
-                  featureless_curve_scan_longitudinal_blend_);
-  featureless_curve_scan_lateral_blend_ =
-      ConfigValue(config, "featureless_curve_scan_lateral_blend",
-                  featureless_curve_scan_lateral_blend_);
-  featureless_curve_scan_yaw_blend_ =
-      ConfigValue(config, "featureless_curve_scan_yaw_blend",
-                  featureless_curve_scan_yaw_blend_);
-  featureless_max_step_m_ =
-      ConfigValue(config, "featureless_max_step_m", featureless_max_step_m_);
-  featureless_entry_scan_anchor_enabled_ =
-      ConfigValue(config, "featureless_entry_scan_anchor_enabled",
-                  featureless_entry_scan_anchor_enabled_ ? 1. : 0.) != 0.;
-  featureless_scan_correction_lpf_enabled_ =
-      ConfigValue(config, "featureless_scan_correction_lpf_enabled",
-                  featureless_scan_correction_lpf_enabled_ ? 1. : 0.) != 0.;
-  featureless_scan_correction_lpf_alpha_ =
-      ConfigValue(config, "featureless_scan_correction_lpf_alpha",
-                  featureless_scan_correction_lpf_alpha_);
-  featureless_scan_correction_lpf_max_update_m_ =
-      ConfigValue(config, "featureless_scan_correction_lpf_max_update_m",
-                  featureless_scan_correction_lpf_max_update_m_);
-  featureless_scan_correction_lpf_max_update_yaw_ =
-      ConfigValue(config, "featureless_scan_correction_lpf_max_update_yaw",
-                  featureless_scan_correction_lpf_max_update_yaw_);
-  LOG(INFO) << "Loaded adaptive straight mapping config from " << config_path_env
-            << " enabled=" << adaptive_straight_enabled_
-            << " eigen_ratio_threshold="
-            << adaptive_straight_eigen_ratio_threshold_
-            << " min_points=" << adaptive_straight_min_points_
-            << " score_range=[" << adaptive_straight_min_score_ << ", "
-            << adaptive_straight_max_score_ << "]"
-            << " enter_streak=" << adaptive_straight_enter_streak_
-            << " exit_streak=" << adaptive_straight_exit_streak_
-            << " blends(longitudinal,lateral,yaw)=("
-            << featureless_scan_longitudinal_blend_ << ", "
-            << featureless_scan_lateral_blend_ << ", "
-            << featureless_scan_yaw_blend_ << ")"
-            << " curve_residual_thresholds(translation,rotation)=("
-            << featureless_curve_translation_residual_threshold_ << ", "
-            << featureless_curve_rotation_residual_threshold_ << ")"
-            << " curve_blends(longitudinal,lateral,yaw)=("
-            << featureless_curve_scan_longitudinal_blend_ << ", "
-            << featureless_curve_scan_lateral_blend_ << ", "
-            << featureless_curve_scan_yaw_blend_ << ")"
-            << " max_step_m=" << featureless_max_step_m_
-            << " entry_scan_anchor="
-            << featureless_entry_scan_anchor_enabled_
-            << " scan_correction_lpf="
-            << featureless_scan_correction_lpf_enabled_
-            << " lpf_alpha=" << featureless_scan_correction_lpf_alpha_
-            << " lpf_max_update_m="
-            << featureless_scan_correction_lpf_max_update_m_
-            << " lpf_max_update_yaw="
-            << featureless_scan_correction_lpf_max_update_yaw_;
+  const double factor = common::ToSeconds(time - before.time) / duration;
+  const transform::Rigid2d before_2d = transform::Project2D(before.pose);
+  const transform::Rigid2d after_2d = transform::Project2D(after.pose);
+  const Eigen::Vector2d translation =
+      before_2d.translation() +
+      factor * (after_2d.translation() - before_2d.translation());
+  const double angle_delta = std::atan2(
+      std::sin(after_2d.rotation().angle() - before_2d.rotation().angle()),
+      std::cos(after_2d.rotation().angle() - before_2d.rotation().angle()));
+  return transform::Rigid2d(
+      translation, before_2d.rotation().angle() + factor * angle_delta);
 }
 
-void LocalTrajectoryBuilder2D::UpdateFeaturelessStraightMode(
-    const double scan_match_score,
-    const sensor::PointCloud& filtered_gravity_aligned_point_cloud,
-    LocalSlamQualityMetrics* const quality_metrics) {
-  quality_metrics->num_filtered_points =
-      static_cast<int>(filtered_gravity_aligned_point_cloud.size());
-  quality_metrics->geometry_degeneracy_ratio =
-      ComputePlanarDegeneracyRatio(filtered_gravity_aligned_point_cloud);
-
-  const bool score_in_adaptive_range =
-      std::isnan(scan_match_score) ||
-      (scan_match_score >= adaptive_straight_min_score_ &&
-       scan_match_score <= adaptive_straight_max_score_);
-  const bool featureless_geometry =
-      adaptive_straight_enabled_ &&
-      quality_metrics->num_filtered_points >= adaptive_straight_min_points_ &&
-      quality_metrics->geometry_degeneracy_ratio >=
-          adaptive_straight_eigen_ratio_threshold_ &&
-      score_in_adaptive_range;
-
-  if (featureless_geometry) {
-    ++featureless_straight_streak_;
-    featureful_straight_streak_ = 0;
-  } else {
-    ++featureful_straight_streak_;
-    featureless_straight_streak_ = 0;
+absl::optional<transform::Rigid2d>
+LocalTrajectoryBuilder2D::InterpolateOrLatestOdometry2D(
+    const common::Time time) const {
+  if (odometry_history_.size() < 2 || time < odometry_history_.front().time) {
+    return absl::nullopt;
   }
-
-  if (!featureless_straight_mode_ &&
-      featureless_straight_streak_ >= adaptive_straight_enter_streak_) {
-    featureless_straight_mode_ = true;
+  if (time > odometry_history_.back().time) {
+    return transform::Project2D(odometry_history_.back().pose);
   }
-  if (featureless_straight_mode_ &&
-      featureful_straight_streak_ >= adaptive_straight_exit_streak_) {
-    featureless_straight_mode_ = false;
-    featureless_step_limiter_initialized_ = false;
-    featureless_entry_scan_anchor_initialized_ = false;
-    featureless_scan_correction_lpf_initialized_ = false;
-  }
-  if (!featureless_straight_mode_) {
-    featureless_step_limiter_initialized_ = false;
-    featureless_entry_scan_anchor_initialized_ = false;
-    featureless_scan_correction_lpf_initialized_ = false;
-  }
-
-  quality_metrics->featureless_straight_mode = featureless_straight_mode_;
-  quality_metrics->featureless_straight_streak = featureless_straight_streak_;
-  if (extrapolator_ != nullptr) {
-    extrapolator_->SetFeaturelessStraightMode(
-        featureless_straight_mode_,
-        quality_metrics->geometry_degeneracy_ratio);
-  }
-}
-
-transform::Rigid2d LocalTrajectoryBuilder2D::SelectPoseForAdaptiveStraight(
-    const transform::Rigid2d& pose_prediction,
-    const transform::Rigid2d& pose_estimate,
-    const LocalSlamQualityMetrics& quality_metrics) {
-  if (!quality_metrics.featureless_straight_mode) {
-    featureless_entry_scan_anchor_initialized_ = false;
-    featureless_scan_correction_lpf_initialized_ = false;
-    if (featureless_max_step_m_ > 0.) {
-      // Keep the last normal pose as the guard point for the first
-      // featureless frame. Otherwise the entry frame can jump before the
-      // limiter has a previous pose to compare against.
-      featureless_last_pose_to_use_ = pose_estimate;
-      featureless_step_limiter_initialized_ = true;
-    } else {
-      featureless_step_limiter_initialized_ = false;
-    }
-    return pose_estimate;
-  }
-
-  const double prediction_yaw = pose_prediction.rotation().angle();
-  const bool curve_like_correction =
-      quality_metrics.translation_residual >=
-          featureless_curve_translation_residual_threshold_ ||
-      std::abs(quality_metrics.rotation_residual) >=
-          featureless_curve_rotation_residual_threshold_;
-  const double longitudinal_blend =
-      curve_like_correction ? featureless_curve_scan_longitudinal_blend_
-                            : featureless_scan_longitudinal_blend_;
-  const double lateral_blend =
-      curve_like_correction ? featureless_curve_scan_lateral_blend_
-                            : featureless_scan_lateral_blend_;
-  const double yaw_blend =
-      curve_like_correction ? featureless_curve_scan_yaw_blend_
-                            : featureless_scan_yaw_blend_;
-  const Eigen::Vector2d forward(std::cos(prediction_yaw),
-                                std::sin(prediction_yaw));
-  const Eigen::Vector2d lateral(-std::sin(prediction_yaw),
-                                std::cos(prediction_yaw));
-  const Eigen::Vector2d delta =
-      pose_estimate.translation() - pose_prediction.translation();
-  double longitudinal_delta = delta.dot(forward);
-  double lateral_delta = delta.dot(lateral);
-  double yaw_delta = common::NormalizeAngleDifference(
-      pose_estimate.rotation().angle() - prediction_yaw);
-  if (featureless_entry_scan_anchor_enabled_) {
-    if (!featureless_entry_scan_anchor_initialized_) {
-      featureless_entry_scan_anchor_longitudinal_delta_ = longitudinal_delta;
-      featureless_entry_scan_anchor_lateral_delta_ = lateral_delta;
-      featureless_entry_scan_anchor_yaw_delta_ = yaw_delta;
-      featureless_entry_scan_anchor_initialized_ = true;
-    }
-    longitudinal_delta = featureless_entry_scan_anchor_longitudinal_delta_;
-    lateral_delta = featureless_entry_scan_anchor_lateral_delta_;
-    yaw_delta = featureless_entry_scan_anchor_yaw_delta_;
-  } else if (featureless_scan_correction_lpf_enabled_) {
-    const double alpha = std::max(
-        0., std::min(1., featureless_scan_correction_lpf_alpha_));
-    if (!featureless_scan_correction_lpf_initialized_) {
-      featureless_scan_correction_lpf_longitudinal_delta_ = longitudinal_delta;
-      featureless_scan_correction_lpf_lateral_delta_ = lateral_delta;
-      featureless_scan_correction_lpf_yaw_delta_ = yaw_delta;
-      featureless_scan_correction_lpf_initialized_ = true;
-    } else {
-      double longitudinal_update =
-          alpha * (longitudinal_delta -
-                   featureless_scan_correction_lpf_longitudinal_delta_);
-      double lateral_update =
-          alpha * (lateral_delta -
-                   featureless_scan_correction_lpf_lateral_delta_);
-      const double translation_update =
-          std::hypot(longitudinal_update, lateral_update);
-      if (featureless_scan_correction_lpf_max_update_m_ > 0. &&
-          translation_update >
-              featureless_scan_correction_lpf_max_update_m_) {
-        const double scale =
-            featureless_scan_correction_lpf_max_update_m_ /
-            translation_update;
-        longitudinal_update *= scale;
-        lateral_update *= scale;
-      }
-      double yaw_update =
-          alpha * common::NormalizeAngleDifference(
-                      yaw_delta -
-                      featureless_scan_correction_lpf_yaw_delta_);
-      if (featureless_scan_correction_lpf_max_update_yaw_ > 0.) {
-        yaw_update = std::max(
-            -featureless_scan_correction_lpf_max_update_yaw_,
-            std::min(featureless_scan_correction_lpf_max_update_yaw_,
-                     yaw_update));
-      }
-      featureless_scan_correction_lpf_longitudinal_delta_ +=
-          longitudinal_update;
-      featureless_scan_correction_lpf_lateral_delta_ += lateral_update;
-      featureless_scan_correction_lpf_yaw_delta_ =
-          common::NormalizeAngleDifference(
-              featureless_scan_correction_lpf_yaw_delta_ + yaw_update);
-    }
-    longitudinal_delta = featureless_scan_correction_lpf_longitudinal_delta_;
-    lateral_delta = featureless_scan_correction_lpf_lateral_delta_;
-    yaw_delta = featureless_scan_correction_lpf_yaw_delta_;
-  }
-  const Eigen::Vector2d blended_translation =
-      pose_prediction.translation() +
-      longitudinal_blend * longitudinal_delta * forward +
-      lateral_blend * lateral_delta * lateral;
-  transform::Rigid2d result(
-      blended_translation,
-      prediction_yaw + yaw_blend * yaw_delta);
-
-  if (featureless_max_step_m_ > 0.) {
-    if (featureless_step_limiter_initialized_) {
-      const Eigen::Vector2d delta =
-          result.translation() - featureless_last_pose_to_use_.translation();
-      const double step = delta.norm();
-      if (step > featureless_max_step_m_) {
-        const Eigen::Vector2d limited_translation =
-            featureless_last_pose_to_use_.translation() +
-            delta * (featureless_max_step_m_ / step);
-        result = transform::Rigid2d(limited_translation, result.rotation());
-      }
-    }
-    featureless_last_pose_to_use_ = result;
-    featureless_step_limiter_initialized_ = true;
-  }
-  return result;
+  return InterpolateOdometry2D(time);
 }
 
 std::unique_ptr<LocalTrajectoryBuilder2D::MatchingResult>
@@ -701,6 +684,93 @@ LocalTrajectoryBuilder2D::AddAccumulatedRangeData(
   }
 
   LocalSlamQualityMetrics quality_metrics;
+  quality_metrics.adaptive_odometry_weight =
+      extrapolator_->IsAdaptiveOdometryBlendEnabled()
+          ? extrapolator_->GetAdaptiveOdometryWeight()
+          : std::numeric_limits<double>::quiet_NaN();
+  quality_metrics.odom_history_size =
+      static_cast<int>(odometry_history_.size());
+  if (!odometry_history_.empty()) {
+    quality_metrics.odom_latest_age =
+        common::ToSeconds(time - odometry_history_.back().time);
+  }
+  if (last_pose_estimate_time_.has_value() &&
+      last_pose_estimate_2d_.has_value()) {
+    const double dt =
+        common::ToSeconds(time - last_pose_estimate_time_.value());
+    quality_metrics.prediction_delta_dt = dt;
+    if (dt > 0.) {
+      const transform::Rigid2d& last_pose =
+          last_pose_estimate_2d_.value();
+      const Eigen::Vector2d last_heading(
+          std::cos(last_pose.rotation().angle()),
+          std::sin(last_pose.rotation().angle()));
+      const Eigen::Vector2d prediction_delta =
+          pose_prediction.translation() - last_pose.translation();
+      const Eigen::Vector2d last_lateral(-last_heading.y(), last_heading.x());
+      const double prediction_yaw_delta = std::atan2(
+          std::sin(pose_prediction.rotation().angle() -
+                   last_pose.rotation().angle()),
+          std::cos(pose_prediction.rotation().angle() -
+                   last_pose.rotation().angle()));
+      quality_metrics.prediction_delta_forward =
+          prediction_delta.dot(last_heading);
+      quality_metrics.prediction_delta_lateral =
+          prediction_delta.dot(last_lateral);
+      quality_metrics.prediction_delta_x = prediction_delta.x();
+      quality_metrics.prediction_delta_y = prediction_delta.y();
+      quality_metrics.prediction_delta_forward_velocity =
+          quality_metrics.prediction_delta_forward / dt;
+      quality_metrics.prediction_delta_translation =
+          prediction_delta.norm();
+      quality_metrics.prediction_delta_yaw = prediction_yaw_delta;
+      quality_metrics.imu_delta_dt = dt;
+      quality_metrics.imu_delta_yaw =
+          integrated_imu_yaw_ - last_pose_integrated_imu_yaw_;
+      quality_metrics.imu_delta_yaw_rate =
+          quality_metrics.imu_delta_yaw / dt;
+      const absl::optional<LocalSlamCommandDebugData> command =
+          GetLocalSlamCommandDebugData();
+      if (command.has_value()) {
+        quality_metrics.command_latest_age =
+            common::ToSeconds(time - command.value().time);
+        quality_metrics.command_speed = command.value().speed;
+        quality_metrics.command_steering_angle =
+            command.value().steering_angle;
+        quality_metrics.command_expected_delta =
+            command.value().speed * dt;
+      }
+
+      const absl::optional<transform::Rigid2d> odom_prev =
+          InterpolateOrLatestOdometry2D(last_pose_estimate_time_.value());
+      const absl::optional<transform::Rigid2d> odom_now =
+          InterpolateOrLatestOdometry2D(time);
+      if (odom_prev.has_value() && odom_now.has_value()) {
+        const transform::Rigid2d odom_delta =
+            odom_prev.value().inverse() * odom_now.value();
+        const Eigen::Vector2d odom_delta_in_local =
+            last_pose.rotation() * odom_delta.translation();
+        const Eigen::Vector2d last_lateral(-last_heading.y(), last_heading.x());
+        const double odom_yaw_delta = std::atan2(
+            std::sin(odom_delta.rotation().angle()),
+            std::cos(odom_delta.rotation().angle()));
+        quality_metrics.odom_pose_delta_dt = dt;
+        quality_metrics.odom_pose_delta_forward =
+            odom_delta_in_local.dot(last_heading);
+        quality_metrics.odom_pose_delta_lateral =
+            odom_delta_in_local.dot(last_lateral);
+        quality_metrics.odom_pose_delta_local_x =
+            odom_delta.translation().x();
+        quality_metrics.odom_pose_delta_local_y =
+            odom_delta.translation().y();
+        quality_metrics.odom_pose_delta_forward_velocity =
+            quality_metrics.odom_pose_delta_forward / dt;
+        quality_metrics.odom_pose_delta_translation =
+            odom_delta_in_local.norm();
+        quality_metrics.odom_pose_delta_yaw = odom_yaw_delta;
+      }
+    }
+  }
   // local map frame <- gravity-aligned frame
   std::unique_ptr<transform::Rigid2d> pose_estimate_2d =
       ScanMatch(time, pose_prediction, filtered_gravity_aligned_point_cloud,
@@ -709,25 +779,56 @@ LocalTrajectoryBuilder2D::AddAccumulatedRangeData(
     LOG(WARNING) << "Scan matching failed.";
     return nullptr;
   }
-  UpdateFeaturelessStraightMode(
-      quality_metrics.real_time_correlative_score,
-      filtered_gravity_aligned_point_cloud, &quality_metrics);
+  if (last_pose_estimate_time_.has_value() &&
+      last_pose_estimate_2d_.has_value()) {
+    const double dt =
+        common::ToSeconds(time - last_pose_estimate_time_.value());
+    if (dt > 0.) {
+      const transform::Rigid2d& last_pose =
+          last_pose_estimate_2d_.value();
+      const double scan_match_yaw_delta = std::atan2(
+          std::sin(pose_estimate_2d->rotation().angle() -
+                   last_pose.rotation().angle()),
+          std::cos(pose_estimate_2d->rotation().angle() -
+                   last_pose.rotation().angle()));
+      quality_metrics.scan_match_yaw_rate =
+          std::abs(scan_match_yaw_delta / dt);
+      const Eigen::Vector2d heading(std::cos(last_pose.rotation().angle()),
+                                    std::sin(last_pose.rotation().angle()));
+      const Eigen::Vector2d lateral(-heading.y(), heading.x());
+      const Eigen::Vector2d scan_match_delta =
+          pose_estimate_2d->translation() - last_pose.translation();
+      quality_metrics.scan_match_delta_forward =
+          scan_match_delta.dot(heading);
+      quality_metrics.scan_match_delta_lateral =
+          scan_match_delta.dot(lateral);
+      quality_metrics.scan_match_delta_translation =
+          scan_match_delta.norm();
+      quality_metrics.scan_match_delta_yaw = scan_match_yaw_delta;
+      quality_metrics.scan_forward_velocity =
+          quality_metrics.scan_match_delta_forward / dt;
+    }
+  }
+  const bool longitudinal_motion_mismatch =
+      quality_metrics.straight_longitudinal_mismatch;
+  quality_metrics.longitudinal_motion_loss = longitudinal_motion_mismatch;
+  quality_metrics.motion_loss_prior_hold_count =
+      longitudinal_motion_loss_prior_hold_count_;
+  const transform::Rigid2d accepted_pose_2d = *pose_estimate_2d;
+  const transform::Rigid3d pose_estimate =
+      transform::Embed3D(accepted_pose_2d) * gravity_alignment;
+  extrapolator_->AddPose(time, pose_estimate);
+  last_pose_estimate_time_ = time;
+  last_pose_estimate_2d_ = accepted_pose_2d;
+  last_pose_integrated_imu_yaw_ = integrated_imu_yaw_;
   quality_metrics.was_outlier = IsLocalSlamOutlier(&quality_metrics);
-  const transform::Rigid2d pose_to_use_2d =
-      quality_metrics.was_outlier
-          ? pose_prediction
-          : SelectPoseForAdaptiveStraight(pose_prediction, *pose_estimate_2d,
-                                          quality_metrics);
-  const transform::Rigid3d pose_to_use =
-      transform::Embed3D(pose_to_use_2d) * gravity_alignment;
-  extrapolator_->AddPose(time, pose_to_use);
 
   sensor::RangeData range_data_in_local =
       TransformRangeData(gravity_aligned_range_data,
-                         transform::Embed3D(pose_to_use_2d.cast<float>()));
+                         transform::Embed3D(accepted_pose_2d.cast<float>()));
   if (quality_metrics.was_outlier) {
     LOG_EVERY_N(WARNING, 20)
-        << "Local SLAM outlier detected (using prediction and skipping submap update). "
+        << "Local SLAM outlier detected (inserting with reduced constraint weight). "
         << "score=" << quality_metrics.real_time_correlative_score
         << " translation_residual=" << quality_metrics.translation_residual
         << " rotation_residual=" << quality_metrics.rotation_residual
@@ -736,9 +837,9 @@ LocalTrajectoryBuilder2D::AddAccumulatedRangeData(
   }
   std::unique_ptr<InsertionResult> insertion_result = InsertIntoSubmap(
       time, range_data_in_local, filtered_gravity_aligned_point_cloud,
-      pose_to_use, gravity_alignment.rotation(), quality_metrics.was_outlier);
+      pose_estimate, gravity_alignment.rotation(), quality_metrics.was_outlier);
   MaybeWriteQualityMetricsCsv(
-      time, pose_prediction, pose_to_use_2d, quality_metrics,
+      time, pose_prediction, accepted_pose_2d, quality_metrics,
       insertion_result != nullptr,
       insertion_result != nullptr ? insertion_result->insertion_submaps.size()
                                   : 0);
@@ -765,7 +866,7 @@ LocalTrajectoryBuilder2D::AddAccumulatedRangeData(
   last_wall_time_ = wall_time;
   last_thread_cpu_time_seconds_ = thread_cpu_time_seconds;
   return absl::make_unique<MatchingResult>(
-      MatchingResult{time, pose_to_use, std::move(range_data_in_local),
+      MatchingResult{time, pose_estimate, std::move(range_data_in_local),
                      quality_metrics,
                      latest_scan_match_score_,
                      latest_scan_match_score_valid_,
@@ -779,9 +880,6 @@ LocalTrajectoryBuilder2D::InsertIntoSubmap(
     const transform::Rigid3d& pose_estimate,
     const Eigen::Quaterniond& gravity_alignment,
     const bool is_outlier) {
-  if (is_outlier && options_.skip_submap_insertion_for_outliers()) {
-    return nullptr;
-  }
   if (motion_filter_.IsSimilar(time, pose_estimate)) {
     return nullptr;
   }
@@ -828,11 +926,38 @@ bool LocalTrajectoryBuilder2D::InitializeQualityMetricsCsvWriter() {
     quality_metrics_csv_
         << "stamp,rt_correlative_score,ceres_final_cost,"
            "translation_residual,rotation_residual,num_filtered_points,"
-           "geometry_degeneracy_ratio,featureless_straight_mode,"
-           "featureless_straight_streak,was_outlier,medium_outlier_streak,"
-           "inserted_to_submap,num_insertion_submaps,pose_prediction_x,"
-           "pose_prediction_y,pose_prediction_yaw,pose_estimate_x,"
-           "pose_estimate_y,pose_estimate_yaw\n";
+           "was_outlier,medium_outlier_streak,inserted_to_submap,"
+           "num_insertion_submaps,pose_prediction_x,pose_prediction_y,"
+           "pose_prediction_yaw,pose_estimate_x,pose_estimate_y,"
+           "pose_estimate_yaw,longitudinal_residual,lateral_residual,"
+           "yaw_residual,wheel_forward_velocity,"
+           "scan_forward_velocity,scan_match_yaw_rate,"
+           "scan_match_delta_forward,scan_match_delta_lateral,"
+           "scan_match_delta_translation,scan_match_delta_yaw,"
+           "prediction_delta_dt,prediction_delta_forward,"
+           "prediction_delta_lateral,prediction_delta_x,prediction_delta_y,"
+           "prediction_delta_forward_velocity,prediction_delta_translation,"
+           "prediction_delta_yaw,adaptive_odometry_weight,"
+           "wheel_twist_expected_delta,"
+           "odom_pose_delta_dt,odom_pose_delta_forward,"
+           "odom_pose_delta_lateral,odom_pose_delta_local_x,"
+           "odom_pose_delta_local_y,"
+           "odom_pose_delta_forward_velocity,odom_pose_delta_translation,"
+           "odom_pose_delta_yaw,odom_latest_age,odom_history_size,"
+           "front_point_count,front_point_fraction,front_weak,"
+           "longitudinal_prior_active,"
+           "longitudinal_replacement_active,"
+           "longitudinal_motion_loss,straight_longitudinal_mismatch,"
+           "straight_longitudinal_mismatch_streak,"
+           "motion_loss_prior_hold_count,"
+           "longitudinal_blend_weight,longitudinal_prior_weight,"
+           "ceres_occupied_space_weight_scale,ceres_rotation_weight,"
+           "longitudinal_prior_target_delta,"
+           "longitudinal_prior_wheel_delta_scale,"
+           "trigger_scan_forward_delta,odom_prior_translation,"
+           "odom_prior_yaw_rate,imu_yaw_rate,imu_delta_dt,"
+           "imu_delta_yaw,imu_delta_yaw_rate,command_latest_age,"
+           "command_speed,command_steering_angle,command_expected_delta\n";
     quality_metrics_csv_.flush();
   }
   return true;
@@ -854,9 +979,6 @@ void LocalTrajectoryBuilder2D::MaybeWriteQualityMetricsCsv(
       << quality_metrics.translation_residual << ','
       << quality_metrics.rotation_residual << ','
       << quality_metrics.num_filtered_points << ','
-      << quality_metrics.geometry_degeneracy_ratio << ','
-      << static_cast<int>(quality_metrics.featureless_straight_mode) << ','
-      << quality_metrics.featureless_straight_streak << ','
       << static_cast<int>(quality_metrics.was_outlier) << ','
       << quality_metrics.medium_outlier_streak << ','
       << static_cast<int>(inserted_to_submap) << ','
@@ -865,18 +987,94 @@ void LocalTrajectoryBuilder2D::MaybeWriteQualityMetricsCsv(
       << pose_prediction.rotation().angle() << ','
       << pose_estimate.translation().x() << ','
       << pose_estimate.translation().y() << ','
-      << pose_estimate.rotation().angle() << '\n';
+      << pose_estimate.rotation().angle() << ','
+      << quality_metrics.longitudinal_residual << ','
+      << quality_metrics.lateral_residual << ','
+      << quality_metrics.yaw_residual << ','
+      << quality_metrics.wheel_forward_velocity << ','
+      << quality_metrics.scan_forward_velocity << ','
+      << quality_metrics.scan_match_yaw_rate << ','
+      << quality_metrics.scan_match_delta_forward << ','
+      << quality_metrics.scan_match_delta_lateral << ','
+      << quality_metrics.scan_match_delta_translation << ','
+      << quality_metrics.scan_match_delta_yaw << ','
+      << quality_metrics.prediction_delta_dt << ','
+      << quality_metrics.prediction_delta_forward << ','
+      << quality_metrics.prediction_delta_lateral << ','
+      << quality_metrics.prediction_delta_x << ','
+      << quality_metrics.prediction_delta_y << ','
+      << quality_metrics.prediction_delta_forward_velocity << ','
+      << quality_metrics.prediction_delta_translation << ','
+      << quality_metrics.prediction_delta_yaw << ','
+      << quality_metrics.adaptive_odometry_weight << ','
+      << quality_metrics.wheel_twist_expected_delta << ','
+      << quality_metrics.odom_pose_delta_dt << ','
+      << quality_metrics.odom_pose_delta_forward << ','
+      << quality_metrics.odom_pose_delta_lateral << ','
+      << quality_metrics.odom_pose_delta_local_x << ','
+      << quality_metrics.odom_pose_delta_local_y << ','
+      << quality_metrics.odom_pose_delta_forward_velocity << ','
+      << quality_metrics.odom_pose_delta_translation << ','
+      << quality_metrics.odom_pose_delta_yaw << ','
+      << quality_metrics.odom_latest_age << ','
+      << quality_metrics.odom_history_size << ','
+      << quality_metrics.front_point_count << ','
+      << quality_metrics.front_point_fraction << ','
+      << static_cast<int>(quality_metrics.front_weak) << ','
+      << static_cast<int>(quality_metrics.longitudinal_prior_active) << ','
+      << static_cast<int>(quality_metrics.longitudinal_replacement_active)
+      << ','
+      << static_cast<int>(quality_metrics.longitudinal_motion_loss) << ','
+      << static_cast<int>(quality_metrics.straight_longitudinal_mismatch)
+      << ','
+      << quality_metrics.straight_longitudinal_mismatch_streak << ','
+      << quality_metrics.motion_loss_prior_hold_count << ','
+      << quality_metrics.longitudinal_blend_weight << ','
+      << quality_metrics.longitudinal_prior_weight << ','
+      << quality_metrics.ceres_occupied_space_weight_scale << ','
+      << quality_metrics.ceres_rotation_weight << ','
+      << quality_metrics.longitudinal_prior_target_delta << ','
+      << quality_metrics.longitudinal_prior_wheel_delta_scale << ','
+      << quality_metrics.trigger_scan_forward_delta << ','
+      << quality_metrics.odom_prior_translation << ','
+      << quality_metrics.odom_prior_yaw_rate << ','
+      << latest_imu_angular_velocity_z_ << ','
+      << quality_metrics.imu_delta_dt << ','
+      << quality_metrics.imu_delta_yaw << ','
+      << quality_metrics.imu_delta_yaw_rate << ','
+      << quality_metrics.command_latest_age << ','
+      << quality_metrics.command_speed << ','
+      << quality_metrics.command_steering_angle << ','
+      << quality_metrics.command_expected_delta << '\n';
   quality_metrics_csv_.flush();
 }
 
 void LocalTrajectoryBuilder2D::AddImuData(const sensor::ImuData& imu_data) {
   CHECK(options_.use_imu_data()) << "An unexpected IMU packet was added.";
+  if (last_imu_time_.has_value()) {
+    const double dt = common::ToSeconds(imu_data.time - last_imu_time_.value());
+    if (dt > 0. && dt < 1.) {
+      integrated_imu_yaw_ += imu_data.angular_velocity.z() * dt;
+    }
+  }
+  last_imu_time_ = imu_data.time;
+  latest_imu_angular_velocity_z_ = imu_data.angular_velocity.z();
   InitializeExtrapolator(imu_data.time);
   extrapolator_->AddImuData(imu_data);
 }
 
 void LocalTrajectoryBuilder2D::AddOdometryData(
     const sensor::OdometryData& odometry_data) {
+  odometry_history_.push_back(odometry_data);
+  const common::Time history_cutoff =
+      odometry_data.time - common::FromSeconds(10.);
+  while (odometry_history_.size() > 2 &&
+         odometry_history_.front().time < history_cutoff) {
+    odometry_history_.pop_front();
+  }
+  while (odometry_history_.size() > 500) {
+    odometry_history_.pop_front();
+  }
   if (extrapolator_ == nullptr) {
     // Until we've initialized the extrapolator we cannot add odometry data.
     LOG(INFO) << "Extrapolator not yet initialized.";

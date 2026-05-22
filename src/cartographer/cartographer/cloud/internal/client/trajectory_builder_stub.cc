@@ -163,8 +163,11 @@ void TrajectoryBuilderStub::RunLocalSlamResultsReader(
                       response.insertion_result().node_id().trajectory_id(),
                       response.insertion_result().node_id().node_index()}})
             : nullptr;
-    local_slam_result_callback(trajectory_id, time, local_pose, range_data,
-                               std::move(insertion_result));
+    local_slam_result_callback(
+        trajectory_id, time, local_pose, range_data,
+        0. /* scan_match_score */, false /* scan_match_score_valid */,
+        mapping::TrajectoryBuilderInterface::LocalSlamDebugData{},
+        std::move(insertion_result));
   }
   client->StreamFinish();
 }

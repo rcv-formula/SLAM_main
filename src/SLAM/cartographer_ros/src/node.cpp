@@ -17,6 +17,9 @@
 #include "cartographer_ros/node.h"
 
 #include <chrono>
+#include <cmath>
+#include <cstdlib>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -26,6 +29,7 @@
 #include "cartographer/common/lua_parameter_dictionary.h"
 #include "cartographer/common/port.h"
 #include "cartographer/common/time.h"
+#include "cartographer/mapping/internal/2d/local_trajectory_builder_2d.h"
 #include "cartographer/mapping/pose_graph_interface.h"
 #include "cartographer/mapping/proto/submap_visualization.pb.h"
 #include "cartographer/metrics/register.h"
@@ -40,6 +44,7 @@
 #include "cartographer_ros_msgs/msg/scan_match_score.hpp"
 #include "cartographer_ros_msgs/msg/status_code.hpp"
 #include "cartographer_ros_msgs/msg/status_response.hpp"
+#include "std_msgs/msg/bool.hpp"
 #include "geometry_msgs/msg/point_stamped.hpp"
 #include "glog/logging.h"
 #include "nav_msgs/msg/odometry.hpp"
@@ -57,6 +62,35 @@ using TrajectoryState =
     ::cartographer::mapping::PoseGraphInterface::TrajectoryState;
 
 namespace {
+constexpr double kMotionMismatchCommandMinSpeed = 0.05;
+constexpr double kMotionMismatchWheelToCommandRatio = 0.35;
+constexpr double kMotionMismatchMaxInputAgeSeconds = 0.3;
+constexpr double kMotionMismatchMarkerMinPeriodSeconds = 0.2;
+constexpr double kDeltaMismatchExpectedMinMeters = 0.005;
+constexpr double kDeltaMismatchScanToExpectedRatio = 0.45;
+constexpr double kDiagnosticMarkerLifetimeSeconds = 8.;
+
+bool EnvBool(const char* name, const bool default_value) {
+  const char* value = std::getenv(name);
+  if (value == nullptr) {
+    return default_value;
+  }
+  return std::string(value) == "1" || std::string(value) == "true" ||
+         std::string(value) == "TRUE";
+}
+
+builtin_interfaces::msg::Duration MarkerLifetime() {
+  builtin_interfaces::msg::Duration duration;
+  duration.sec = static_cast<int32_t>(kDiagnosticMarkerLifetimeSeconds);
+  duration.nanosec = static_cast<uint32_t>(
+      (kDiagnosticMarkerLifetimeSeconds - duration.sec) * 1e9);
+  return duration;
+}
+
+double StampToSeconds(const builtin_interfaces::msg::Time& stamp) {
+  return static_cast<double>(stamp.sec) + 1e-9 * stamp.nanosec;
+}
+
 // Subscribes to the 'topic' for 'trajectory_id' using the 'node_handle' and
 // calls 'handler' on the 'node' to handle messages. Returns the subscriber.
 template <typename MessageType>
@@ -130,6 +164,18 @@ Node::Node(
   scan_match_score_publisher_ =
       node_->create_publisher<cartographer_ros_msgs::msg::ScanMatchScore>(
           kScanMatchScoreTopic, 10);
+  localization_status_publisher_ =
+      node_->create_publisher<std_msgs::msg::Bool>(
+          kLocalizationStatusTopic, rclcpp::QoS(1).transient_local());
+  motion_mismatch_marker_publisher_ =
+      node_->create_publisher<visualization_msgs::msg::MarkerArray>(
+          "motion_mismatch_markers", 10);
+
+  // Wire localization status callback from pose graph
+  map_builder_bridge_->GetPoseGraph()->SetLocalizationStatusCallback(
+      [this](carto::mapping::PoseGraphInterface::LocalizationStatus status) {
+        OnLocalizationStatusChanged(status);
+      });
 
   submap_query_server_ = node_->create_service<cartographer_ros_msgs::srv::SubmapQuery>(
       kSubmapQueryServiceName,
@@ -233,8 +279,8 @@ void Node::AddExtrapolator(const int trajectory_id,
           : options.trajectory_builder_options.trajectory_builder_2d_options()
                 .imu_gravity_time_constant();
   extrapolators_.emplace(
-      trajectory_id,
-      absl::make_unique<::cartographer::mapping::PoseExtrapolator>(
+      std::piecewise_construct, std::forward_as_tuple(trajectory_id),
+      std::forward_as_tuple(
           ::cartographer::common::FromSeconds(kExtrapolationEstimationTimeSec),
           gravity_time_constant));
 }
@@ -255,7 +301,7 @@ void Node::PublishLocalTrajectoryData() {
   for (const auto& entry : map_builder_bridge_->GetLocalTrajectoryData()) {
     const auto& trajectory_data = entry.second;
 
-    auto& extrapolator = *extrapolators_.at(entry.first);
+    auto& extrapolator = extrapolators_.at(entry.first);
     // We only publish a point cloud if it has changed. It is not needed at high
     // frequency, and republishing it would be computationally wasteful.
     if (trajectory_data.local_slam_data->time !=
@@ -363,8 +409,247 @@ void Node::PublishLocalTrajectoryData() {
         pose_msg.pose = ToGeometryMsgPose(tracking_to_map);
         tracked_pose_publisher_->publish(pose_msg);
       }
+      MaybePublishMotionMismatchMarker(entry.first, stamped_transform.header.stamp,
+                                       tracking_to_map);
+      MaybePublishDeltaMismatchMarker(
+          entry.first, stamped_transform.header.stamp, tracking_to_map,
+          trajectory_data.local_slam_data->debug_data);
+      MaybePublishFrontWeakMarker(
+          entry.first, stamped_transform.header.stamp, tracking_to_map,
+          trajectory_data.local_slam_data->debug_data);
     }
   }
+}
+
+void Node::MaybePublishMotionMismatchMarker(
+    const int trajectory_id, const builtin_interfaces::msg::Time& stamp,
+    const Rigid3d& tracking_to_map) {
+  if (motion_mismatch_marker_publisher_->get_subscription_count() == 0) {
+    return;
+  }
+  const auto command_it = latest_command_speed_.find(trajectory_id);
+  const auto wheel_it = latest_wheel_forward_velocity_.find(trajectory_id);
+  if (command_it == latest_command_speed_.end() ||
+      wheel_it == latest_wheel_forward_velocity_.end() ||
+      !command_it->second.valid || !wheel_it->second.valid) {
+    return;
+  }
+
+  const double now_seconds = StampToSeconds(stamp);
+  const double command_age =
+      std::abs(now_seconds - StampToSeconds(command_it->second.stamp));
+  const double wheel_age =
+      std::abs(now_seconds - StampToSeconds(wheel_it->second.stamp));
+  if (command_age > kMotionMismatchMaxInputAgeSeconds ||
+      wheel_age > kMotionMismatchMaxInputAgeSeconds) {
+    return;
+  }
+
+  const double command_speed = command_it->second.value;
+  const double wheel_speed = wheel_it->second.value;
+  if (command_speed <= kMotionMismatchCommandMinSpeed) {
+    return;
+  }
+  const bool wheel_too_small =
+      wheel_speed < command_speed * kMotionMismatchWheelToCommandRatio;
+  const bool wheel_backward = wheel_speed < -0.02;
+  if (!wheel_too_small && !wheel_backward) {
+    return;
+  }
+
+  const auto last_it = last_motion_mismatch_marker_stamp_.find(trajectory_id);
+  if (last_it != last_motion_mismatch_marker_stamp_.end() &&
+      now_seconds - StampToSeconds(last_it->second) <
+          kMotionMismatchMarkerMinPeriodSeconds) {
+    return;
+  }
+  last_motion_mismatch_marker_stamp_[trajectory_id] = stamp;
+
+  visualization_msgs::msg::Marker sphere;
+  sphere.header.frame_id = node_options_.map_frame;
+  sphere.header.stamp = stamp;
+  sphere.ns = "wheel_command_mismatch";
+  sphere.id = next_motion_mismatch_marker_id_++;
+  sphere.type = visualization_msgs::msg::Marker::SPHERE;
+  sphere.action = visualization_msgs::msg::Marker::ADD;
+  sphere.pose = ToGeometryMsgPose(tracking_to_map);
+  sphere.pose.position.z += 0.25;
+  sphere.scale.x = 0.35;
+  sphere.scale.y = 0.35;
+  sphere.scale.z = 0.35;
+  sphere.color.r = 1.0;
+  sphere.color.g = 0.05;
+  sphere.color.b = 0.0;
+  sphere.color.a = 0.9;
+  sphere.lifetime = MarkerLifetime();
+
+  visualization_msgs::msg::Marker text = sphere;
+  text.ns = "wheel_command_mismatch_text";
+  text.id = next_motion_mismatch_marker_id_++;
+  text.type = visualization_msgs::msg::Marker::TEXT_VIEW_FACING;
+  text.pose.position.z += 0.45;
+  text.scale.x = 0.0;
+  text.scale.y = 0.0;
+  text.scale.z = 0.25;
+  text.color.r = 1.0;
+  text.color.g = 1.0;
+  text.color.b = 1.0;
+  text.color.a = 1.0;
+  std::ostringstream label;
+  label.setf(std::ios::fixed);
+  label.precision(2);
+  label << "cmd " << command_speed << " / wheel " << wheel_speed;
+  text.text = label.str();
+
+  visualization_msgs::msg::MarkerArray markers;
+  markers.markers.push_back(std::move(sphere));
+  markers.markers.push_back(std::move(text));
+  motion_mismatch_marker_publisher_->publish(markers);
+}
+
+void Node::MaybePublishDeltaMismatchMarker(
+    const int trajectory_id, const builtin_interfaces::msg::Time& stamp,
+    const Rigid3d& tracking_to_map,
+    const cartographer::mapping::TrajectoryBuilderInterface::LocalSlamDebugData&
+        debug_data) {
+  if (motion_mismatch_marker_publisher_->get_subscription_count() == 0) {
+    return;
+  }
+
+  const double scan_delta = debug_data.scan_match_delta_forward;
+  const double wheel_delta = debug_data.wheel_twist_expected_delta;
+  const double command_delta = debug_data.command_expected_delta;
+  if (!std::isfinite(scan_delta) || !std::isfinite(wheel_delta) ||
+      !std::isfinite(command_delta)) {
+    return;
+  }
+
+  const double expected_delta = std::max(wheel_delta, command_delta);
+  const bool scan_stopped_or_backward = scan_delta <= 0.;
+  const bool scan_too_short =
+      expected_delta >= kDeltaMismatchExpectedMinMeters &&
+      scan_delta < expected_delta * kDeltaMismatchScanToExpectedRatio;
+  if (!debug_data.straight_longitudinal_mismatch &&
+      !scan_stopped_or_backward && !scan_too_short) {
+    return;
+  }
+
+  const double now_seconds = StampToSeconds(stamp);
+  const auto last_it = last_delta_mismatch_marker_stamp_.find(trajectory_id);
+  if (last_it != last_delta_mismatch_marker_stamp_.end() &&
+      now_seconds - StampToSeconds(last_it->second) <
+          kMotionMismatchMarkerMinPeriodSeconds) {
+    return;
+  }
+  last_delta_mismatch_marker_stamp_[trajectory_id] = stamp;
+
+  visualization_msgs::msg::Marker sphere;
+  sphere.header.frame_id = node_options_.map_frame;
+  sphere.header.stamp = stamp;
+  sphere.ns = "scan_wheel_command_delta_mismatch";
+  sphere.id = next_motion_mismatch_marker_id_++;
+  sphere.type = visualization_msgs::msg::Marker::CUBE;
+  sphere.action = visualization_msgs::msg::Marker::ADD;
+  sphere.pose = ToGeometryMsgPose(tracking_to_map);
+  sphere.pose.position.z += 0.65;
+  sphere.scale.x = 0.28;
+  sphere.scale.y = 0.28;
+  sphere.scale.z = 0.28;
+  sphere.color.r = 1.0;
+  sphere.color.g = 0.6;
+  sphere.color.b = 0.0;
+  sphere.color.a = 0.95;
+  sphere.lifetime = MarkerLifetime();
+
+  visualization_msgs::msg::Marker text = sphere;
+  text.ns = "scan_wheel_command_delta_mismatch_text";
+  text.id = next_motion_mismatch_marker_id_++;
+  text.type = visualization_msgs::msg::Marker::TEXT_VIEW_FACING;
+  text.pose.position.z += 0.45;
+  text.scale.x = 0.0;
+  text.scale.y = 0.0;
+  text.scale.z = 0.22;
+  text.color.r = 1.0;
+  text.color.g = 1.0;
+  text.color.b = 1.0;
+  text.color.a = 1.0;
+  std::ostringstream label;
+  label.setf(std::ios::fixed);
+  label.precision(2);
+  label << "scan " << scan_delta << " wheel " << wheel_delta << " cmd "
+        << command_delta;
+  text.text = label.str();
+
+  visualization_msgs::msg::MarkerArray markers;
+  markers.markers.push_back(std::move(sphere));
+  markers.markers.push_back(std::move(text));
+  motion_mismatch_marker_publisher_->publish(markers);
+}
+
+void Node::MaybePublishFrontWeakMarker(
+    const int trajectory_id, const builtin_interfaces::msg::Time& stamp,
+    const Rigid3d& tracking_to_map,
+    const cartographer::mapping::TrajectoryBuilderInterface::LocalSlamDebugData&
+        debug_data) {
+  if (motion_mismatch_marker_publisher_->get_subscription_count() == 0 ||
+      !debug_data.front_weak ||
+      !EnvBool("CARTOGRAPHER_PUBLISH_FRONT_WEAK_MARKERS", false)) {
+    return;
+  }
+
+  const double now_seconds = StampToSeconds(stamp);
+  const auto last_it = last_front_weak_marker_stamp_.find(trajectory_id);
+  if (last_it != last_front_weak_marker_stamp_.end() &&
+      now_seconds - StampToSeconds(last_it->second) <
+          kMotionMismatchMarkerMinPeriodSeconds) {
+    return;
+  }
+  last_front_weak_marker_stamp_[trajectory_id] = stamp;
+
+  visualization_msgs::msg::Marker sphere;
+  sphere.header.frame_id = node_options_.map_frame;
+  sphere.header.stamp = stamp;
+  sphere.ns = "front_weak_degeneracy";
+  sphere.id = next_motion_mismatch_marker_id_++;
+  sphere.type = visualization_msgs::msg::Marker::SPHERE;
+  sphere.action = visualization_msgs::msg::Marker::ADD;
+  sphere.pose = ToGeometryMsgPose(tracking_to_map);
+  sphere.pose.position.z += 0.42;
+  sphere.scale.x = 0.28;
+  sphere.scale.y = 0.28;
+  sphere.scale.z = 0.28;
+  sphere.color.r = 0.0;
+  sphere.color.g = 0.85;
+  sphere.color.b = 1.0;
+  sphere.color.a = 0.95;
+  sphere.lifetime = MarkerLifetime();
+
+  visualization_msgs::msg::Marker text = sphere;
+  text.ns = "front_weak_degeneracy_text";
+  text.id = next_motion_mismatch_marker_id_++;
+  text.type = visualization_msgs::msg::Marker::TEXT_VIEW_FACING;
+  text.pose.position.z += 0.45;
+  text.scale.x = 0.0;
+  text.scale.y = 0.0;
+  text.scale.z = 0.22;
+  text.color.r = 0.85;
+  text.color.g = 1.0;
+  text.color.b = 1.0;
+  text.color.a = 1.0;
+  std::ostringstream label;
+  label.setf(std::ios::fixed);
+  label.precision(2);
+  label << "front_weak pts " << debug_data.front_point_count << " frac "
+        << debug_data.front_point_fraction;
+  if (debug_data.longitudinal_replacement_active) {
+    label << " blend " << debug_data.longitudinal_blend_weight;
+  }
+  text.text = label.str();
+
+  visualization_msgs::msg::MarkerArray markers;
+  markers.markers.push_back(std::move(sphere));
+  markers.markers.push_back(std::move(text));
+  motion_mismatch_marker_publisher_->publish(markers);
 }
 
 void Node::PublishTrajectoryNodeList() {
@@ -509,6 +794,11 @@ void Node::LaunchSubscribers(const TrajectoryOptions& options,
              node_, this),
          kLandmarkTopic});
   }
+  subscribers_[trajectory_id].push_back(
+      {SubscribeWithHandler<ackermann_msgs::msg::AckermannDriveStamped>(
+           &Node::HandleCommandMessage, trajectory_id, "ackermann_cmd",
+           node_, this),
+       "ackermann_cmd"});
 }
 
 bool Node::ValidateTrajectoryOptions(const TrajectoryOptions& options) {
@@ -809,8 +1099,10 @@ void Node::HandleOdometryMessage(const int trajectory_id,
   auto sensor_bridge_ptr = map_builder_bridge_->sensor_bridge(trajectory_id);
   auto odometry_data_ptr = sensor_bridge_ptr->ToOdometryData(msg);
   if (odometry_data_ptr != nullptr) {
-    extrapolators_.at(trajectory_id)->AddOdometryData(*odometry_data_ptr);
+    extrapolators_.at(trajectory_id).AddOdometryData(*odometry_data_ptr);
   }
+  latest_wheel_forward_velocity_[trajectory_id] =
+      LatestMotionInput{msg->header.stamp, msg->twist.twist.linear.x, true};
   sensor_bridge_ptr->HandleOdometryMessage(sensor_id, msg);
 }
 
@@ -846,7 +1138,7 @@ void Node::HandleImuMessage(const int trajectory_id,
   auto sensor_bridge_ptr = map_builder_bridge_->sensor_bridge(trajectory_id);
   auto imu_data_ptr = sensor_bridge_ptr->ToImuData(msg);
   if (imu_data_ptr != nullptr) {
-    extrapolators_.at(trajectory_id)->AddImuData(*imu_data_ptr);
+    extrapolators_.at(trajectory_id).AddImuData(*imu_data_ptr);
   }
   sensor_bridge_ptr->HandleImuMessage(sensor_id, msg);
 }
@@ -882,6 +1174,19 @@ void Node::HandlePointCloud2Message(
   }
   map_builder_bridge_->sensor_bridge(trajectory_id)
       ->HandlePointCloud2Message(sensor_id, msg);
+}
+
+void Node::HandleCommandMessage(
+    const int trajectory_id, const std::string& sensor_id,
+    const ackermann_msgs::msg::AckermannDriveStamped::ConstSharedPtr& msg) {
+  (void)trajectory_id;
+  (void)sensor_id;
+  absl::MutexLock lock(&mutex_);
+  carto::mapping::SetLocalSlamCommandDebugData(
+      FromRos(msg->header.stamp), msg->drive.speed,
+      msg->drive.steering_angle);
+  latest_command_speed_[trajectory_id] =
+      LatestMotionInput{msg->header.stamp, msg->drive.speed, true};
 }
 
 void Node::SerializeState(const std::string& filename,
@@ -927,6 +1232,16 @@ void Node::MaybeWarnAboutTopicMismatch() {
 //    LOG(WARNING) << "Currently available topics are: "
 //                 << published_topics_string.str();
 //  }
+}
+
+void Node::OnLocalizationStatusChanged(
+    carto::mapping::PoseGraphInterface::LocalizationStatus status) {
+  const bool lost =
+      (status == carto::mapping::PoseGraphInterface::LocalizationStatus::kLost);
+  LOG(WARNING) << "Localization status: " << (lost ? "LOST" : "GOOD");
+  std_msgs::msg::Bool msg;
+  msg.data = lost;
+  localization_status_publisher_->publish(msg);
 }
 
 }  // namespace cartographer_ros

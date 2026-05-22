@@ -153,6 +153,8 @@ class PoseGraph2D : public PoseGraph {
       LOCKS_EXCLUDED(mutex_);
   void SetGlobalSlamOptimizationCallback(
       PoseGraphInterface::GlobalSlamOptimizationCallback callback) override;
+  void SetLocalizationStatusCallback(
+      PoseGraphInterface::LocalizationStatusCallback callback) override;
   transform::Rigid3d GetInterpolatedGlobalTrajectoryPose(
       int trajectory_id, const common::Time time) const
       EXCLUSIVE_LOCKS_REQUIRED(mutex_);
@@ -234,12 +236,27 @@ class PoseGraph2D : public PoseGraph {
                                  const SubmapId& submap_id) const
       EXCLUSIVE_LOCKS_REQUIRED(mutex_);
 
+  bool IsTrajectoryInInitialLocalization(int trajectory_id) const
+      EXCLUSIVE_LOCKS_REQUIRED(mutex_);
+
   // Updates the trajectory connectivity structure with a new constraint.
   void UpdateTrajectoryConnectivity(const Constraint& constraint)
       EXCLUSIVE_LOCKS_REQUIRED(mutex_);
 
   const proto::PoseGraphOptions options_;
   GlobalSlamOptimizationCallback global_slam_optimization_callback_;
+  PoseGraphInterface::LocalizationStatusCallback localization_status_callback_;
+
+  // Relocalization state machine (pure localization mode only)
+  enum class LocalizationStatus { kGood, kLost };
+  LocalizationStatus localization_status_ GUARDED_BY(mutex_) =
+      LocalizationStatus::kLost;
+  common::Time last_frozen_constraint_time_ GUARDED_BY(mutex_) =
+      common::Time::min();
+  int relocalization_recovery_success_count_ GUARDED_BY(mutex_) = 0;
+  common::Time relocalization_recovery_grace_until_ GUARDED_BY(mutex_) =
+      common::Time::min();
+
   mutable absl::Mutex mutex_;
   absl::Mutex work_queue_mutex_;
 
@@ -250,6 +267,8 @@ class PoseGraph2D : public PoseGraph {
   // We globally localize a fraction of the nodes from each trajectory.
   absl::flat_hash_map<int, std::unique_ptr<common::FixedRatioSampler>>
       global_localization_samplers_ GUARDED_BY(mutex_);
+  absl::flat_hash_map<int, std::unique_ptr<common::FixedRatioSampler>>
+      initial_global_localization_samplers_ GUARDED_BY(mutex_);
 
   // Number of nodes added since last loop closure.
   int num_nodes_since_last_loop_closure_ GUARDED_BY(mutex_) = 0;

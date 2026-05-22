@@ -35,6 +35,46 @@ namespace cartographer {
 namespace mapping {
 namespace scan_matching {
 
+namespace {
+
+class LongitudinalTranslationDeltaCostFunctor2D {
+ public:
+  static ceres::CostFunction* CreateAutoDiffCostFunction(
+      const double scaling_factor, const Eigen::Vector2d& target_translation,
+      const Eigen::Vector2d& target_heading) {
+    return new ceres::AutoDiffCostFunction<
+        LongitudinalTranslationDeltaCostFunctor2D, 1 /* residuals */,
+        3 /* pose variables */>(
+        new LongitudinalTranslationDeltaCostFunctor2D(
+            scaling_factor, target_translation, target_heading.normalized()));
+  }
+
+  template <typename T>
+  bool operator()(const T* const pose, T* residual) const {
+    residual[0] = scaling_factor_ *
+                  ((pose[0] - x_) * heading_x_ + (pose[1] - y_) * heading_y_);
+    return true;
+  }
+
+ private:
+  LongitudinalTranslationDeltaCostFunctor2D(
+      const double scaling_factor, const Eigen::Vector2d& target_translation,
+      const Eigen::Vector2d& target_heading)
+      : scaling_factor_(scaling_factor),
+        x_(target_translation.x()),
+        y_(target_translation.y()),
+        heading_x_(target_heading.x()),
+        heading_y_(target_heading.y()) {}
+
+  const double scaling_factor_;
+  const double x_;
+  const double y_;
+  const double heading_x_;
+  const double heading_y_;
+};
+
+}  // namespace
+
 proto::CeresScanMatcherOptions2D CreateCeresScanMatcherOptions2D(
     common::LuaParameterDictionary* const parameter_dictionary) {
   proto::CeresScanMatcherOptions2D options;
@@ -44,6 +84,14 @@ proto::CeresScanMatcherOptions2D CreateCeresScanMatcherOptions2D(
       parameter_dictionary->GetDouble("translation_weight"));
   options.set_rotation_weight(
       parameter_dictionary->GetDouble("rotation_weight"));
+  options.set_longitudinal_translation_weight(
+      parameter_dictionary->GetDouble("longitudinal_translation_weight"));
+  options.set_longitudinal_translation_min_speed(
+      parameter_dictionary->GetDouble("longitudinal_translation_min_speed"));
+  options.set_longitudinal_translation_max_yaw_rate(
+      parameter_dictionary->GetDouble("longitudinal_translation_max_yaw_rate"));
+  options.set_longitudinal_prior_wheel_delta_scale(
+      parameter_dictionary->GetDouble("longitudinal_prior_wheel_delta_scale"));
   *options.mutable_ceres_solver_options() =
       common::CreateCeresSolverOptionsProto(
           parameter_dictionary->GetDictionary("ceres_solver_options").get());
@@ -60,22 +108,42 @@ CeresScanMatcher2D::CeresScanMatcher2D(
 
 CeresScanMatcher2D::~CeresScanMatcher2D() {}
 
-void CeresScanMatcher2D::Match(const Eigen::Vector2d& target_translation,
-                               const transform::Rigid2d& initial_pose_estimate,
-                               const sensor::PointCloud& point_cloud,
-                               const Grid2D& grid,
-                               transform::Rigid2d* const pose_estimate,
-                               ceres::Solver::Summary* const summary) const {
+void CeresScanMatcher2D::Match(
+    const Eigen::Vector2d& target_translation,
+    const transform::Rigid2d& initial_pose_estimate,
+    const sensor::PointCloud& point_cloud, const Grid2D& grid,
+    transform::Rigid2d* const pose_estimate,
+    ceres::Solver::Summary* const summary) const {
+  Match(target_translation, Eigen::Vector2d::UnitX(), target_translation,
+        0. /* longitudinal_translation_weight */,
+        1. /* occupied_space_weight_scale */, options_.rotation_weight(),
+        initial_pose_estimate, point_cloud, grid, pose_estimate, summary);
+}
+
+void CeresScanMatcher2D::Match(
+    const Eigen::Vector2d& target_translation,
+    const Eigen::Vector2d& target_heading,
+    const Eigen::Vector2d& longitudinal_target_translation,
+    const double longitudinal_translation_weight,
+    const double occupied_space_weight_scale,
+    const double rotation_weight,
+    const transform::Rigid2d& initial_pose_estimate,
+    const sensor::PointCloud& point_cloud, const Grid2D& grid,
+    transform::Rigid2d* const pose_estimate,
+    ceres::Solver::Summary* const summary) const {
   double ceres_pose_estimate[3] = {initial_pose_estimate.translation().x(),
                                    initial_pose_estimate.translation().y(),
                                    initial_pose_estimate.rotation().angle()};
   ceres::Problem problem;
   CHECK_GT(options_.occupied_space_weight(), 0.);
+  const double occupied_space_weight =
+      options_.occupied_space_weight() * occupied_space_weight_scale;
+  CHECK_GT(occupied_space_weight, 0.);
   switch (grid.GetGridType()) {
     case GridType::PROBABILITY_GRID:
       problem.AddResidualBlock(
           CreateOccupiedSpaceCostFunction2D(
-              options_.occupied_space_weight() /
+              occupied_space_weight /
                   std::sqrt(static_cast<double>(point_cloud.size())),
               point_cloud, grid),
           nullptr /* loss function */, ceres_pose_estimate);
@@ -83,7 +151,7 @@ void CeresScanMatcher2D::Match(const Eigen::Vector2d& target_translation,
     case GridType::TSDF:
       problem.AddResidualBlock(
           CreateTSDFMatchCostFunction2D(
-              options_.occupied_space_weight() /
+              occupied_space_weight /
                   std::sqrt(static_cast<double>(point_cloud.size())),
               point_cloud, static_cast<const TSDF2D&>(grid)),
           nullptr /* loss function */, ceres_pose_estimate);
@@ -94,10 +162,17 @@ void CeresScanMatcher2D::Match(const Eigen::Vector2d& target_translation,
       TranslationDeltaCostFunctor2D::CreateAutoDiffCostFunction(
           options_.translation_weight(), target_translation),
       nullptr /* loss function */, ceres_pose_estimate);
-  CHECK_GT(options_.rotation_weight(), 0.);
+  if (longitudinal_translation_weight > 0.) {
+    problem.AddResidualBlock(
+        LongitudinalTranslationDeltaCostFunctor2D::CreateAutoDiffCostFunction(
+            longitudinal_translation_weight, longitudinal_target_translation,
+            target_heading),
+        new ceres::HuberLoss(0.05), ceres_pose_estimate);
+  }
+  CHECK_GT(rotation_weight, 0.);
   problem.AddResidualBlock(
       RotationDeltaCostFunctor2D::CreateAutoDiffCostFunction(
-          options_.rotation_weight(), ceres_pose_estimate[2]),
+          rotation_weight, ceres_pose_estimate[2]),
       nullptr /* loss function */, ceres_pose_estimate);
 
   ceres::Solve(ceres_solver_options_, &problem, summary);

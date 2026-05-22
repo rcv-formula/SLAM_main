@@ -33,6 +33,34 @@ namespace {
 static auto* kLocalSlamMatchingResults = metrics::Counter::Null();
 static auto* kLocalSlamInsertionResults = metrics::Counter::Null();
 
+TrajectoryBuilderInterface::LocalSlamDebugData ToLocalSlamDebugData(
+    const LocalTrajectoryBuilder2D::MatchingResult& matching_result) {
+  TrajectoryBuilderInterface::LocalSlamDebugData debug;
+  debug.front_weak = matching_result.quality_metrics.front_weak;
+  debug.front_point_count = matching_result.quality_metrics.front_point_count;
+  debug.front_point_fraction =
+      matching_result.quality_metrics.front_point_fraction;
+  debug.longitudinal_replacement_active =
+      matching_result.quality_metrics.longitudinal_replacement_active;
+  debug.longitudinal_blend_weight =
+      matching_result.quality_metrics.longitudinal_blend_weight;
+  debug.straight_longitudinal_mismatch =
+      matching_result.quality_metrics.straight_longitudinal_mismatch;
+  debug.scan_match_delta_forward =
+      matching_result.quality_metrics.scan_match_delta_forward;
+  debug.wheel_twist_expected_delta =
+      matching_result.quality_metrics.wheel_twist_expected_delta;
+  debug.command_expected_delta =
+      matching_result.quality_metrics.command_expected_delta;
+  return debug;
+}
+
+template <typename MatchingResult>
+TrajectoryBuilderInterface::LocalSlamDebugData ToLocalSlamDebugData(
+    const MatchingResult&) {
+  return TrajectoryBuilderInterface::LocalSlamDebugData{};
+}
+
 template <typename LocalTrajectoryBuilder, typename PoseGraph>
 class GlobalTrajectoryBuilder : public mapping::TrajectoryBuilderInterface {
  public:
@@ -85,6 +113,7 @@ class GlobalTrajectoryBuilder : public mapping::TrajectoryBuilderInterface {
           std::move(matching_result->range_data_in_local),
           matching_result->scan_match_score,
           matching_result->scan_match_score_valid,
+          ToLocalSlamDebugData(*matching_result),
           std::move(insertion_result));
     }
   }

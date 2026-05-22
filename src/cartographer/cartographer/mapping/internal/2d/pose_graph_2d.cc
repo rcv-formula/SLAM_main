@@ -204,6 +204,11 @@ void PoseGraph2D::AddTrajectoryIfNeeded(const int trajectory_id) {
         absl::make_unique<common::FixedRatioSampler>(
             options_.global_sampling_ratio());
   }
+  if (!initial_global_localization_samplers_[trajectory_id]) {
+    initial_global_localization_samplers_[trajectory_id] =
+        absl::make_unique<common::FixedRatioSampler>(
+            options_.initial_global_sampling_ratio());
+  }
 }
 
 void PoseGraph2D::AddImuData(const int trajectory_id,
@@ -262,6 +267,7 @@ void PoseGraph2D::ComputeConstraint(const NodeId& node_id,
                                     const SubmapId& submap_id) {
   bool maybe_add_local_constraint = false;
   bool maybe_add_global_constraint = false;
+  bool use_initial_global_localization = false;
   const TrajectoryNode::Data* constant_data;
   const Submap2D* submap;
   {
@@ -274,20 +280,45 @@ void PoseGraph2D::ComputeConstraint(const NodeId& node_id,
     }
 
     const common::Time node_time = GetLatestNodeTime(node_id, submap_id);
+    use_initial_global_localization =
+        IsTrajectoryInInitialLocalization(node_id.trajectory_id);
+    const bool relocalizing_against_frozen_map =
+        node_id.trajectory_id != submap_id.trajectory_id &&
+        (IsTrajectoryFrozen(node_id.trajectory_id) ||
+         IsTrajectoryFrozen(submap_id.trajectory_id)) &&
+        localization_status_ == LocalizationStatus::kLost &&
+        options_.relocalization_trigger_sec() > 0.;
+    if (relocalizing_against_frozen_map) {
+      use_initial_global_localization = true;
+    }
     const common::Time last_connection_time =
         data_.trajectory_connectivity_state.LastConnectionTime(
             node_id.trajectory_id, submap_id.trajectory_id);
-    if (node_id.trajectory_id == submap_id.trajectory_id ||
-        node_time <
-            last_connection_time +
-                common::FromSeconds(
-                    options_.global_constraint_search_after_n_seconds())) {
-      // If the node and the submap belong to the same trajectory or if there
-      // has been a recent global constraint that ties that node's trajectory to
-      // the submap's trajectory, it suffices to do a match constrained to a
-      // local search window.
+    const double global_constraint_search_after_n_seconds =
+        use_initial_global_localization
+            ? options_.initial_global_constraint_search_after_n_seconds()
+            : options_.global_constraint_search_after_n_seconds();
+    if (node_id.trajectory_id == submap_id.trajectory_id) {
+      // Same trajectory: always use local search window.
       maybe_add_local_constraint = true;
-    } else if (global_localization_samplers_[node_id.trajectory_id]->Pulse()) {
+    } else if (relocalizing_against_frozen_map &&
+               initial_global_localization_samplers_[node_id.trajectory_id]
+                   ->Pulse()) {
+      // LOST: retry global localization like the initial localization path,
+      // but keep it sampled so a large frozen map does not overwhelm SLAM.
+      maybe_add_global_constraint = true;
+    } else if (!relocalizing_against_frozen_map &&
+               node_time <
+               last_connection_time +
+                   common::FromSeconds(
+                       global_constraint_search_after_n_seconds)) {
+      // Cross-trajectory but recently connected: local search is enough.
+      maybe_add_local_constraint = true;
+    } else if ((use_initial_global_localization
+                    ? initial_global_localization_samplers_
+                          [node_id.trajectory_id]
+                    : global_localization_samplers_[node_id.trajectory_id])
+                   ->Pulse()) {
       maybe_add_global_constraint = true;
     }
     constant_data = data_.trajectory_nodes.at(node_id).constant_data.get();
@@ -304,8 +335,14 @@ void PoseGraph2D::ComputeConstraint(const NodeId& node_id,
     constraint_builder_.MaybeAddConstraint(
         submap_id, submap, node_id, constant_data, initial_relative_pose);
   } else if (maybe_add_global_constraint) {
+    const double global_localization_min_score =
+        use_initial_global_localization
+            ? options_.initial_global_localization_min_score()
+            : options_.constraint_builder_options()
+                  .global_localization_min_score();
     constraint_builder_.MaybeAddGlobalConstraint(submap_id, submap, node_id,
-                                                 constant_data);
+                                                 constant_data,
+                                                 global_localization_min_score);
   }
 }
 
@@ -415,6 +452,22 @@ common::Time PoseGraph2D::GetLatestNodeTime(const NodeId& node_id,
   return time;
 }
 
+bool PoseGraph2D::IsTrajectoryInInitialLocalization(
+    const int trajectory_id) const {
+  bool has_other_trajectory = false;
+  for (const auto& entry : data_.trajectories_state) {
+    if (entry.first == trajectory_id) {
+      continue;
+    }
+    has_other_trajectory = true;
+    if (data_.trajectory_connectivity_state.TransitivelyConnected(
+            trajectory_id, entry.first)) {
+      return false;
+    }
+  }
+  return has_other_trajectory;
+}
+
 void PoseGraph2D::UpdateTrajectoryConnectivity(const Constraint& constraint) {
   CHECK_EQ(constraint.tag, Constraint::INTER_SUBMAP);
   const common::Time time =
@@ -449,6 +502,95 @@ void PoseGraph2D::HandleWorkQueue(
                              result.end());
   }
   RunOptimization();
+
+  // Relocalization state machine — checked after every optimization batch.
+  PoseGraphInterface::LocalizationStatusCallback reloc_cb;
+  PoseGraphInterface::LocalizationStatus new_reloc_status;
+  bool fire_reloc_cb = false;
+  {
+    absl::MutexLock locker(&mutex_);
+    const double trigger_sec = options_.relocalization_trigger_sec();
+    if (trigger_sec > 0.0) {
+      bool got_frozen_constraint = false;
+      common::Time latest_constraint_time = common::Time::min();
+      for (const Constraint& c : result) {
+        if (c.tag == Constraint::INTER_SUBMAP &&
+            c.node_id.trajectory_id != c.submap_id.trajectory_id &&
+            (IsTrajectoryFrozen(c.node_id.trajectory_id) ||
+             IsTrajectoryFrozen(c.submap_id.trajectory_id))) {
+          if (data_.trajectory_nodes.at(c.node_id).constant_data == nullptr) {
+            continue;
+          }
+          got_frozen_constraint = true;
+          common::Time constraint_time =
+              data_.trajectory_nodes.at(c.node_id).constant_data->time;
+          if (IsTrajectoryFrozen(c.node_id.trajectory_id) &&
+              !IsTrajectoryFrozen(c.submap_id.trajectory_id)) {
+            constraint_time = GetLatestNodeTime(c.node_id, c.submap_id);
+          }
+          latest_constraint_time =
+              std::max(latest_constraint_time, constraint_time);
+        }
+      }
+      common::Time latest_node_time = common::Time::min();
+      for (const auto& node_id_data : data_.trajectory_nodes) {
+        if (node_id_data.data.constant_data != nullptr &&
+            !IsTrajectoryFrozen(node_id_data.id.trajectory_id)) {
+          latest_node_time =
+              std::max(latest_node_time,
+                       node_id_data.data.constant_data->time);
+        }
+      }
+      if (latest_node_time != common::Time::min()) {
+        LocalizationStatus next = localization_status_;
+        if (got_frozen_constraint) {
+          last_frozen_constraint_time_ = latest_constraint_time;
+          if (localization_status_ == LocalizationStatus::kLost) {
+            ++relocalization_recovery_success_count_;
+            if (relocalization_recovery_success_count_ >=
+                std::max(1, options_
+                                .relocalization_recovery_required_successes())) {
+              next = LocalizationStatus::kGood;
+              relocalization_recovery_success_count_ = 0;
+              relocalization_recovery_grace_until_ =
+                  latest_constraint_time +
+                  common::FromSeconds(
+                      options_.relocalization_recovery_grace_sec());
+              LOG(INFO)
+                  << "Relocalization recovered after "
+                  << options_.relocalization_recovery_required_successes()
+                  << " successful frozen-map constraint batches.";
+            }
+          }
+        } else if (localization_status_ == LocalizationStatus::kLost) {
+          relocalization_recovery_success_count_ = 0;
+        } else if (localization_status_ == LocalizationStatus::kGood &&
+                   last_frozen_constraint_time_ != common::Time::min() &&
+                   latest_node_time > relocalization_recovery_grace_until_) {
+          const double elapsed = common::ToSeconds(
+              latest_node_time - last_frozen_constraint_time_);
+          if (elapsed > trigger_sec) {
+            next = LocalizationStatus::kLost;
+            relocalization_recovery_success_count_ = 0;
+            relocalization_recovery_grace_until_ = common::Time::min();
+            LOG(WARNING) << "Localization LOST: no frozen-map constraint for "
+                         << elapsed << "s (threshold=" << trigger_sec << "s).";
+          }
+        }
+        if (next != localization_status_) {
+          localization_status_ = next;
+          fire_reloc_cb = true;
+          new_reloc_status = (next == LocalizationStatus::kGood)
+              ? PoseGraphInterface::LocalizationStatus::kGood
+              : PoseGraphInterface::LocalizationStatus::kLost;
+          reloc_cb = localization_status_callback_;
+        }
+      }
+    }
+  }
+  if (fire_reloc_cb && reloc_cb) {
+    reloc_cb(new_reloc_status);
+  }
 
   if (global_slam_optimization_callback_) {
     std::map<int, NodeId> trajectory_id_to_last_optimized_node_id;
@@ -1311,6 +1453,21 @@ PoseGraph2D::GetSubmapDataUnderLock() const {
 void PoseGraph2D::SetGlobalSlamOptimizationCallback(
     PoseGraphInterface::GlobalSlamOptimizationCallback callback) {
   global_slam_optimization_callback_ = callback;
+}
+
+void PoseGraph2D::SetLocalizationStatusCallback(
+    PoseGraphInterface::LocalizationStatusCallback callback) {
+  PoseGraphInterface::LocalizationStatus initial_status;
+  {
+    absl::MutexLock locker(&mutex_);
+    localization_status_callback_ = callback;
+    initial_status = (localization_status_ == LocalizationStatus::kGood)
+                         ? PoseGraphInterface::LocalizationStatus::kGood
+                         : PoseGraphInterface::LocalizationStatus::kLost;
+  }
+  if (callback) {
+    callback(initial_status);
+  }
 }
 
 void PoseGraph2D::RegisterMetrics(metrics::FamilyFactory* family_factory) {
