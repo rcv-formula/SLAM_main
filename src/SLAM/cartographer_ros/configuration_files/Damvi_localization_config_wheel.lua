@@ -110,8 +110,7 @@ TRAJECTORY_BUILDER.pure_localization_trimmer = {
   max_submaps_to_keep = 5,
 }
 TRAJECTORY_BUILDER_2D.num_accumulated_range_data = 1
-TRAJECTORY_BUILDER_2D.use_online_correlative_scan_matching = false
-
+TRAJECTORY_BUILDER_2D.use_online_correlative_scan_matching = true
 TRAJECTORY_BUILDER_2D.skip_submap_insertion_for_outliers = true
 TRAJECTORY_BUILDER_2D.outlier_max_translation_residual = 0.08
 TRAJECTORY_BUILDER_2D.outlier_max_rotation_residual =
@@ -131,9 +130,9 @@ TRAJECTORY_BUILDER_2D.outlier_min_num_filtered_points =
 -- ◆ [GLOBAL]
 -- 초기 위치에 대한 설정. 아래 두 값은 초기 위치가 크게 벗어날 가능성이 높으면 큰 값을 지정
   -- [2]global Fast Correlative 매칭에서 x-y 평면상 탐색 범위 (m), 고정. 작을수록 좋음
-POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher.linear_search_window = 0.073
+POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher.linear_search_window = 0.07
   -- [2]global Fast Correlative 매칭에서 회전(각도) 탐색 범위 (라디안), 고정. 작을수록 좋음
-POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher.angular_search_window = math.rad(1.5)
+POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher.angular_search_window = math.rad(2.5)
 POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher.log_score_distribution_to_csv =
     fast_correlative_score_distribution_csv_path ~= ""
 POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher.score_distribution_csv_path =
@@ -151,10 +150,11 @@ POSE_GRAPH.initial_global_localization_min_score = 0.25
   -- [2]실시간 Local Correlative 매칭에서 x-y 평면상 탐색 범위 (m)
 TRAJECTORY_BUILDER_2D.real_time_correlative_scan_matcher.linear_search_window = 0.08
 -- [2]실시간 Local Correlative 매칭에서 회전(각도) 탐색 범위 (라디안), 얼마나 허용할 지
-TRAJECTORY_BUILDER_2D.real_time_correlative_scan_matcher.angular_search_window = math.rad(1.0)
+TRAJECTORY_BUILDER_2D.real_time_correlative_scan_matcher.angular_search_window = math.rad(2.8)
 
 TRAJECTORY_BUILDER_2D.real_time_correlative_scan_matcher.translation_delta_cost_weight = 25.0
-TRAJECTORY_BUILDER_2D.real_time_correlative_scan_matcher.rotation_delta_cost_weight = 25.0
+TRAJECTORY_BUILDER_2D.real_time_correlative_scan_matcher.rotation_delta_cost_weight = 12.0
+--TRAJECTORY_BUILDER_2D.real_time_correlative_scan_matcher.rotation_delta_cost_weight = 11.0
 
 -- LiDAR 관련
 TRAJECTORY_BUILDER_2D.min_range = 0.1

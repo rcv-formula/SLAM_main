@@ -22,7 +22,7 @@ def generate_launch_description():
         score_distribution_dir,
         f"pose_graph_constraint_metrics_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
     )
-    default_pbstream_file = os.path.join(package_dir, 'pbstream/0521_1.pbstream')
+    default_pbstream_file = os.path.join(package_dir, 'pbstream/0522.pbstream')
     use_sim_time = LaunchConfiguration('use_sim_time')
     fusion_extrapolator = LaunchConfiguration('fusion_extrapolator')
     pbstream_file = LaunchConfiguration('pbstream_file')
