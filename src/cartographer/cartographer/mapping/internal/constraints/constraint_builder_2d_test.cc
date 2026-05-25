@@ -90,7 +90,11 @@ TEST_F(ConstraintBuilder2DTest, FindsConstraints) {
     }
     constraint_builder_->MaybeAddGlobalConstraint(submap_id, &submap,
                                                   NodeId{0, 0}, &node_data,
-                                                  0.);
+                                                  0.,
+                                                  transform::Rigid2d::Identity(),
+                                                  ConstraintBuilder2D::
+                                                      GlobalConstraintSearchMode::
+                                                          kInitial);
     constraint_builder_->NotifyEndOfNode();
     thread_pool_.WaitUntilIdle();
     EXPECT_EQ(constraint_builder_->GetNumFinishedNodes(), ++expected_nodes);

@@ -50,6 +50,8 @@ def generate_launch_description():
     wheel_odom_yaw_weight = LaunchConfiguration('wheel_odom_yaw_weight')
     enable_relocalization_guards = LaunchConfiguration(
         'enable_relocalization_guards')
+    enable_tracking_global_guards = LaunchConfiguration(
+        'enable_tracking_global_guards')
     restart_on_lost = LaunchConfiguration('restart_on_lost')
     restart_lost_after_sec = LaunchConfiguration('restart_lost_after_sec')
     restart_cooldown_sec = LaunchConfiguration('restart_cooldown_sec')
@@ -70,7 +72,7 @@ def generate_launch_description():
     return LaunchDescription([
         DeclareLaunchArgument(
             'bagfiles',
-            default_value='/home/rcv/Documents/localization_wheel/SLAM_main/0522_fast_humble',
+            default_value='/home/rcv/Documents/localization_wheel/SLAM_main/0525_humble',
             description='Path to the rosbag directory'
         ),
         DeclareLaunchArgument(
@@ -137,6 +139,11 @@ def generate_launch_description():
             'enable_relocalization_guards',
             default_value='false',
             description='Enable experimental ambiguous-global-match rejection gates',
+        ),
+        DeclareLaunchArgument(
+            'enable_tracking_global_guards',
+            default_value='false',
+            description='Bound normal tracking global constraints to the predicted pose',
         ),
         DeclareLaunchArgument(
             'restart_on_lost',
@@ -278,6 +285,14 @@ def generate_launch_description():
             value=enable_relocalization_guards,
         ),
         SetEnvironmentVariable(
+            name='POSE_GRAPH_AMBIGUOUS_APPLY_TO_TRACKING',
+            value='false',
+        ),
+        SetEnvironmentVariable(
+            name='POSE_GRAPH_AMBIGUOUS_APPLY_TO_RECOVERY',
+            value=enable_relocalization_guards,
+        ),
+        SetEnvironmentVariable(
             name='POSE_GRAPH_AMBIGUOUS_CONSTRAINT_REJECT_MIN_SCORE',
             value='0.70',
         ),
@@ -312,6 +327,22 @@ def generate_launch_description():
         SetEnvironmentVariable(
             name='POSE_GRAPH_BOUND_RELOCALIZATION_TO_PRIOR',
             value=enable_relocalization_guards,
+        ),
+        SetEnvironmentVariable(
+            name='POSE_GRAPH_BOUND_TRACKING_GLOBAL_TO_PRIOR',
+            value=enable_tracking_global_guards,
+        ),
+        SetEnvironmentVariable(
+            name='POSE_GRAPH_TRACKING_PRIOR_MIN_SCORE',
+            value='0.70',
+        ),
+        SetEnvironmentVariable(
+            name='POSE_GRAPH_TRACKING_MAX_TRANSLATION_CORRECTION',
+            value='0.80',
+        ),
+        SetEnvironmentVariable(
+            name='POSE_GRAPH_TRACKING_MAX_YAW_CORRECTION',
+            value='0.45',
         ),
         SetEnvironmentVariable(
             name='POSE_GRAPH_RELOCALIZATION_PRIOR_MIN_SCORE',

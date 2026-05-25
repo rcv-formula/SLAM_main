@@ -33,10 +33,15 @@ CeresPose::CeresPose(
     std::unique_ptr<ceres::Manifold> rotation_manifold,
     ceres::Problem* problem)
     : data_(std::make_shared<CeresPose::Data>(FromPose(pose))) {
-  problem->AddParameterBlock(data_->translation.data(), 3,
-                             translation_manifold.release());
-  problem->AddParameterBlock(data_->rotation.data(), 4,
-                             rotation_manifold.release());
+  problem->AddParameterBlock(data_->translation.data(), 3);
+  if (translation_manifold != nullptr) {
+    problem->SetManifold(data_->translation.data(),
+                         translation_manifold.release());
+  }
+  problem->AddParameterBlock(data_->rotation.data(), 4);
+  if (rotation_manifold != nullptr) {
+    problem->SetManifold(data_->rotation.data(), rotation_manifold.release());
+  }
 }
 
 const transform::Rigid3d CeresPose::ToRigid() const {

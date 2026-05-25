@@ -222,8 +222,8 @@ ImuBasedPoseExtrapolator::ExtrapolatePosesWithGravity(
 
   std::array<double, 4> imu_calibration{{1., 0., 0., 0.}};
 
-  problem.AddParameterBlock(imu_calibration.data(), 4,
-                            new ceres::QuaternionManifold());
+  problem.AddParameterBlock(imu_calibration.data(), 4);
+  problem.SetManifold(imu_calibration.data(), new ceres::QuaternionManifold());
   problem.SetParameterBlockConstant(imu_calibration.data());
 
   auto imu_it = imu_data_.begin();

@@ -276,10 +276,11 @@ void OptimizationProblem3D::Solve(
 
   const auto translation_parameterization =
       [this]() -> std::unique_ptr<ceres::Manifold> {
-    return options_.fix_z_in_3d()
-               ? absl::make_unique<ceres::SubsetManifold>(
-                     3, std::vector<int>{2})
-               : nullptr;
+    if (options_.fix_z_in_3d()) {
+      return absl::make_unique<ceres::SubsetManifold>(
+          3, std::vector<int>{2});
+    }
+    return nullptr;
   };
 
   // Set the starting point.
@@ -362,8 +363,9 @@ void OptimizationProblem3D::Solve(
       }
       TrajectoryData& trajectory_data = trajectory_data_.at(trajectory_id);
 
-      problem.AddParameterBlock(trajectory_data.imu_calibration.data(), 4,
-                                new ceres::QuaternionManifold());
+      problem.AddParameterBlock(trajectory_data.imu_calibration.data(), 4);
+      problem.SetManifold(trajectory_data.imu_calibration.data(),
+                          new ceres::QuaternionManifold());
       if (!options_.use_online_imu_extrinsics_in_3d()) {
         problem.SetParameterBlockConstant(
             trajectory_data.imu_calibration.data());
