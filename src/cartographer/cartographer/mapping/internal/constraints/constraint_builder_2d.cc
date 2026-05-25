@@ -387,6 +387,26 @@ void ConstraintBuilder2D::ComputeConstraint(
       score_summary.candidate_count >= 2
           ? score_summary.top1_score - score_summary.top2_score
           : std::numeric_limits<double>::infinity();
+  const bool bounded_relocalization_candidate =
+      match_full_submap &&
+      EnvBool("POSE_GRAPH_BOUND_RELOCALIZATION_TO_PRIOR", false) &&
+      global_localization_min_score >=
+          EnvDouble("POSE_GRAPH_RELOCALIZATION_PRIOR_MIN_SCORE", 0.70);
+  if (bounded_relocalization_candidate) {
+    const double max_translation =
+        EnvDouble("POSE_GRAPH_RELOCALIZATION_MAX_TRANSLATION_CORRECTION", 1.5);
+    const double max_yaw =
+        EnvDouble("POSE_GRAPH_RELOCALIZATION_MAX_YAW_CORRECTION", 0.80);
+    if (initial_to_final.translation().norm() > max_translation ||
+        std::abs(initial_to_final.rotation().angle()) > max_yaw) {
+      MaybeWriteConstraintMetricsCsv(
+          "prior_gate_rejected", match_full_submap, submap_id, node_id,
+          constant_data, score, global_localization_min_score, initial_pose,
+          fast_pose_estimate, pose_estimate, constraint_transform, 0., 0., 0.,
+          score_summary, false);
+      return;
+    }
+  }
   const bool ambiguous_large_constraint =
       EnvBool("POSE_GRAPH_AMBIGUOUS_CONSTRAINT_DOWNWEIGHT", false) &&
       initial_to_final.translation().norm() >
@@ -396,7 +416,39 @@ void ConstraintBuilder2D::ComputeConstraint(
                     0.001) &&
       score_summary.near_top_count_0p02 >=
           EnvDouble("POSE_GRAPH_AMBIGUOUS_CONSTRAINT_MIN_NEAR_TOP_COUNT", 20.);
+  const bool ambiguous_full_submap_constraint =
+      match_full_submap &&
+      EnvBool("POSE_GRAPH_REJECT_AMBIGUOUS_FULL_SUBMAP", false) &&
+      global_localization_min_score >=
+          EnvDouble("POSE_GRAPH_AMBIGUOUS_FULL_SUBMAP_REJECT_MIN_SCORE",
+                    0.70) &&
+      top1_top2_margin <
+          EnvDouble("POSE_GRAPH_AMBIGUOUS_FULL_SUBMAP_MAX_SCORE_MARGIN",
+                    0.001) &&
+      score_summary.near_top_count_0p02 >=
+          EnvDouble("POSE_GRAPH_AMBIGUOUS_FULL_SUBMAP_MIN_NEAR_TOP_COUNT",
+                    80.);
+  if (ambiguous_full_submap_constraint) {
+    MaybeWriteConstraintMetricsCsv(
+        "ambiguous_full_rejected", match_full_submap, submap_id, node_id,
+        constant_data, score, global_localization_min_score, initial_pose,
+        fast_pose_estimate, pose_estimate, constraint_transform, 0., 0., 0.,
+        score_summary, true);
+    return;
+  }
   if (ambiguous_large_constraint) {
+    if (EnvBool("POSE_GRAPH_AMBIGUOUS_CONSTRAINT_REJECT", false) &&
+        match_full_submap &&
+        global_localization_min_score >=
+            EnvDouble("POSE_GRAPH_AMBIGUOUS_CONSTRAINT_REJECT_MIN_SCORE",
+                      0.70)) {
+      MaybeWriteConstraintMetricsCsv(
+          "ambiguous_rejected", match_full_submap, submap_id, node_id,
+          constant_data, score, global_localization_min_score, initial_pose,
+          fast_pose_estimate, pose_estimate, constraint_transform, 0., 0., 0.,
+          score_summary, true);
+      return;
+    }
     weight_scale *=
         EnvDouble("POSE_GRAPH_AMBIGUOUS_CONSTRAINT_WEIGHT_SCALE", 0.2);
   }

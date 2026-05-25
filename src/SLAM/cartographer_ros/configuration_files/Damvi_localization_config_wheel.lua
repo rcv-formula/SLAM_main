@@ -38,6 +38,13 @@ local function wheel_config_or_default(key, default)
   return default
 end
 
+local function wheel_config_bool_or_default(key, default)
+  if WHEEL_ODOM_CONFIG[key] ~= nil then
+    return WHEEL_ODOM_CONFIG[key] ~= 0
+  end
+  return default
+end
+
 local fast_correlative_score_distribution_csv_path =
     os.getenv("FAST_CORRELATIVE_SCORE_DISTRIBUTION_CSV_PATH") or ""
 
@@ -76,14 +83,22 @@ options.damvi_runtime_options = {
   wheel_odom_linear_scale =
       wheel_config_or_default("wheel_odom_linear_scale", 2.6),
   adaptive_odometry_blend = true,
-  adaptive_odometry_full_weight_yaw_rate = 0.05,
-  adaptive_odometry_zero_weight_yaw_rate = 0.20,
-  adaptive_odometry_min_weight = 0.0,
-  adaptive_odometry_max_weight = 1.0,
-  adaptive_odometry_mismatch_override = true,
-  adaptive_odometry_mismatch_ratio = 0.35,
-  adaptive_odometry_min_forward_delta = 0.005,
-  adaptive_odometry_mismatch_force_weight = 1.0,
+  adaptive_odometry_full_weight_yaw_rate =
+      wheel_config_or_default("adaptive_odometry_full_weight_yaw_rate", 0.03),
+  adaptive_odometry_zero_weight_yaw_rate =
+      wheel_config_or_default("adaptive_odometry_zero_weight_yaw_rate", 0.12),
+  adaptive_odometry_min_weight =
+      wheel_config_or_default("adaptive_odometry_min_weight", 0.0),
+  adaptive_odometry_max_weight =
+      wheel_config_or_default("adaptive_odometry_max_weight", 0.45),
+  adaptive_odometry_mismatch_override =
+      wheel_config_bool_or_default("adaptive_odometry_mismatch_override", false),
+  adaptive_odometry_mismatch_ratio =
+      wheel_config_or_default("adaptive_odometry_mismatch_ratio", 0.35),
+  adaptive_odometry_min_forward_delta =
+      wheel_config_or_default("adaptive_odometry_min_forward_delta", 0.005),
+  adaptive_odometry_mismatch_force_weight =
+      wheel_config_or_default("adaptive_odometry_mismatch_force_weight", 0.35),
   adaptive_odometry_longitudinal_only = true,
 }
 
@@ -103,9 +118,9 @@ TRAJECTORY_BUILDER_2D.submaps.num_range_data = 45
   -- ◆ [1]전역 매칭(루프 클로저) 최소 점수
 POSE_GRAPH.constraint_builder.global_localization_min_score = 0.75
   -- ◆ [1]로컬 매칭(일반 스캔 매칭) 최소 점수
-POSE_GRAPH.constraint_builder.min_score = 0.87
+POSE_GRAPH.constraint_builder.min_score = 0.82
 
-POSE_GRAPH.global_constraint_search_after_n_seconds = 2.0
+POSE_GRAPH.global_constraint_search_after_n_seconds = 1.5
 TRAJECTORY_BUILDER.pure_localization_trimmer = {
   max_submaps_to_keep = 5,
 }
@@ -148,9 +163,9 @@ POSE_GRAPH.initial_global_localization_min_score = 0.25
 -- ◆ [LOCAL]
 -- real time 변수 설정
   -- [2]실시간 Local Correlative 매칭에서 x-y 평면상 탐색 범위 (m)
-TRAJECTORY_BUILDER_2D.real_time_correlative_scan_matcher.linear_search_window = 0.08
+TRAJECTORY_BUILDER_2D.real_time_correlative_scan_matcher.linear_search_window = 0.12
 -- [2]실시간 Local Correlative 매칭에서 회전(각도) 탐색 범위 (라디안), 얼마나 허용할 지
-TRAJECTORY_BUILDER_2D.real_time_correlative_scan_matcher.angular_search_window = math.rad(2.8)
+TRAJECTORY_BUILDER_2D.real_time_correlative_scan_matcher.angular_search_window = math.rad(3.5)
 
 TRAJECTORY_BUILDER_2D.real_time_correlative_scan_matcher.translation_delta_cost_weight = 25.0
 TRAJECTORY_BUILDER_2D.real_time_correlative_scan_matcher.rotation_delta_cost_weight = 12.0
@@ -165,8 +180,8 @@ TRAJECTORY_BUILDER_2D.adaptive_voxel_filter.min_num_points = 350
 TRAJECTORY_BUILDER_2D.voxel_filter_size = 0.05
 
 -- Ceres 기반 Scan Matcher 설정, Lidar 데이터로 이전 서브맵과의 비교를 수행, pose&orientation 파악
-TRAJECTORY_BUILDER_2D.ceres_scan_matcher.occupied_space_weight = 12.0
-TRAJECTORY_BUILDER_2D.ceres_scan_matcher.translation_weight = 80.0
+TRAJECTORY_BUILDER_2D.ceres_scan_matcher.occupied_space_weight = 20.0
+TRAJECTORY_BUILDER_2D.ceres_scan_matcher.translation_weight = 45.0
 TRAJECTORY_BUILDER_2D.ceres_scan_matcher.rotation_weight =30.0
 TRAJECTORY_BUILDER_2D.ceres_scan_matcher.longitudinal_translation_weight =
     wheel_config_or_default("longitudinal_translation_weight", 0.0)
@@ -175,7 +190,7 @@ TRAJECTORY_BUILDER_2D.ceres_scan_matcher.longitudinal_translation_min_speed =
 TRAJECTORY_BUILDER_2D.ceres_scan_matcher.longitudinal_translation_max_yaw_rate =
     wheel_config_or_default("longitudinal_translation_max_yaw_rate", 0.60)
 TRAJECTORY_BUILDER_2D.ceres_scan_matcher.longitudinal_prior_wheel_delta_scale =
-    wheel_config_or_default("longitudinal_prior_wheel_delta_scale", 1.0)
+    wheel_config_or_default("longitudinal_prior_wheel_delta_scale", 1.5)
 
 --[드리프트 심할 때 키우세요] IMU 설정
   -- 급격한 steering이 있을 경우에는 time_constant와 rotation_weight 증가 고려

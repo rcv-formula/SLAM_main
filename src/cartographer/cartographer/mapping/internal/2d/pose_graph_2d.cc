@@ -268,6 +268,7 @@ void PoseGraph2D::ComputeConstraint(const NodeId& node_id,
   bool maybe_add_local_constraint = false;
   bool maybe_add_global_constraint = false;
   bool use_initial_global_localization = false;
+  bool use_initial_global_min_score = false;
   const TrajectoryNode::Data* constant_data;
   const Submap2D* submap;
   {
@@ -282,12 +283,17 @@ void PoseGraph2D::ComputeConstraint(const NodeId& node_id,
     const common::Time node_time = GetLatestNodeTime(node_id, submap_id);
     use_initial_global_localization =
         IsTrajectoryInInitialLocalization(node_id.trajectory_id);
+    use_initial_global_min_score = use_initial_global_localization;
     const bool relocalizing_against_frozen_map =
         node_id.trajectory_id != submap_id.trajectory_id &&
         (IsTrajectoryFrozen(node_id.trajectory_id) ||
          IsTrajectoryFrozen(submap_id.trajectory_id)) &&
         localization_status_ == LocalizationStatus::kLost &&
         options_.relocalization_trigger_sec() > 0.;
+    if (relocalizing_against_frozen_map &&
+        last_frozen_constraint_time_ == common::Time::min()) {
+      use_initial_global_min_score = true;
+    }
     if (relocalizing_against_frozen_map) {
       use_initial_global_localization = true;
     }
@@ -336,7 +342,7 @@ void PoseGraph2D::ComputeConstraint(const NodeId& node_id,
         submap_id, submap, node_id, constant_data, initial_relative_pose);
   } else if (maybe_add_global_constraint) {
     const double global_localization_min_score =
-        use_initial_global_localization
+        use_initial_global_min_score
             ? options_.initial_global_localization_min_score()
             : options_.constraint_builder_options()
                   .global_localization_min_score();

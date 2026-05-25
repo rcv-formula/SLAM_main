@@ -22,7 +22,7 @@ def generate_launch_description():
         score_distribution_dir,
         f"pose_graph_constraint_metrics_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
     )
-    default_pbstream_file = os.path.join(package_dir, 'pbstream/0522.pbstream')
+    default_pbstream_file = os.path.join(package_dir, 'pbstream/latest.pbstream')
     use_sim_time = LaunchConfiguration('use_sim_time')
     fusion_extrapolator = LaunchConfiguration('fusion_extrapolator')
     pbstream_file = LaunchConfiguration('pbstream_file')
@@ -35,8 +35,15 @@ def generate_launch_description():
         'pose_graph_constraint_metrics_csv_path')
     local_lateral_residual_max = LaunchConfiguration(
         'local_lateral_residual_max')
+    clamp_local_lateral_residual = LaunchConfiguration(
+        'clamp_local_lateral_residual')
     imu_yaw_weight = LaunchConfiguration('imu_yaw_weight')
     wheel_odom_yaw_weight = LaunchConfiguration('wheel_odom_yaw_weight')
+    enable_relocalization_guards = LaunchConfiguration(
+        'enable_relocalization_guards')
+    restart_on_lost = LaunchConfiguration('restart_on_lost')
+    restart_lost_after_sec = LaunchConfiguration('restart_lost_after_sec')
+    restart_cooldown_sec = LaunchConfiguration('restart_cooldown_sec')
     use_initial_pose = LaunchConfiguration('use_initial_pose')
     initial_pose_x = LaunchConfiguration('initial_pose_x')
     initial_pose_y = LaunchConfiguration('initial_pose_y')
@@ -95,14 +102,39 @@ def generate_launch_description():
             description='Maximum local scan-match lateral correction per scan in meters',
         ),
         DeclareLaunchArgument(
+            'clamp_local_lateral_residual',
+            default_value='false',
+            description='Clamp local scan-match lateral correction when true',
+        ),
+        DeclareLaunchArgument(
             'imu_yaw_weight',
-            default_value='0.35',
+            default_value='0.45',
             description='Weight applied to IMU yaw integration in pose prediction',
         ),
         DeclareLaunchArgument(
             'wheel_odom_yaw_weight',
             default_value='0.0',
             description='Weight applied to wheel odometry angular.z',
+        ),
+        DeclareLaunchArgument(
+            'enable_relocalization_guards',
+            default_value='false',
+            description='Enable experimental ambiguous-global-match rejection gates',
+        ),
+        DeclareLaunchArgument(
+            'restart_on_lost',
+            default_value='false',
+            description='Restart localization trajectory when LOST persists',
+        ),
+        DeclareLaunchArgument(
+            'restart_lost_after_sec',
+            default_value='3.0',
+            description='Seconds of continuous LOST before trajectory restart',
+        ),
+        DeclareLaunchArgument(
+            'restart_cooldown_sec',
+            default_value='8.0',
+            description='Minimum seconds between automatic restarts',
         ),
         DeclareLaunchArgument(
             'use_initial_pose',
@@ -159,7 +191,7 @@ def generate_launch_description():
         ),
         SetEnvironmentVariable(
             name='CARTOGRAPHER_CLAMP_LOCAL_LATERAL_RESIDUAL',
-            value='true',
+            value=clamp_local_lateral_residual,
         ),
         SetEnvironmentVariable(
             name='CARTOGRAPHER_LOCAL_LATERAL_RESIDUAL_MAX',
@@ -172,6 +204,74 @@ def generate_launch_description():
         SetEnvironmentVariable(
             name='WHEEL_ODOM_YAW_WEIGHT',
             value=wheel_odom_yaw_weight,
+        ),
+        SetEnvironmentVariable(
+            name='CARTOGRAPHER_RESTART_ON_LOCALIZATION_LOST',
+            value=restart_on_lost,
+        ),
+        SetEnvironmentVariable(
+            name='CARTOGRAPHER_RESTART_LOST_AFTER_SEC',
+            value=restart_lost_after_sec,
+        ),
+        SetEnvironmentVariable(
+            name='CARTOGRAPHER_RESTART_COOLDOWN_SEC',
+            value=restart_cooldown_sec,
+        ),
+        SetEnvironmentVariable(
+            name='POSE_GRAPH_AMBIGUOUS_CONSTRAINT_DOWNWEIGHT',
+            value=enable_relocalization_guards,
+        ),
+        SetEnvironmentVariable(
+            name='POSE_GRAPH_AMBIGUOUS_CONSTRAINT_REJECT',
+            value=enable_relocalization_guards,
+        ),
+        SetEnvironmentVariable(
+            name='POSE_GRAPH_AMBIGUOUS_CONSTRAINT_REJECT_MIN_SCORE',
+            value='0.70',
+        ),
+        SetEnvironmentVariable(
+            name='POSE_GRAPH_AMBIGUOUS_CONSTRAINT_MIN_TRANSLATION',
+            value='1.0',
+        ),
+        SetEnvironmentVariable(
+            name='POSE_GRAPH_AMBIGUOUS_CONSTRAINT_MAX_SCORE_MARGIN',
+            value='0.001',
+        ),
+        SetEnvironmentVariable(
+            name='POSE_GRAPH_AMBIGUOUS_CONSTRAINT_MIN_NEAR_TOP_COUNT',
+            value='20',
+        ),
+        SetEnvironmentVariable(
+            name='POSE_GRAPH_REJECT_AMBIGUOUS_FULL_SUBMAP',
+            value=enable_relocalization_guards,
+        ),
+        SetEnvironmentVariable(
+            name='POSE_GRAPH_AMBIGUOUS_FULL_SUBMAP_MAX_SCORE_MARGIN',
+            value='0.001',
+        ),
+        SetEnvironmentVariable(
+            name='POSE_GRAPH_AMBIGUOUS_FULL_SUBMAP_REJECT_MIN_SCORE',
+            value='0.70',
+        ),
+        SetEnvironmentVariable(
+            name='POSE_GRAPH_AMBIGUOUS_FULL_SUBMAP_MIN_NEAR_TOP_COUNT',
+            value='80',
+        ),
+        SetEnvironmentVariable(
+            name='POSE_GRAPH_BOUND_RELOCALIZATION_TO_PRIOR',
+            value=enable_relocalization_guards,
+        ),
+        SetEnvironmentVariable(
+            name='POSE_GRAPH_RELOCALIZATION_PRIOR_MIN_SCORE',
+            value='0.70',
+        ),
+        SetEnvironmentVariable(
+            name='POSE_GRAPH_RELOCALIZATION_MAX_TRANSLATION_CORRECTION',
+            value='1.5',
+        ),
+        SetEnvironmentVariable(
+            name='POSE_GRAPH_RELOCALIZATION_MAX_YAW_CORRECTION',
+            value='0.8',
         ),
         
         Node(

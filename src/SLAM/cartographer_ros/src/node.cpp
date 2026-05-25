@@ -79,6 +79,16 @@ bool EnvBool(const char* name, const bool default_value) {
          std::string(value) == "TRUE";
 }
 
+double EnvDouble(const char* name, const double default_value) {
+  const char* value = std::getenv(name);
+  if (value == nullptr) {
+    return default_value;
+  }
+  char* end = nullptr;
+  const double parsed = std::strtod(value, &end);
+  return end != value ? parsed : default_value;
+}
+
 builtin_interfaces::msg::Duration MarkerLifetime() {
   builtin_interfaces::msg::Duration duration;
   duration.sec = static_cast<int32_t>(kDiagnosticMarkerLifetimeSeconds);
@@ -177,6 +187,13 @@ Node::Node(
         OnLocalizationStatusChanged(status);
       });
 
+  auto_restart_on_localization_lost_ = EnvBool(
+      "CARTOGRAPHER_RESTART_ON_LOCALIZATION_LOST", false);
+  auto_restart_lost_after_sec_ = EnvDouble(
+      "CARTOGRAPHER_RESTART_LOST_AFTER_SEC", 3.);
+  auto_restart_cooldown_sec_ = EnvDouble(
+      "CARTOGRAPHER_RESTART_COOLDOWN_SEC", 8.);
+
   submap_query_server_ = node_->create_service<cartographer_ros_msgs::srv::SubmapQuery>(
       kSubmapQueryServiceName,
       std::bind(
@@ -234,6 +251,13 @@ Node::Node(
     [this]() {
       PublishConstraintList();
     });
+  if (auto_restart_on_localization_lost_) {
+    localization_restart_timer_ = node_->create_wall_timer(
+        std::chrono::milliseconds(250),
+        [this]() {
+          MaybeRestartLocalization();
+        });
+  }
 }
 
 Node::~Node() { FinishAllTrajectories(); }
@@ -342,8 +366,10 @@ void Node::PublishLocalTrajectoryData() {
     // published poses to advance. If we already know a newer pose, we use its
     // time instead. Since tf knows how to interpolate, providing newer
     // information is better.
-    const ::cartographer::common::Time now = std::max(
-        FromRos(node_->now()), extrapolator.GetLastExtrapolatedTime());
+    const ::cartographer::common::Time now =
+        std::max(std::max(FromRos(node_->now()),
+                          extrapolator.GetLastExtrapolatedTime()),
+                 extrapolator.GetLastPoseTime());
     stamped_transform.header.stamp =
         node_options_.use_pose_extrapolator
             ? ToRos(now)
@@ -942,7 +968,8 @@ bool Node::handleStartTrajectory(
 void Node::StartTrajectoryWithDefaultTopics(const TrajectoryOptions& options) {
   absl::MutexLock lock(&mutex_);
   CHECK(ValidateTrajectoryOptions(options));
-  AddTrajectory(options);
+  default_trajectory_options_ = absl::make_unique<TrajectoryOptions>(options);
+  active_default_trajectory_id_ = AddTrajectory(options);
 }
 
 std::vector<
@@ -1239,9 +1266,81 @@ void Node::OnLocalizationStatusChanged(
   const bool lost =
       (status == carto::mapping::PoseGraphInterface::LocalizationStatus::kLost);
   LOG(WARNING) << "Localization status: " << (lost ? "LOST" : "GOOD");
+  {
+    std::lock_guard<std::mutex> lock(localization_restart_mutex_);
+    localization_currently_lost_ = lost;
+    if (lost) {
+      localization_lost_since_ = node_->now();
+    } else {
+      localization_has_been_good_ = true;
+      localization_lost_since_ = rclcpp::Time(0, 0, node_->get_clock()->get_clock_type());
+    }
+  }
   std_msgs::msg::Bool msg;
   msg.data = lost;
   localization_status_publisher_->publish(msg);
+}
+
+void Node::MaybeRestartLocalization() {
+  if (!auto_restart_on_localization_lost_) {
+    return;
+  }
+
+  const rclcpp::Time now = node_->now();
+  double lost_elapsed_sec = 0.;
+  {
+    std::lock_guard<std::mutex> lock(localization_restart_mutex_);
+    if (!localization_currently_lost_ || !localization_has_been_good_) {
+      return;
+    }
+    if (localization_lost_since_.nanoseconds() == 0) {
+      localization_lost_since_ = now;
+      return;
+    }
+    lost_elapsed_sec = (now - localization_lost_since_).seconds();
+    if (lost_elapsed_sec < auto_restart_lost_after_sec_) {
+      return;
+    }
+    if (last_localization_restart_time_.nanoseconds() != 0 &&
+        (now - last_localization_restart_time_).seconds() <
+            auto_restart_cooldown_sec_) {
+      return;
+    }
+  }
+
+  absl::MutexLock lock(&mutex_);
+  if (default_trajectory_options_ == nullptr) {
+    return;
+  }
+
+  LOG(WARNING) << "Localization stayed LOST for " << lost_elapsed_sec
+               << "s. Finishing active localization trajectory and starting "
+               << "a fresh trajectory.";
+
+  const auto trajectory_states = map_builder_bridge_->GetTrajectoryStates();
+  for (const auto& entry : trajectory_states) {
+    if (entry.second == TrajectoryState::ACTIVE) {
+      const auto status_response = FinishTrajectoryUnderLock(entry.first);
+      if (status_response.code !=
+          cartographer_ros_msgs::msg::StatusCode::OK) {
+        LOG(ERROR) << "Failed to finish trajectory " << entry.first
+                   << " during localization restart: "
+                   << status_response.message;
+      }
+    }
+  }
+
+  TrajectoryOptions restart_options = *default_trajectory_options_;
+  restart_options.trajectory_builder_options.clear_initial_trajectory_pose();
+  active_default_trajectory_id_ = AddTrajectory(restart_options);
+  {
+    std::lock_guard<std::mutex> lock(localization_restart_mutex_);
+    localization_lost_since_ = now;
+    last_localization_restart_time_ = now;
+  }
+  LOG(WARNING) << "Started fresh localization trajectory "
+               << active_default_trajectory_id_
+               << " without an explicit initial pose.";
 }
 
 }  // namespace cartographer_ros

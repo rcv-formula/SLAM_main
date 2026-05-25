@@ -241,14 +241,14 @@ transform::Rigid3d PoseExtrapolator::ExtrapolatePose(const common::Time time) {
         time, reference_pose_->pose, transform::Rigid3d::Identity()};
     return cached_extrapolated_pose_.pose;
   }
-  if (cached_extrapolated_pose_.time != time) {
-    const TimedPose& newest_timed_pose = *reference_pose_;
-    CHECK_GE(time, newest_timed_pose.time);
+  const TimedPose& newest_timed_pose = *reference_pose_;
+  const common::Time extrapolation_time = std::max(time, newest_timed_pose.time);
+  if (cached_extrapolated_pose_.time != extrapolation_time) {
     CHECK(!odometry_data_.empty());
     const transform::Rigid3d reference_odom =
         InterpolateOdometry(odometry_data_, newest_timed_pose.time);
     const transform::Rigid3d current_odom =
-        InterpolateOdometry(odometry_data_, time);
+        InterpolateOdometry(odometry_data_, extrapolation_time);
     const transform::Rigid3d odom_diff =
         reference_odom.inverse() * current_odom;
     const Eigen::Vector3d odom_translation_delta =
@@ -265,7 +265,7 @@ transform::Rigid3d PoseExtrapolator::ExtrapolatePose(const common::Time time) {
                             Eigen::Vector3d::UnitZ());
     } else if (pose_queue_.size() >= 2) {
       const double extrapolation_delta =
-          common::ToSeconds(time - newest_timed_pose.time);
+          common::ToSeconds(extrapolation_time - newest_timed_pose.time);
       const Eigen::Vector3d rotation_vector =
           extrapolation_delta * angular_velocity_from_poses_;
       predicted_rotation =
@@ -278,7 +278,7 @@ transform::Rigid3d PoseExtrapolator::ExtrapolatePose(const common::Time time) {
     if (adaptive_odometry_blend_ && pose_queue_.size() >= 2) {
       double odom_weight = ComputeAdaptiveOdometryWeight();
       const double extrapolation_delta =
-          common::ToSeconds(time - newest_timed_pose.time);
+          common::ToSeconds(extrapolation_time - newest_timed_pose.time);
       const Eigen::Vector3d scan_delta =
           extrapolation_delta * linear_velocity_from_poses_;
       const Eigen::Vector3d odom_delta =
@@ -315,7 +315,8 @@ transform::Rigid3d PoseExtrapolator::ExtrapolatePose(const common::Time time) {
           newest_timed_pose.pose.translation() + blended_delta,
           extrapolated.rotation());
     }
-    cached_extrapolated_pose_ = Extrapolation{time, extrapolated, odom_diff};
+    cached_extrapolated_pose_ =
+        Extrapolation{extrapolation_time, extrapolated, odom_diff};
   }
   return cached_extrapolated_pose_.pose;
 }
