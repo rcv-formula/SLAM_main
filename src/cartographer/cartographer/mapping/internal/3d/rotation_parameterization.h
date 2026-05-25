@@ -27,6 +27,11 @@ namespace mapping {
 struct YawOnlyQuaternionPlus {
   template <typename T>
   bool operator()(const T* x, const T* delta, T* x_plus_delta) const {
+    return Plus(x, delta, x_plus_delta);
+  }
+
+  template <typename T>
+  bool Plus(const T* x, const T* delta, T* x_plus_delta) const {
     const T clamped_delta = common::Clamp(delta[0], T(-0.5), T(0.5));
     T q_delta[4];
     q_delta[0] = ceres::sqrt(1. - clamped_delta * clamped_delta);
@@ -36,11 +41,25 @@ struct YawOnlyQuaternionPlus {
     ceres::QuaternionProduct(q_delta, x, x_plus_delta);
     return true;
   }
+
+  template <typename T>
+  bool Minus(const T* y, const T* x, T* y_minus_x) const {
+    const T x_inverse[4] = {x[0], -x[1], -x[2], -x[3]};
+    T delta[4];
+    ceres::QuaternionProduct(y, x_inverse, delta);
+    y_minus_x[0] = common::Clamp(delta[3], T(-0.5), T(0.5));
+    return true;
+  }
 };
 
 struct ConstantYawQuaternionPlus {
   template <typename T>
   bool operator()(const T* x, const T* delta, T* x_plus_delta) const {
+    return Plus(x, delta, x_plus_delta);
+  }
+
+  template <typename T>
+  bool Plus(const T* x, const T* delta, T* x_plus_delta) const {
     const T delta_norm =
         ceres::sqrt(common::Pow2(delta[0]) + common::Pow2(delta[1]));
     const T sin_delta_over_delta =
@@ -57,6 +76,24 @@ struct ConstantYawQuaternionPlus {
     // that have nothing to do with gravity alignment (i.e. we disallow steps
     // just changing "yaw" of the complete map).
     ceres::QuaternionProduct(x, q_delta, x_plus_delta);
+    return true;
+  }
+
+  template <typename T>
+  bool Minus(const T* y, const T* x, T* y_minus_x) const {
+    const T x_inverse[4] = {x[0], -x[1], -x[2], -x[3]};
+    T delta[4];
+    ceres::QuaternionProduct(x_inverse, y, delta);
+    const T delta_norm =
+        ceres::sqrt(common::Pow2(delta[1]) + common::Pow2(delta[2]));
+    if (delta_norm < T(1e-6)) {
+      y_minus_x[0] = delta[1];
+      y_minus_x[1] = delta[2];
+      return true;
+    }
+    const T delta_scale = ceres::atan2(delta_norm, delta[0]) / delta_norm;
+    y_minus_x[0] = delta_scale * delta[1];
+    y_minus_x[1] = delta_scale * delta[2];
     return true;
   }
 };

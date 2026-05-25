@@ -137,7 +137,7 @@ ImuBasedPoseExtrapolator::ExtrapolatePosesWithGravity(
   // we can estimate the gravity alignment of the current pose.
   optimization::CeresPose gravity_from_local(
       gravity_from_local_, nullptr,
-      absl::make_unique<ceres::QuaternionParameterization>(), &problem);
+      absl::make_unique<ceres::QuaternionManifold>(), &problem);
   // Use deque so addresses stay constant during problem formulation.
   std::deque<optimization::CeresPose> nodes;
   std::vector<common::Time> node_times;
@@ -162,13 +162,13 @@ ImuBasedPoseExtrapolator::ExtrapolatePosesWithGravity(
 
     if (is_last) {
       nodes.emplace_back(gravity_from_node, nullptr,
-                         absl::make_unique<ceres::AutoDiffLocalParameterization<
+                         absl::make_unique<ceres::AutoDiffManifold<
                              ConstantYawQuaternionPlus, 4, 2>>(),
                          &problem);
       problem.SetParameterBlockConstant(nodes.back().translation());
     } else {
       nodes.emplace_back(gravity_from_node, nullptr,
-                         absl::make_unique<ceres::QuaternionParameterization>(),
+                         absl::make_unique<ceres::QuaternionManifold>(),
                          &problem);
     }
   }
@@ -200,7 +200,7 @@ ImuBasedPoseExtrapolator::ExtrapolatePosesWithGravity(
           &imu_it_prev_prev)
           .pose;
   nodes.emplace_back(initial_estimate, nullptr,
-                     absl::make_unique<ceres::QuaternionParameterization>(),
+                     absl::make_unique<ceres::QuaternionManifold>(),
                      &problem);
   node_times.push_back(time);
 
@@ -223,7 +223,7 @@ ImuBasedPoseExtrapolator::ExtrapolatePosesWithGravity(
   std::array<double, 4> imu_calibration{{1., 0., 0., 0.}};
 
   problem.AddParameterBlock(imu_calibration.data(), 4,
-                            new ceres::QuaternionParameterization());
+                            new ceres::QuaternionManifold());
   problem.SetParameterBlockConstant(imu_calibration.data());
 
   auto imu_it = imu_data_.begin();

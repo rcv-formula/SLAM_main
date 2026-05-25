@@ -89,6 +89,10 @@ macro(google_initialize_cartographer_project)
     google_add_flag(GOOG_CXX_FLAGS "-Werror=switch")
     google_add_flag(GOOG_CXX_FLAGS "-Werror=uninitialized")
 
+    if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
+      google_add_flag(GOOG_CXX_FLAGS "-Wno-error=maybe-uninitialized")
+    endif()
+
     if (CMAKE_CXX_COMPILER_ID MATCHES "Clang" OR CMAKE_CXX_COMPILER_ID MATCHES "AppleClang")
       google_add_flag(GOOG_CXX_FLAGS "-Wthread-safety")
     endif()
