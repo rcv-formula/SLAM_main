@@ -37,11 +37,11 @@ local fast_correlative_score_distribution_csv_path =
 
 local damvi_runtime_options = {
   wheel_odom_twist_only = true,
-  wheel_odom_linear_scale = 2.6,
-  longitudinal_prior_occupied_space_weight_scale = 0.35,
+  wheel_odom_linear_scale = 2.5, --2.6
+  longitudinal_prior_occupied_space_weight_scale = 0.40, --0.35
   adaptive_odometry_blend = true,
   adaptive_odometry_full_weight_yaw_rate = 0.05,
-  adaptive_odometry_zero_weight_yaw_rate = 0.20,
+  adaptive_odometry_zero_weight_yaw_rate = 0.18, --0.20
   adaptive_odometry_min_weight = 0.0,
   adaptive_odometry_max_weight = 1.0,
   adaptive_odometry_mismatch_override = true,
@@ -102,7 +102,7 @@ TRAJECTORY_BUILDER_2D.max_range = 25.0
 TRAJECTORY_BUILDER_2D.missing_data_ray_length = 25.0
 
 -- LiDAR filter and precision adjustments
-TRAJECTORY_BUILDER_2D.adaptive_voxel_filter.max_length = 1.0
+TRAJECTORY_BUILDER_2D.adaptive_voxel_filter.max_length = 2.0 --1.0
 TRAJECTORY_BUILDER_2D.adaptive_voxel_filter.min_num_points = 200
 TRAJECTORY_BUILDER_2D.voxel_filter_size = 0.05
 
@@ -113,9 +113,9 @@ TRAJECTORY_BUILDER_2D.real_time_correlative_scan_matcher.translation_delta_cost_
 TRAJECTORY_BUILDER_2D.real_time_correlative_scan_matcher.rotation_delta_cost_weight = 5.0
 
 -- IMU settings
-TRAJECTORY_BUILDER_2D.imu_gravity_time_constant = 3.0 --30.0
+TRAJECTORY_BUILDER_2D.imu_gravity_time_constant = 10.0 --3.0
 TRAJECTORY_BUILDER_2D.ceres_scan_matcher.translation_weight = 25.0 --20.0
-TRAJECTORY_BUILDER_2D.ceres_scan_matcher.occupied_space_weight = 25.0 --50.0
+TRAJECTORY_BUILDER_2D.ceres_scan_matcher.occupied_space_weight = 30.0 --25.0
 TRAJECTORY_BUILDER_2D.ceres_scan_matcher.rotation_weight = 20.0
 TRAJECTORY_BUILDER_2D.ceres_scan_matcher.longitudinal_translation_weight =
     env_double("CARTOGRAPHER_LONGITUDINAL_TRANSLATION_WEIGHT", 3.0)
@@ -145,7 +145,7 @@ POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher.score_distribution_c
 POSE_GRAPH.constraint_builder.loop_closure_translation_weight = 1e4 -- 2000.0
 POSE_GRAPH.constraint_builder.loop_closure_rotation_weight = 1e4 --2000.0
 POSE_GRAPH.optimization_problem.odometry_translation_weight =
-    env_double("CARTOGRAPHER_POSE_GRAPH_ODOMETRY_TRANSLATION_WEIGHT", 100.0)
+    env_double("CARTOGRAPHER_POSE_GRAPH_ODOMETRY_TRANSLATION_WEIGHT", 80.0) --100.0
 POSE_GRAPH.optimization_problem.odometry_rotation_weight =
     env_double("CARTOGRAPHER_POSE_GRAPH_ODOMETRY_ROTATION_WEIGHT", 0.0)
 

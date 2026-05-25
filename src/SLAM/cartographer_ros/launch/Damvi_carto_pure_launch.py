@@ -28,7 +28,7 @@ def generate_launch_description():
     return LaunchDescription([
         DeclareLaunchArgument(
             'use_sim_time',
-            default_value='true',
+            default_value='false',
             description='Use simulation time if true',
         ),
         DeclareLaunchArgument(
@@ -62,7 +62,7 @@ def generate_launch_description():
             arguments=[
                 '--collect_metrics',
                 '-configuration_directory', config_dir,
-                '-configuration_basename', 'Damvi_localization_config.lua',
+                '-configuration_basename', 'Damvi_localization_config_backup.lua',
                 '-load_state_filename', pbstream_file,
             ],
             remappings=[

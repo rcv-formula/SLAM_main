@@ -10,3 +10,4 @@ __pycache__/
 .vscode
 frozen_tuning_results/
 *.csv
+.local_deps/

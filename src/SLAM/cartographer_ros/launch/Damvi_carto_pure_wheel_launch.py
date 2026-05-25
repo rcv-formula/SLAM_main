@@ -17,7 +17,7 @@ def generate_launch_description():
         
         DeclareLaunchArgument(
             'use_sim_time',
-            default_value='true',
+            default_value='false',
             description='Use simulation time if true'
         ),
         #true일 경우 scan imu fusion 사용, false일 경우 원본 
