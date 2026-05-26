@@ -99,15 +99,15 @@ options.damvi_runtime_options = {
   -- Recovery relocalization ambiguity guards.
   pose_graph_ambiguous_constraint_downweight = true,
   pose_graph_ambiguous_constraint_reject = true,
-  pose_graph_ambiguous_apply_to_tracking = false,
+  pose_graph_ambiguous_apply_to_tracking = true,
   pose_graph_ambiguous_apply_to_initial = false,
   pose_graph_ambiguous_apply_to_recovery = true,
   pose_graph_ambiguous_constraint_reject_min_score = 0.45,
   pose_graph_ambiguous_constraint_min_translation = 1.0,
-  pose_graph_ambiguous_constraint_max_score_margin = 0.001,
+  pose_graph_ambiguous_constraint_max_score_margin = 0.01,
   pose_graph_ambiguous_constraint_min_near_top_count = 20.0,
   pose_graph_reject_ambiguous_full_submap = true,
-  pose_graph_ambiguous_full_submap_max_score_margin = 0.001,
+  pose_graph_ambiguous_full_submap_max_score_margin = 0.01,
   pose_graph_ambiguous_full_submap_reject_min_score = 0.45,
   pose_graph_ambiguous_full_submap_min_near_top_count = 80.0,
 
@@ -151,7 +151,7 @@ TRAJECTORY_BUILDER_2D.submaps.num_range_data = 45
 
 -- Pure Localization 모드 관련 설정
   -- ◆ [1]전역 매칭(루프 클로저) 최소 점수
-POSE_GRAPH.constraint_builder.global_localization_min_score = 0.75
+POSE_GRAPH.constraint_builder.global_localization_min_score = 0.65 --0.75
   -- ◆ [1]로컬 매칭(일반 스캔 매칭) 최소 점수
 POSE_GRAPH.constraint_builder.min_score = 0.82
 
@@ -160,7 +160,7 @@ TRAJECTORY_BUILDER.pure_localization_trimmer = {
   max_submaps_to_keep = 5,
 }
 TRAJECTORY_BUILDER_2D.num_accumulated_range_data = 1
-TRAJECTORY_BUILDER_2D.use_online_correlative_scan_matching = false
+TRAJECTORY_BUILDER_2D.use_online_correlative_scan_matching = true
 TRAJECTORY_BUILDER_2D.skip_submap_insertion_for_outliers = true
 TRAJECTORY_BUILDER_2D.outlier_max_translation_residual = 0.08
 TRAJECTORY_BUILDER_2D.outlier_max_rotation_residual =
@@ -189,7 +189,7 @@ POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher.score_distribution_c
     fast_correlative_score_distribution_csv_path
 POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher.min_score_distribution_margin = 0.0
   -- [1] global 전역 매칭(큰 오프셋 수정 등) 시 스캔을 추출하여 매칭 시도할 확률 (0 ~ 1). 연산량 tradeoff가 존재. 0.0036-0.004 사이. 0.0001 단위로 조절
-POSE_GRAPH.global_sampling_ratio = 0.5
+POSE_GRAPH.global_sampling_ratio = 0.3
 POSE_GRAPH.initial_global_sampling_ratio = 0.9
 POSE_GRAPH.initial_global_constraint_search_after_n_seconds = 0.0
 POSE_GRAPH.initial_global_localization_min_score = 0.45
