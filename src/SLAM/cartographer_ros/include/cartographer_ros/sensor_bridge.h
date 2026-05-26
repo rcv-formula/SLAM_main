@@ -52,6 +52,9 @@ class SensorBridge {
 
   std::unique_ptr<::cartographer::sensor::OdometryData> ToOdometryData(
       const nav_msgs::msg::Odometry::ConstSharedPtr& msg);
+  void HandleOdometryData(
+      const std::string& sensor_id,
+      const ::cartographer::sensor::OdometryData& odometry_data);
   void HandleOdometryMessage(const std::string& sensor_id,
                              const nav_msgs::msg::Odometry::ConstSharedPtr& msg);
   void HandleNavSatFixMessage(const std::string& sensor_id,
@@ -62,6 +65,8 @@ class SensorBridge {
 
   std::unique_ptr<::cartographer::sensor::ImuData> ToImuData(
       const sensor_msgs::msg::Imu::ConstSharedPtr& msg);
+  void HandleImuData(const std::string& sensor_id,
+                     const ::cartographer::sensor::ImuData& imu_data);
   void HandleImuMessage(const std::string& sensor_id,
                         const sensor_msgs::msg::Imu::ConstSharedPtr& msg);
   void HandleLaserScanMessage(const std::string& sensor_id,

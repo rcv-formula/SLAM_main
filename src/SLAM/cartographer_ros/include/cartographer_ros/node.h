@@ -19,6 +19,7 @@
 
 #include <map>
 #include <memory>
+#include <mutex>
 #include <set>
 #include <unordered_map>
 #include <unordered_set>
@@ -45,6 +46,7 @@
 #include "cartographer_ros_msgs/srv/submap_query.hpp"
 #include "cartographer_ros_msgs/srv/write_state.hpp"
 #include "ackermann_msgs/msg/ackermann_drive_stamped.hpp"
+#include "geometry_msgs/msg/transform_stamped.hpp"
 #include "nav_msgs/msg/odometry.hpp"
 #include "std_msgs/msg/bool.hpp"
 #include <rclcpp/rclcpp.hpp>
@@ -193,6 +195,7 @@ class Node {
   void MaybeWarnAboutTopicMismatch();
   void OnLocalizationStatusChanged(
       cartographer::mapping::PoseGraphInterface::LocalizationStatus status);
+  void MaybeRestartLocalization();
 
   // Helper function for service handlers that need to check trajectory states.
   cartographer_ros_msgs::msg::StatusResponse TrajectoryStateToStatus(
@@ -203,12 +206,15 @@ class Node {
   const NodeOptions node_options_;
 
   std::shared_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
+  std::vector<geometry_msgs::msg::TransformStamped> stamped_transforms_;
 
   absl::Mutex mutex_;
   std::unique_ptr<cartographer_ros::metrics::FamilyFactory> metrics_registry_;
   std::shared_ptr<MapBuilderBridge> map_builder_bridge_ GUARDED_BY(mutex_);
 
   rclcpp::Node::SharedPtr node_;
+  rclcpp::CallbackGroup::SharedPtr sensor_callback_group_;
+  rclcpp::CallbackGroup::SharedPtr timer_callback_group_;
   ::rclcpp::Publisher<::cartographer_ros_msgs::msg::SubmapList>::SharedPtr submap_list_publisher_;
   ::rclcpp::Publisher<::visualization_msgs::msg::MarkerArray>::SharedPtr trajectory_node_list_publisher_;
   ::rclcpp::Publisher<::visualization_msgs::msg::MarkerArray>::SharedPtr landmark_poses_list_publisher_;
@@ -265,6 +271,16 @@ class Node {
   std::unordered_map<int, std::vector<Subscriber>> subscribers_;
   std::unordered_set<std::string> subscribed_topics_;
   std::unordered_set<int> trajectories_scheduled_for_finish_;
+  std::unique_ptr<TrajectoryOptions> default_trajectory_options_;
+  int active_default_trajectory_id_ = -1;
+  bool auto_restart_on_localization_lost_ = false;
+  double auto_restart_lost_after_sec_ = 3.;
+  double auto_restart_cooldown_sec_ = 8.;
+  std::mutex localization_restart_mutex_;
+  bool localization_currently_lost_ = false;
+  bool localization_has_been_good_ = false;
+  rclcpp::Time localization_lost_since_;
+  rclcpp::Time last_localization_restart_time_;
   int next_motion_mismatch_marker_id_ = 0;
 
   // The timer for publishing local trajectory data (i.e. pose transforms and
@@ -277,6 +293,7 @@ class Node {
   ::rclcpp::TimerBase::SharedPtr landmark_pose_list_timer_;
   ::rclcpp::TimerBase::SharedPtr constrain_list_timer_;
   ::rclcpp::TimerBase::SharedPtr maybe_warn_about_topic_mismatch_timer_;
+  ::rclcpp::TimerBase::SharedPtr localization_restart_timer_;
 };
 
 }  // namespace cartographer_ros

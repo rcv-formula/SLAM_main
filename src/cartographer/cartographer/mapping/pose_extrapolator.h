@@ -98,6 +98,7 @@ class PoseExtrapolator : public PoseExtrapolatorInterface {
   std::deque<TimedPose> pose_queue_;
   Eigen::Vector3d linear_velocity_from_poses_ = Eigen::Vector3d::Zero();
   Eigen::Vector3d angular_velocity_from_poses_ = Eigen::Vector3d::Zero();
+  Eigen::Quaterniond gravity_orientation_ = Eigen::Quaterniond::Identity();
   double latest_imu_angular_velocity_z_ = 0.;
   double integrated_imu_yaw_ = 0.;
   double last_pose_integrated_imu_yaw_ = 0.;

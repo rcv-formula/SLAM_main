@@ -94,11 +94,17 @@ CreateFastCorrelativeScanMatcherOptions2D(
   options.set_branch_and_bound_depth(
       parameter_dictionary->GetInt("branch_and_bound_depth"));
   options.set_log_score_distribution_to_csv(
-      parameter_dictionary->GetBool("log_score_distribution_to_csv"));
+      parameter_dictionary->HasKey("log_score_distribution_to_csv")
+          ? parameter_dictionary->GetBool("log_score_distribution_to_csv")
+          : false);
   options.set_score_distribution_csv_path(
-      parameter_dictionary->GetString("score_distribution_csv_path"));
+      parameter_dictionary->HasKey("score_distribution_csv_path")
+          ? parameter_dictionary->GetString("score_distribution_csv_path")
+          : "");
   options.set_min_score_distribution_margin(
-      parameter_dictionary->GetDouble("min_score_distribution_margin"));
+      parameter_dictionary->HasKey("min_score_distribution_margin")
+          ? parameter_dictionary->GetDouble("min_score_distribution_margin")
+          : 0.);
   return options;
 }
 

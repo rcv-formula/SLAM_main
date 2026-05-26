@@ -32,8 +32,8 @@ class CeresPose {
  public:
   CeresPose(
       const transform::Rigid3d& rigid,
-      std::unique_ptr<ceres::LocalParameterization> translation_parametrization,
-      std::unique_ptr<ceres::LocalParameterization> rotation_parametrization,
+      std::unique_ptr<ceres::LocalParameterization> translation_parameterization,
+      std::unique_ptr<ceres::LocalParameterization> rotation_parameterization,
       ceres::Problem* problem);
 
   const transform::Rigid3d ToRigid() const;

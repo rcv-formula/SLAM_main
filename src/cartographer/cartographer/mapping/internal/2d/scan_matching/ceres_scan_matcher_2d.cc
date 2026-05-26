@@ -85,13 +85,24 @@ proto::CeresScanMatcherOptions2D CreateCeresScanMatcherOptions2D(
   options.set_rotation_weight(
       parameter_dictionary->GetDouble("rotation_weight"));
   options.set_longitudinal_translation_weight(
-      parameter_dictionary->GetDouble("longitudinal_translation_weight"));
+      parameter_dictionary->HasKey("longitudinal_translation_weight")
+          ? parameter_dictionary->GetDouble("longitudinal_translation_weight")
+          : 0.);
   options.set_longitudinal_translation_min_speed(
-      parameter_dictionary->GetDouble("longitudinal_translation_min_speed"));
+      parameter_dictionary->HasKey("longitudinal_translation_min_speed")
+          ? parameter_dictionary->GetDouble(
+                "longitudinal_translation_min_speed")
+          : 0.05);
   options.set_longitudinal_translation_max_yaw_rate(
-      parameter_dictionary->GetDouble("longitudinal_translation_max_yaw_rate"));
+      parameter_dictionary->HasKey("longitudinal_translation_max_yaw_rate")
+          ? parameter_dictionary->GetDouble(
+                "longitudinal_translation_max_yaw_rate")
+          : 0.15);
   options.set_longitudinal_prior_wheel_delta_scale(
-      parameter_dictionary->GetDouble("longitudinal_prior_wheel_delta_scale"));
+      parameter_dictionary->HasKey("longitudinal_prior_wheel_delta_scale")
+          ? parameter_dictionary->GetDouble(
+                "longitudinal_prior_wheel_delta_scale")
+          : 1.);
   *options.mutable_ceres_solver_options() =
       common::CreateCeresSolverOptionsProto(
           parameter_dictionary->GetDictionary("ceres_solver_options").get());

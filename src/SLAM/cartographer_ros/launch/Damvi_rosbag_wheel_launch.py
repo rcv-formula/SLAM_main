@@ -14,7 +14,7 @@ def generate_launch_description():
     qos_overrides_path = os.path.join(config_dir, 'rosbag_play_qos_overrides.yaml')
     slam_main_dir = os.environ.get(
         'SLAM_MAIN_DIR',
-        '/home/rcv/Documents/slam_wheel/SLAM_main',
+        '/home/rcv/Documents/localization_wheel/SLAM_main',
     )
 
     rosbag_file = LaunchConfiguration('bagfiles')
@@ -27,9 +27,9 @@ def generate_launch_description():
         'local_quality_metrics_csv_path')
 
     return LaunchDescription([
-        DeclareLaunchArgument(
+        DeclareLaunchArgument(     
             'bagfiles',
-            default_value=os.path.join(slam_main_dir, '0518_2_humble'),
+            default_value=os.path.join(slam_main_dir, '0522_fast'),
             description='Path to the rosbag directory or db3 file',
         ),
         DeclareLaunchArgument(

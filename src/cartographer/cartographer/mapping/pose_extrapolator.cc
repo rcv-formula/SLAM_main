@@ -22,6 +22,7 @@
 #include <string>
 
 #include "absl/memory/memory.h"
+#include "cartographer/mapping/internal/eigen_quaterniond_from_two_vectors.h"
 #include "cartographer/transform/timestamped_transform.h"
 #include "cartographer/transform/transform.h"
 #include "glog/logging.h"
@@ -53,6 +54,23 @@ bool EnvBool(const char* name, const bool default_value) {
     return false;
   }
   return default_value;
+}
+
+Eigen::Quaterniond NearlyIdentityGravityOrientation() {
+  return Eigen::Quaterniond(
+      Eigen::AngleAxisd(1e-12, Eigen::Vector3d::UnitZ()));
+}
+
+Eigen::Quaterniond GravityOrientationFromAcceleration(
+    const Eigen::Vector3d& acceleration) {
+  if (acceleration.norm() == 0.) {
+    return NearlyIdentityGravityOrientation();
+  }
+  const Eigen::Quaterniond orientation =
+      FromTwoVectors(acceleration, Eigen::Vector3d::UnitZ());
+  return orientation.angularDistance(Eigen::Quaterniond::Identity()) < 1e-12
+             ? NearlyIdentityGravityOrientation()
+             : orientation;
 }
 
 transform::Rigid3d InterpolateOdometry(
@@ -100,6 +118,7 @@ PoseExtrapolator::PoseExtrapolator(
       cached_extrapolated_pose_{common::Time::min(),
                                 transform::Rigid3d::Identity(),
                                 transform::Rigid3d::Identity()},
+      gravity_orientation_(NearlyIdentityGravityOrientation()),
       adaptive_odometry_blend_(
           EnvBool("CARTOGRAPHER_ADAPTIVE_ODOMETRY_BLEND", true)),
       adaptive_odometry_longitudinal_only_(EnvBool(
@@ -128,6 +147,7 @@ std::unique_ptr<PoseExtrapolator> PoseExtrapolator::InitializeWithImu(
     const sensor::ImuData& imu_data) {
   auto extrapolator = absl::make_unique<PoseExtrapolator>(
       pose_queue_duration, imu_gravity_time_constant);
+  extrapolator->AddImuData(imu_data);
   extrapolator->AddPose(
       imu_data.time,
       transform::Rigid3d::Rotation(Eigen::Quaterniond::Identity()));
@@ -149,6 +169,9 @@ void PoseExtrapolator::AddPose(const common::Time time,
                                const transform::Rigid3d& pose) {
   reference_pose_ = absl::make_unique<TimedPose>(TimedPose{time, pose});
   last_pose_integrated_imu_yaw_ = integrated_imu_yaw_;
+  cached_extrapolated_pose_ = Extrapolation{
+      common::Time::min(), transform::Rigid3d::Identity(),
+      transform::Rigid3d::Identity()};
   pose_queue_.push_back(TimedPose{time, pose});
   while (pose_queue_.size() > 2 &&
          pose_queue_[1].time <= time - pose_queue_duration_) {
@@ -158,6 +181,8 @@ void PoseExtrapolator::AddPose(const common::Time time,
 }
 
 void PoseExtrapolator::AddImuData(const sensor::ImuData& imu_data) {
+  gravity_orientation_ =
+      GravityOrientationFromAcceleration(imu_data.linear_acceleration);
   if (last_imu_time_.has_value()) {
     const double dt = common::ToSeconds(imu_data.time - last_imu_time_.value());
     if (dt > 0. && dt < 1.) {
@@ -236,23 +261,26 @@ double PoseExtrapolator::ComputeAdaptiveOdometryWeight() const {
 
 transform::Rigid3d PoseExtrapolator::ExtrapolatePose(const common::Time time) {
   CHECK(reference_pose_);
-  if (odometry_data_.empty()) {
-    cached_extrapolated_pose_ = Extrapolation{
-        time, reference_pose_->pose, transform::Rigid3d::Identity()};
-    return cached_extrapolated_pose_.pose;
-  }
-  if (cached_extrapolated_pose_.time != time) {
-    const TimedPose& newest_timed_pose = *reference_pose_;
-    CHECK_GE(time, newest_timed_pose.time);
-    CHECK(!odometry_data_.empty());
-    const transform::Rigid3d reference_odom =
-        InterpolateOdometry(odometry_data_, newest_timed_pose.time);
-    const transform::Rigid3d current_odom =
-        InterpolateOdometry(odometry_data_, time);
-    const transform::Rigid3d odom_diff =
-        reference_odom.inverse() * current_odom;
-    const Eigen::Vector3d odom_translation_delta =
-        newest_timed_pose.pose.rotation() * odom_diff.translation();
+  const TimedPose& newest_timed_pose = *reference_pose_;
+  CHECK_GE(time, newest_timed_pose.time);
+  CHECK(cached_extrapolated_pose_.time == common::Time::min() ||
+        time >= cached_extrapolated_pose_.time);
+  const common::Time extrapolation_time = time;
+  if (cached_extrapolated_pose_.time != extrapolation_time) {
+    const double extrapolation_delta =
+        common::ToSeconds(extrapolation_time - newest_timed_pose.time);
+    transform::Rigid3d odom_diff = transform::Rigid3d::Identity();
+    Eigen::Vector3d translation_delta =
+        extrapolation_delta * linear_velocity_from_poses_;
+    if (!odometry_data_.empty()) {
+      const transform::Rigid3d reference_odom =
+          InterpolateOdometry(odometry_data_, newest_timed_pose.time);
+      const transform::Rigid3d current_odom =
+          InterpolateOdometry(odometry_data_, extrapolation_time);
+      odom_diff = reference_odom.inverse() * current_odom;
+      translation_delta = newest_timed_pose.pose.rotation() *
+                          odom_diff.translation();
+    }
     Eigen::Quaterniond predicted_rotation = newest_timed_pose.pose.rotation();
     if (has_imu_data_) {
       const double imu_delta_yaw =
@@ -264,8 +292,6 @@ transform::Rigid3d PoseExtrapolator::ExtrapolatePose(const common::Time time) {
           Eigen::AngleAxisd(imu_yaw_weight * imu_delta_yaw,
                             Eigen::Vector3d::UnitZ());
     } else if (pose_queue_.size() >= 2) {
-      const double extrapolation_delta =
-          common::ToSeconds(time - newest_timed_pose.time);
       const Eigen::Vector3d rotation_vector =
           extrapolation_delta * angular_velocity_from_poses_;
       predicted_rotation =
@@ -273,12 +299,12 @@ transform::Rigid3d PoseExtrapolator::ExtrapolatePose(const common::Time time) {
           transform::AngleAxisVectorToRotationQuaternion(rotation_vector);
     }
     transform::Rigid3d extrapolated(
-        newest_timed_pose.pose.translation() + odom_translation_delta,
+        newest_timed_pose.pose.translation() + translation_delta,
         predicted_rotation);
     if (adaptive_odometry_blend_ && pose_queue_.size() >= 2) {
       double odom_weight = ComputeAdaptiveOdometryWeight();
       const double extrapolation_delta =
-          common::ToSeconds(time - newest_timed_pose.time);
+          common::ToSeconds(extrapolation_time - newest_timed_pose.time);
       const Eigen::Vector3d scan_delta =
           extrapolation_delta * linear_velocity_from_poses_;
       const Eigen::Vector3d odom_delta =
@@ -315,14 +341,17 @@ transform::Rigid3d PoseExtrapolator::ExtrapolatePose(const common::Time time) {
           newest_timed_pose.pose.translation() + blended_delta,
           extrapolated.rotation());
     }
-    cached_extrapolated_pose_ = Extrapolation{time, extrapolated, odom_diff};
+    cached_extrapolated_pose_ =
+        Extrapolation{extrapolation_time, extrapolated, odom_diff};
   }
   return cached_extrapolated_pose_.pose;
 }
 
 Eigen::Quaterniond PoseExtrapolator::EstimateGravityOrientation(
-    const common::Time /*time*/) {
-  return Eigen::Quaterniond::Identity();
+    const common::Time time) {
+  CHECK(reference_pose_);
+  CHECK_GE(time, reference_pose_->time);
+  return gravity_orientation_;
 }
 
 PoseExtrapolator::ExtrapolationResult

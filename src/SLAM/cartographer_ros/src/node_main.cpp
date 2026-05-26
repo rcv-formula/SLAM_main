@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#include <cstdlib>
+
 #include "absl/memory/memory.h"
 #include "cartographer/common/time.h"
 #include "cartographer/mapping/map_builder.h"
@@ -22,6 +24,7 @@
 #include "cartographer_ros/node_options.h"
 #include "cartographer_ros/ros_log_sink.h"
 #include "gflags/gflags.h"
+#include "rclcpp/executors/multi_threaded_executor.hpp"
 #include "tf2_ros/transform_listener.h"
 
 DEFINE_bool(collect_metrics, false,
@@ -61,6 +64,22 @@ DEFINE_string(
 
 namespace cartographer_ros {
 namespace {
+
+int GetExecutorThreadCount() {
+  constexpr int kDefaultExecutorThreads = 1;
+  const char* value = std::getenv("CARTOGRAPHER_ROS_EXECUTOR_THREADS");
+  if (value == nullptr) {
+    return kDefaultExecutorThreads;
+  }
+  char* end = nullptr;
+  const long parsed = std::strtol(value, &end, 10);
+  if (end == value || parsed <= 0) {
+    LOG(WARNING) << "Ignoring invalid CARTOGRAPHER_ROS_EXECUTOR_THREADS="
+                 << value << ". Using " << kDefaultExecutorThreads << ".";
+    return kDefaultExecutorThreads;
+  }
+  return static_cast<int>(parsed);
+}
 
 void Run() {
   rclcpp::Node::SharedPtr cartographer_node = rclcpp::Node::make_shared("cartographer_node");
@@ -113,7 +132,13 @@ void Run() {
     node->StartTrajectoryWithDefaultTopics(trajectory_options);
   }
 
-  rclcpp::spin(cartographer_node);
+  const int executor_threads = GetExecutorThreadCount();
+  LOG(INFO) << "Spinning cartographer_node with MultiThreadedExecutor using "
+            << executor_threads << " threads.";
+  rclcpp::executors::MultiThreadedExecutor executor(
+      rclcpp::ExecutorOptions(), executor_threads);
+  executor.add_node(cartographer_node);
+  executor.spin();
 
   node->FinishAllTrajectories();
   node->RunFinalOptimization();

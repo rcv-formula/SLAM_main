@@ -268,6 +268,11 @@ void PoseGraph2D::ComputeConstraint(const NodeId& node_id,
   bool maybe_add_local_constraint = false;
   bool maybe_add_global_constraint = false;
   bool use_initial_global_localization = false;
+  bool use_initial_global_min_score = false;
+  constraints::ConstraintBuilder2D::GlobalConstraintSearchMode
+      global_constraint_search_mode =
+          constraints::ConstraintBuilder2D::GlobalConstraintSearchMode::
+              kTracking;
   const TrajectoryNode::Data* constant_data;
   const Submap2D* submap;
   {
@@ -282,14 +287,27 @@ void PoseGraph2D::ComputeConstraint(const NodeId& node_id,
     const common::Time node_time = GetLatestNodeTime(node_id, submap_id);
     use_initial_global_localization =
         IsTrajectoryInInitialLocalization(node_id.trajectory_id);
+    use_initial_global_min_score = use_initial_global_localization;
     const bool relocalizing_against_frozen_map =
+        !use_initial_global_localization &&
         node_id.trajectory_id != submap_id.trajectory_id &&
         (IsTrajectoryFrozen(node_id.trajectory_id) ||
          IsTrajectoryFrozen(submap_id.trajectory_id)) &&
         localization_status_ == LocalizationStatus::kLost &&
         options_.relocalization_trigger_sec() > 0.;
+    if (relocalizing_against_frozen_map &&
+        last_frozen_constraint_time_ == common::Time::min()) {
+      use_initial_global_min_score = true;
+    }
     if (relocalizing_against_frozen_map) {
       use_initial_global_localization = true;
+      global_constraint_search_mode =
+          constraints::ConstraintBuilder2D::GlobalConstraintSearchMode::
+              kRecovery;
+    } else if (use_initial_global_localization) {
+      global_constraint_search_mode =
+          constraints::ConstraintBuilder2D::GlobalConstraintSearchMode::
+              kInitial;
     }
     const common::Time last_connection_time =
         data_.trajectory_connectivity_state.LastConnectionTime(
@@ -336,13 +354,20 @@ void PoseGraph2D::ComputeConstraint(const NodeId& node_id,
         submap_id, submap, node_id, constant_data, initial_relative_pose);
   } else if (maybe_add_global_constraint) {
     const double global_localization_min_score =
-        use_initial_global_localization
+        use_initial_global_min_score
             ? options_.initial_global_localization_min_score()
             : options_.constraint_builder_options()
                   .global_localization_min_score();
+    const transform::Rigid2d initial_relative_pose =
+        optimization_problem_->submap_data()
+            .at(submap_id)
+            .global_pose.inverse() *
+        optimization_problem_->node_data().at(node_id).global_pose_2d;
     constraint_builder_.MaybeAddGlobalConstraint(submap_id, submap, node_id,
                                                  constant_data,
-                                                 global_localization_min_score);
+                                                 global_localization_min_score,
+                                                 initial_relative_pose,
+                                                 global_constraint_search_mode);
   }
 }
 

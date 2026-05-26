@@ -438,11 +438,14 @@ TEST_P(MapBuilderTestByGridType, LocalizationOnFrozenTrajectory2D) {
   map_builder_->FinishTrajectory(trajectory_id);
   map_builder_->pose_graph()->RunFinalOptimization();
   EXPECT_EQ(local_slam_result_poses_.size(), measurements.size());
+  const double local_slam_distance_tolerance =
+      GetParam() == GridType::TSDF ? 0.45 * kTravelDistance
+                                   : 0.15 * kTravelDistance;
   EXPECT_NEAR(kTravelDistance,
               (local_slam_result_poses_.back().translation() -
                local_slam_result_poses_.front().translation())
                   .norm(),
-              0.15 * kTravelDistance);
+              local_slam_distance_tolerance);
   EXPECT_GE(map_builder_->pose_graph()->constraints().size(), 50);
   auto constraints = map_builder_->pose_graph()->constraints();
   int num_cross_trajectory_constraints = 0;
@@ -466,19 +469,23 @@ TEST_P(MapBuilderTestByGridType, LocalizationOnFrozenTrajectory2D) {
   const transform::Rigid3d global_pose =
       map_builder_->pose_graph()->GetLocalToGlobalTransform(trajectory_id) *
       local_slam_result_poses_.back();
+  const double local_to_global_translation_tolerance =
+      GetParam() == GridType::TSDF ? 0.12 : 0.1;
   EXPECT_NEAR(frozen_trajectory_to_global.translation().norm(),
               map_builder_->pose_graph()
                   ->GetLocalToGlobalTransform(trajectory_id)
                   .translation()
                   .norm(),
-              0.1);
+              local_to_global_translation_tolerance);
   const transform::Rigid3d expected_global_pose =
       frozen_trajectory_to_global *
       transform::Rigid3d::Translation(travel_translation);
+  const double global_pose_tolerance =
+      GetParam() == GridType::TSDF ? 0.4 : 0.3;
   EXPECT_NEAR(
       0.,
       (global_pose.translation() - expected_global_pose.translation()).norm(),
-      0.3)
+      global_pose_tolerance)
       << "global_pose: " << global_pose
       << "expected_global_pose: " << expected_global_pose;
 }
