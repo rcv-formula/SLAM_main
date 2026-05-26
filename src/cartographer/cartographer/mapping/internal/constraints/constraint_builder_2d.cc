@@ -409,12 +409,16 @@ void ConstraintBuilder2D::ComputeConstraint(
   const bool is_tracking_global =
       global_constraint_search_mode ==
       GlobalConstraintSearchMode::kTracking;
+  const bool is_initial_global =
+      global_constraint_search_mode == GlobalConstraintSearchMode::kInitial;
   const bool is_recovery_global =
       global_constraint_search_mode ==
       GlobalConstraintSearchMode::kRecovery;
   const bool apply_ambiguous_guards =
       (is_tracking_global &&
        EnvBool("POSE_GRAPH_AMBIGUOUS_APPLY_TO_TRACKING", false)) ||
+      (is_initial_global &&
+       EnvBool("POSE_GRAPH_AMBIGUOUS_APPLY_TO_INITIAL", true)) ||
       (is_recovery_global &&
        EnvBool("POSE_GRAPH_AMBIGUOUS_APPLY_TO_RECOVERY", true));
   double max_translation = 0.;
@@ -456,6 +460,16 @@ void ConstraintBuilder2D::ComputeConstraint(
   // small drift, so a candidate inside its prior gate is protected from the
   // experimental ambiguity filters below.
   const bool protected_by_prior_gate = bounded_global_candidate;
+  const double ambiguous_min_translation =
+      is_initial_global
+          ? EnvDouble("POSE_GRAPH_INITIAL_AMBIGUOUS_MIN_TRANSLATION", 5.0)
+          : EnvDouble("POSE_GRAPH_AMBIGUOUS_CONSTRAINT_MIN_TRANSLATION",
+                      0.30);
+  const bool initial_full_submap_ambiguity_allowed =
+      is_initial_global &&
+      initial_to_final.translation().norm() <=
+          EnvDouble("POSE_GRAPH_INITIAL_AMBIGUOUS_FULL_SUBMAP_MIN_TRANSLATION",
+                    5.0);
   const bool ambiguous_large_constraint =
       match_full_submap &&
       apply_ambiguous_guards &&
@@ -464,8 +478,7 @@ void ConstraintBuilder2D::ComputeConstraint(
       global_localization_min_score >=
           EnvDouble("POSE_GRAPH_AMBIGUOUS_CONSTRAINT_REJECT_MIN_SCORE",
                     0.70) &&
-      initial_to_final.translation().norm() >
-          EnvDouble("POSE_GRAPH_AMBIGUOUS_CONSTRAINT_MIN_TRANSLATION", 0.30) &&
+      initial_to_final.translation().norm() > ambiguous_min_translation &&
       top1_top2_margin <
           EnvDouble("POSE_GRAPH_AMBIGUOUS_CONSTRAINT_MAX_SCORE_MARGIN",
                     0.001) &&
@@ -475,6 +488,7 @@ void ConstraintBuilder2D::ComputeConstraint(
       match_full_submap &&
       apply_ambiguous_guards &&
       !protected_by_prior_gate &&
+      !initial_full_submap_ambiguity_allowed &&
       EnvBool("POSE_GRAPH_REJECT_AMBIGUOUS_FULL_SUBMAP", false) &&
       global_localization_min_score >=
           EnvDouble("POSE_GRAPH_AMBIGUOUS_FULL_SUBMAP_REJECT_MIN_SCORE",
@@ -508,6 +522,10 @@ void ConstraintBuilder2D::ComputeConstraint(
     }
     weight_scale *=
         EnvDouble("POSE_GRAPH_AMBIGUOUS_CONSTRAINT_WEIGHT_SCALE", 0.2);
+  }
+  if (match_full_submap && is_recovery_global) {
+    weight_scale *= EnvDouble("POSE_GRAPH_RECOVERY_CONSTRAINT_WEIGHT_SCALE",
+                              0.25);
   }
   constraint->reset(new Constraint{submap_id,
                                    node_id,
