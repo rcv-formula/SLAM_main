@@ -125,7 +125,7 @@ TRAJECTORY_BUILDER.pure_localization_trimmer = {
   max_submaps_to_keep = 5,
 }
 TRAJECTORY_BUILDER_2D.num_accumulated_range_data = 1
-TRAJECTORY_BUILDER_2D.use_online_correlative_scan_matching = true
+TRAJECTORY_BUILDER_2D.use_online_correlative_scan_matching = false
 TRAJECTORY_BUILDER_2D.skip_submap_insertion_for_outliers = true
 TRAJECTORY_BUILDER_2D.outlier_max_translation_residual = 0.08
 TRAJECTORY_BUILDER_2D.outlier_max_rotation_residual =
@@ -157,7 +157,7 @@ POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher.min_score_distributi
 POSE_GRAPH.global_sampling_ratio = 0.02
 POSE_GRAPH.initial_global_sampling_ratio = 0.9
 POSE_GRAPH.initial_global_constraint_search_after_n_seconds = 0.0
-POSE_GRAPH.initial_global_localization_min_score = 0.25
+POSE_GRAPH.initial_global_localization_min_score = 0.45
 -- POSE_GRAPH.initial_global_localization_min_score = 0.45
 
 -- ◆ [LOCAL]
@@ -196,7 +196,7 @@ TRAJECTORY_BUILDER_2D.ceres_scan_matcher.longitudinal_prior_wheel_delta_scale =
   -- 급격한 steering이 있을 경우에는 time_constant와 rotation_weight 증가 고려
 TRAJECTORY_BUILDER_2D.imu_gravity_time_constant = 12.0
 
-MAP_BUILDER.num_background_threads = 4
+MAP_BUILDER.num_background_threads = 8
 
 -- ◆ 기타 posegraph 관련
   --n개의 노드(스캔)이 쌓일 때마다 전역 최적화(Loop Closure 등) 실행. 적을수록 빠르게 최적화가 일어남. 1개가 적절
@@ -210,7 +210,7 @@ POSE_GRAPH.relocalization_recovery_grace_sec = 4.0
 
 -- Loop clousre 관련 변수
 POSE_GRAPH.constraint_builder.loop_closure_translation_weight = 2e4
-POSE_GRAPH.constraint_builder.loop_closure_rotation_weight = 110
+POSE_GRAPH.constraint_builder.loop_closure_rotation_weight = 2e4
 POSE_GRAPH.optimization_problem.odometry_translation_weight =
     wheel_config_or_default("odometry_translation_weight", 30.0)
 POSE_GRAPH.optimization_problem.odometry_rotation_weight =
