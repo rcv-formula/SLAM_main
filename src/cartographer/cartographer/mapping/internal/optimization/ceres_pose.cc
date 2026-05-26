@@ -16,6 +16,8 @@
 
 #include "cartographer/mapping/internal/optimization/ceres_pose.h"
 
+#include <utility>
+
 namespace cartographer {
 namespace mapping {
 namespace optimization {
@@ -29,20 +31,16 @@ CeresPose::Data FromPose(const transform::Rigid3d& pose) {
 
 CeresPose::CeresPose(
     const transform::Rigid3d& pose,
-    std::unique_ptr<ceres::LocalParameterization> translation_parameterization,
-    std::unique_ptr<ceres::LocalParameterization> rotation_parameterization,
+    std::unique_ptr<common::CeresParameterization> translation_parameterization,
+    std::unique_ptr<common::CeresParameterization> rotation_parameterization,
     ceres::Problem* problem)
     : data_(std::make_shared<CeresPose::Data>(FromPose(pose))) {
   problem->AddParameterBlock(data_->translation.data(), 3);
-  if (translation_parameterization != nullptr) {
-    problem->SetParameterization(data_->translation.data(),
-                                 translation_parameterization.release());
-  }
+  common::SetParameterization(problem, data_->translation.data(),
+                              std::move(translation_parameterization));
   problem->AddParameterBlock(data_->rotation.data(), 4);
-  if (rotation_parameterization != nullptr) {
-    problem->SetParameterization(data_->rotation.data(),
-                                 rotation_parameterization.release());
-  }
+  common::SetParameterization(problem, data_->rotation.data(),
+                              std::move(rotation_parameterization));
 }
 
 const transform::Rigid3d CeresPose::ToRigid() const {

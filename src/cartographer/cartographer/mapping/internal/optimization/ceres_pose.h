@@ -21,6 +21,7 @@
 #include <memory>
 
 #include "Eigen/Core"
+#include "cartographer/common/internal/ceres_manifold_compat.h"
 #include "cartographer/transform/rigid_transform.h"
 #include "ceres/ceres.h"
 
@@ -32,8 +33,9 @@ class CeresPose {
  public:
   CeresPose(
       const transform::Rigid3d& rigid,
-      std::unique_ptr<ceres::LocalParameterization> translation_parameterization,
-      std::unique_ptr<ceres::LocalParameterization> rotation_parameterization,
+      std::unique_ptr<common::CeresParameterization>
+          translation_parameterization,
+      std::unique_ptr<common::CeresParameterization> rotation_parameterization,
       ceres::Problem* problem);
 
   const transform::Rigid3d ToRigid() const;

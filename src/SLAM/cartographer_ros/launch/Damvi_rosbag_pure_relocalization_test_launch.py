@@ -19,6 +19,10 @@ def generate_launch_description():
         os.path.dirname(os.path.dirname(os.path.dirname(package_dir))),
         'config_mapping_wheel.yaml',
     )
+    slam_main_dir = os.environ.get(
+        'SLAM_MAIN_DIR',
+        os.path.dirname(os.path.dirname(os.path.dirname(package_dir))),
+    )
     score_distribution_dir = os.path.join(package_dir, 'global_constraint_score_distributions')
     os.makedirs(score_distribution_dir, exist_ok=True)
     score_distribution_csv_path = os.path.join(
@@ -72,7 +76,7 @@ def generate_launch_description():
     return LaunchDescription([
         DeclareLaunchArgument(
             'bagfiles',
-            default_value='/home/rcv/Documents/localization_wheel/SLAM_main/0525_humble',
+            default_value=os.path.join(slam_main_dir, '0525'),
             description='Path to the rosbag directory'
         ),
         DeclareLaunchArgument(
