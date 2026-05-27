@@ -23,8 +23,6 @@ def generate_launch_description():
     pose_extrapolator_config = LaunchConfiguration('pose_extrapolator_config')
     wheel_odom_twist_only = LaunchConfiguration('wheel_odom_twist_only')
     wheel_odom_linear_scale = LaunchConfiguration('wheel_odom_linear_scale')
-    local_quality_metrics_csv_path = LaunchConfiguration(
-        'local_quality_metrics_csv_path')
 
     return LaunchDescription([
         DeclareLaunchArgument(
@@ -57,11 +55,6 @@ def generate_launch_description():
             default_value='2.6',
             description='Calibration scale applied to odometry twist.linear.x when wheel_odom_twist_only is true.',
         ),
-        DeclareLaunchArgument(
-            'local_quality_metrics_csv_path',
-            default_value='/tmp/cartographer_local_quality_metrics.csv',
-            description='CSV path for local SLAM pose prediction vs estimate metrics',
-        ),
         SetEnvironmentVariable(
             name='FUSION_EXTRPOLATOR',
             value=fusion_extrapolator,
@@ -81,10 +74,6 @@ def generate_launch_description():
         SetEnvironmentVariable(
             name='WHEEL_ODOM_LINEAR_SCALE',
             value=wheel_odom_linear_scale,
-        ),
-        SetEnvironmentVariable(
-            name='LOCAL_QUALITY_METRICS_CSV_PATH',
-            value=local_quality_metrics_csv_path,
         ),
         ExecuteProcess(
             cmd=[
@@ -110,7 +99,7 @@ def generate_launch_description():
                 {'publish_frame_projected_to_2d': True},
             ],
             arguments=[
-                '--collect_metrics',
+                '-minloglevel', '1',
                 '-configuration_directory', config_dir,
                 '-configuration_basename', 'Damvi_carto_config_wheel.lua',
             ],

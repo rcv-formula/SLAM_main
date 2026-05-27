@@ -45,6 +45,7 @@
 #include "cartographer_ros_msgs/srv/submap_query.hpp"
 #include "cartographer_ros_msgs/srv/write_state.hpp"
 #include "ackermann_msgs/msg/ackermann_drive_stamped.hpp"
+#include "geometry_msgs/msg/transform_stamped.hpp"
 #include "nav_msgs/msg/odometry.hpp"
 #include "std_msgs/msg/bool.hpp"
 #include <rclcpp/rclcpp.hpp>
@@ -203,6 +204,7 @@ class Node {
   const NodeOptions node_options_;
 
   std::shared_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
+  std::vector<geometry_msgs::msg::TransformStamped> stamped_transforms_;
 
   absl::Mutex mutex_;
   std::unique_ptr<cartographer_ros::metrics::FamilyFactory> metrics_registry_;

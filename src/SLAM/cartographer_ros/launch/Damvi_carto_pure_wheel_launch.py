@@ -1,5 +1,4 @@
 import os
-from datetime import datetime
 
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, SetEnvironmentVariable
@@ -11,17 +10,6 @@ def generate_launch_description():
     main_dir = os.path.dirname(script_path)
     package_dir = os.path.dirname(main_dir)
     config_dir = os.path.join(package_dir, 'configuration_files')
-    score_distribution_dir = os.path.join(
-        package_dir, 'global_constraint_score_distributions')
-    os.makedirs(score_distribution_dir, exist_ok=True)
-    score_distribution_csv_path = os.path.join(
-        score_distribution_dir,
-        f"fast_correlative_score_distribution_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
-    )
-    pose_graph_constraint_metrics_csv_path = os.path.join(
-        score_distribution_dir,
-        f"pose_graph_constraint_metrics_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
-    )
     default_pbstream_file = os.path.join(package_dir, 'pbstream/latest.pbstream')
     use_sim_time = LaunchConfiguration('use_sim_time')
     fusion_extrapolator = LaunchConfiguration('fusion_extrapolator')
@@ -29,10 +17,6 @@ def generate_launch_description():
     pose_extrapolator_config = LaunchConfiguration('pose_extrapolator_config')
     wheel_odom_twist_only = LaunchConfiguration('wheel_odom_twist_only')
     wheel_odom_linear_scale = LaunchConfiguration('wheel_odom_linear_scale')
-    local_quality_metrics_csv_path = LaunchConfiguration(
-        'local_quality_metrics_csv_path')
-    pose_graph_constraint_metrics_csv = LaunchConfiguration(
-        'pose_graph_constraint_metrics_csv_path')
     local_lateral_residual_max = LaunchConfiguration(
         'local_lateral_residual_max')
     imu_yaw_weight = LaunchConfiguration('imu_yaw_weight')
@@ -78,16 +62,6 @@ def generate_launch_description():
             'wheel_odom_linear_scale',
             default_value='2.6',
             description='Calibration scale applied to wheel odom twist.linear.x',
-        ),
-        DeclareLaunchArgument(
-            'local_quality_metrics_csv_path',
-            default_value='/tmp/cartographer_localization_quality_metrics.csv',
-            description='CSV path for local localization quality metrics',
-        ),
-        DeclareLaunchArgument(
-            'pose_graph_constraint_metrics_csv_path',
-            default_value=pose_graph_constraint_metrics_csv_path,
-            description='CSV path for pose graph constraint yaw metrics',
         ),
         DeclareLaunchArgument(
             'local_lateral_residual_max',
@@ -150,14 +124,6 @@ def generate_launch_description():
             value=wheel_odom_linear_scale,
         ),
         SetEnvironmentVariable(
-            name='LOCAL_QUALITY_METRICS_CSV_PATH',
-            value=local_quality_metrics_csv_path,
-        ),
-        SetEnvironmentVariable(
-            name='POSE_GRAPH_CONSTRAINT_METRICS_CSV_PATH',
-            value=pose_graph_constraint_metrics_csv,
-        ),
-        SetEnvironmentVariable(
             name='CARTOGRAPHER_CLAMP_LOCAL_LATERAL_RESIDUAL',
             value='true',
         ),
@@ -179,12 +145,8 @@ def generate_launch_description():
             executable='cartographer_node',
             name='cartographer_node',
             output='screen',
-            additional_env={
-                'FAST_CORRELATIVE_SCORE_DISTRIBUTION_CSV_PATH':
-                    score_distribution_csv_path,
-            },
             arguments=[
-                '--collect_metrics',
+                '-minloglevel', '1',
                 '-configuration_directory', config_dir,
                 '-configuration_basename', 'Damvi_localization_config_wheel.lua',
                 '-load_state_filename', pbstream_file,

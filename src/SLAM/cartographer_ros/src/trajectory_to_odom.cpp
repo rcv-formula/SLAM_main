@@ -1,10 +1,6 @@
 #include "rclcpp/rclcpp.hpp"
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "nav_msgs/msg/odometry.hpp"
-#include <tf2_ros/transform_listener.h>
-#include <tf2_ros/buffer.h>
-#include <geometry_msgs/msg/transform_stamped.hpp>
-#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 
 using std::placeholders::_1;
 
@@ -12,9 +8,7 @@ class TrackedPoseToOdom : public rclcpp::Node
 {
 public:
     TrackedPoseToOdom()
-        : Node("tracked_pose_to_odom"),
-          tf_buffer_(this->get_clock()),
-          tf_listener_(tf_buffer_)
+        : Node("tracked_pose_to_odom")
     {
         // /tracked_pose 구독자 생성
         subscription_ = this->create_subscription<geometry_msgs::msg::PoseStamped>(
@@ -35,44 +29,21 @@ public:
 private:
     void callback(const geometry_msgs::msg::PoseStamped::SharedPtr msg)
     {
-        try
-        {
-            // map -> base_link 변환 획득
-            auto map_to_odom = tf_buffer_.lookupTransform("map", "base_link", tf2::TimePointZero);
-
-            // Odometry 메시지 생성
-            nav_msgs::msg::Odometry odom_msg;
-
-            // 타임스탬프 설정 (use_sim_time에 따라)
-            builtin_interfaces::msg::Time current_time;
-            current_time.sec = this->get_clock()->now().seconds();
-            current_time.nanosec = this->get_clock()->now().nanoseconds() % 1000000000;
-            odom_msg.header.stamp = use_sim_time_ ? current_time : msg->header.stamp;
-
-            odom_msg.header.frame_id = "map";
-            odom_msg.child_frame_id = "base_link";
-
-            // transform 데이터를 이용하여 위치 및 자세 설정
-            odom_msg.pose.pose.position.x = map_to_odom.transform.translation.x;
-            odom_msg.pose.pose.position.y = map_to_odom.transform.translation.y;
-            odom_msg.pose.pose.position.z = 0.0;
-
-            odom_msg.pose.pose.orientation = map_to_odom.transform.rotation;
-
-            // 바로 odom 메시지 publish
-            publisher_->publish(odom_msg);
+        nav_msgs::msg::Odometry odom_msg;
+        if (use_sim_time_) {
+            odom_msg.header.stamp = this->get_clock()->now();
+        } else {
+            odom_msg.header.stamp = msg->header.stamp;
         }
-        catch (tf2::TransformException &ex)
-        {
-            RCLCPP_WARN(this->get_logger(), "Could not transform map to odom: %s", ex.what());
-        }
+        odom_msg.header.frame_id = msg->header.frame_id.empty() ? "map" : msg->header.frame_id;
+        odom_msg.child_frame_id = "base_link";
+        odom_msg.pose.pose = msg->pose;
+        odom_msg.pose.pose.position.z = 0.0;
+        publisher_->publish(odom_msg);
     }
 
     rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr subscription_;
     rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr publisher_;
-
-    tf2_ros::Buffer tf_buffer_;
-    tf2_ros::TransformListener tf_listener_;
 
     bool use_sim_time_ = false;
 };

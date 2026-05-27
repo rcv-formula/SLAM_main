@@ -132,6 +132,7 @@ Node::Node(
 {
   node_ = node;
   tf_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(node_) ;
+  stamped_transforms_.reserve(2);
   map_builder_bridge_.reset(new cartographer_ros::MapBuilderBridge(node_options_, std::move(map_builder), tf_buffer.get()));
 
   absl::MutexLock lock(&mutex_);
@@ -264,6 +265,9 @@ bool Node::handleTrajectoryQuery(
 }
 
 void Node::PublishSubmapList() {
+  if (submap_list_publisher_->get_subscription_count() == 0) {
+    return;
+  }
   absl::MutexLock lock(&mutex_);
   submap_list_publisher_->publish(map_builder_bridge_->GetSubmapList(node_->now()));
 }
@@ -373,26 +377,26 @@ void Node::PublishLocalTrajectoryData() {
         trajectory_data.local_to_map * tracking_to_local;
 
     if (trajectory_data.published_to_tracking != nullptr) {
-      if (node_options_.publish_to_tf) {
-        if (trajectory_data.trajectory_options.provide_odom_frame) {
-          std::vector<geometry_msgs::msg::TransformStamped> stamped_transforms;
+	      if (node_options_.publish_to_tf) {
+	        if (trajectory_data.trajectory_options.provide_odom_frame) {
+	          stamped_transforms_.clear();
 
-          stamped_transform.header.frame_id = node_options_.map_frame;
-          stamped_transform.child_frame_id =
-              trajectory_data.trajectory_options.odom_frame;
-          stamped_transform.transform =
-              ToGeometryMsgTransform(trajectory_data.local_to_map);
-          stamped_transforms.push_back(stamped_transform);
+	          stamped_transform.header.frame_id = node_options_.map_frame;
+	          stamped_transform.child_frame_id =
+	              trajectory_data.trajectory_options.odom_frame;
+	          stamped_transform.transform =
+	              ToGeometryMsgTransform(trajectory_data.local_to_map);
+	          stamped_transforms_.push_back(stamped_transform);
 
-          stamped_transform.header.frame_id =
-              trajectory_data.trajectory_options.odom_frame;
-          stamped_transform.child_frame_id =
-              trajectory_data.trajectory_options.published_frame;
-          stamped_transform.transform = ToGeometryMsgTransform(
-              tracking_to_local * (*trajectory_data.published_to_tracking));
-          stamped_transforms.push_back(stamped_transform);
+	          stamped_transform.header.frame_id =
+	              trajectory_data.trajectory_options.odom_frame;
+	          stamped_transform.child_frame_id =
+	              trajectory_data.trajectory_options.published_frame;
+	          stamped_transform.transform = ToGeometryMsgTransform(
+	              tracking_to_local * (*trajectory_data.published_to_tracking));
+	          stamped_transforms_.push_back(stamped_transform);
 
-          tf_broadcaster_->sendTransform(stamped_transforms);
+	          tf_broadcaster_->sendTransform(stamped_transforms_);
         } else {
           stamped_transform.header.frame_id = node_options_.map_frame;
           stamped_transform.child_frame_id =
@@ -1100,10 +1104,10 @@ void Node::HandleOdometryMessage(const int trajectory_id,
   auto odometry_data_ptr = sensor_bridge_ptr->ToOdometryData(msg);
   if (odometry_data_ptr != nullptr) {
     extrapolators_.at(trajectory_id).AddOdometryData(*odometry_data_ptr);
+    sensor_bridge_ptr->HandleOdometryData(sensor_id, *odometry_data_ptr);
   }
   latest_wheel_forward_velocity_[trajectory_id] =
       LatestMotionInput{msg->header.stamp, msg->twist.twist.linear.x, true};
-  sensor_bridge_ptr->HandleOdometryMessage(sensor_id, msg);
 }
 
 void Node::HandleNavSatFixMessage(const int trajectory_id,
@@ -1139,8 +1143,8 @@ void Node::HandleImuMessage(const int trajectory_id,
   auto imu_data_ptr = sensor_bridge_ptr->ToImuData(msg);
   if (imu_data_ptr != nullptr) {
     extrapolators_.at(trajectory_id).AddImuData(*imu_data_ptr);
+    sensor_bridge_ptr->HandleImuData(sensor_id, *imu_data_ptr);
   }
-  sensor_bridge_ptr->HandleImuMessage(sensor_id, msg);
 }
 
 void Node::HandleLaserScanMessage(const int trajectory_id,

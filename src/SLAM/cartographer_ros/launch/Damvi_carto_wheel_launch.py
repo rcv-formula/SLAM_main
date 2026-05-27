@@ -16,19 +16,12 @@ def generate_launch_description():
     config_dir = os.path.join(package_dir, 'configuration_files')
 
     use_sim_time = LaunchConfiguration('use_sim_time')
-    local_quality_metrics_csv_path = LaunchConfiguration(
-        'local_quality_metrics_csv_path')
 
     return LaunchDescription([
         DeclareLaunchArgument(
             'use_sim_time',
             default_value='false',
             description='Use simulation time if true',
-        ),
-        DeclareLaunchArgument(
-            'local_quality_metrics_csv_path',
-            default_value='',
-            description='CSV path for local SLAM pose prediction vs estimate metrics.',
         ),
         SetEnvironmentVariable(
             name='WHEEL_ODOM_TWIST_ONLY',
@@ -38,17 +31,13 @@ def generate_launch_description():
             name='WHEEL_ODOM_LINEAR_SCALE',
             value=WHEEL_ODOM_LINEAR_SCALE,
         ),
-        SetEnvironmentVariable(
-            name='LOCAL_QUALITY_METRICS_CSV_PATH',
-            value=local_quality_metrics_csv_path,
-        ),
         Node(
             package='cartographer_ros',
             executable='cartographer_node',
             name='cartographer_node',
             output='screen',
             arguments=[
-                '--collect_metrics',
+                '-minloglevel', '1',
                 '-configuration_directory', config_dir,
                 '-configuration_basename', 'Damvi_carto_config_wheel.lua',
             ],

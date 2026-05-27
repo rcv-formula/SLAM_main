@@ -136,8 +136,14 @@ void SensorBridge::HandleOdometryMessage(
   std::unique_ptr<carto::sensor::OdometryData> odometry_data =
       ToOdometryData(msg);
   if (odometry_data != nullptr) {
-    trajectory_builder_->AddSensorData(sensor_id, *odometry_data);
+    HandleOdometryData(sensor_id, *odometry_data);
   }
+}
+
+void SensorBridge::HandleOdometryData(
+    const std::string& sensor_id,
+    const carto::sensor::OdometryData& odometry_data) {
+  trajectory_builder_->AddSensorData(sensor_id, odometry_data);
 }
 
 void SensorBridge::HandleNavSatFixMessage(
@@ -214,11 +220,13 @@ void SensorBridge::HandleImuMessage(const std::string& sensor_id,
                                     const sensor_msgs::msg::Imu::ConstSharedPtr& msg) {
   std::unique_ptr<carto::sensor::ImuData> imu_data = ToImuData(msg);
   if (imu_data != nullptr) {
-    trajectory_builder_->AddSensorData(
-        sensor_id,
-        carto::sensor::ImuData{imu_data->time, imu_data->linear_acceleration,
-                               imu_data->angular_velocity});
+    HandleImuData(sensor_id, *imu_data);
   }
+}
+
+void SensorBridge::HandleImuData(const std::string& sensor_id,
+                                 const carto::sensor::ImuData& imu_data) {
+  trajectory_builder_->AddSensorData(sensor_id, imu_data);
 }
 
 void SensorBridge::HandleLaserScanMessage(
