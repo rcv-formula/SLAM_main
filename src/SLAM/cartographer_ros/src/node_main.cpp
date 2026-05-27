@@ -15,7 +15,9 @@
  */
 
 #include "absl/memory/memory.h"
+#include "cartographer/common/time.h"
 #include "cartographer/mapping/map_builder.h"
+#include "cartographer/transform/transform.h"
 #include "cartographer_ros/node.h"
 #include "cartographer_ros/node_options.h"
 #include "cartographer_ros/ros_log_sink.h"
@@ -40,6 +42,19 @@ DEFINE_bool(load_frozen_state, true,
 DEFINE_bool(
     start_trajectory_with_default_topics, true,
     "Enable to immediately start the first trajectory with default topics.");
+DEFINE_bool(use_initial_pose, false,
+            "Start the default trajectory with an explicit initial pose "
+            "relative to initial_pose_relative_to_trajectory_id.");
+DEFINE_double(initial_pose_x, 0.,
+              "Initial trajectory pose x in the relative trajectory frame.");
+DEFINE_double(initial_pose_y, 0.,
+              "Initial trajectory pose y in the relative trajectory frame.");
+DEFINE_double(initial_pose_yaw, 0.,
+              "Initial trajectory pose yaw in radians in the relative "
+              "trajectory frame.");
+DEFINE_int32(initial_pose_relative_to_trajectory_id, 0,
+             "Trajectory ID that the initial pose is relative to. For normal "
+             "single-map localization this is the frozen pbstream trajectory.");
 DEFINE_string(
     save_state_filename, "",
     "If non-empty, serialize state and write it to disk before shutting down.");
@@ -75,6 +90,26 @@ void Run() {
   }
 
   if (FLAGS_start_trajectory_with_default_topics) {
+    if (FLAGS_use_initial_pose) {
+      ::cartographer::mapping::proto::InitialTrajectoryPose
+          initial_trajectory_pose;
+      initial_trajectory_pose.set_to_trajectory_id(
+          FLAGS_initial_pose_relative_to_trajectory_id);
+      const ::cartographer::transform::Rigid3d initial_pose(
+          Eigen::Vector3d(FLAGS_initial_pose_x, FLAGS_initial_pose_y, 0.),
+          Eigen::AngleAxisd(FLAGS_initial_pose_yaw, Eigen::Vector3d::UnitZ()));
+      *initial_trajectory_pose.mutable_relative_pose() =
+          ::cartographer::transform::ToProto(initial_pose);
+      initial_trajectory_pose.set_timestamp(
+          ::cartographer::common::ToUniversal(
+              ::cartographer::common::FromUniversal(0)));
+      *trajectory_options.trajectory_builder_options
+           .mutable_initial_trajectory_pose() = initial_trajectory_pose;
+      LOG(INFO) << "Starting trajectory with initial pose relative to "
+                << FLAGS_initial_pose_relative_to_trajectory_id << ": x="
+                << FLAGS_initial_pose_x << " y=" << FLAGS_initial_pose_y
+                << " yaw=" << FLAGS_initial_pose_yaw;
+    }
     node->StartTrajectoryWithDefaultTopics(trajectory_options);
   }
 

@@ -1,42 +1,0 @@
-[INFO] [1778814723.270728594] [metrics_collector]: Using ReadMetrics service: /read_metrics
-
-📊 메트릭 수집 시작
-   기간: 150초
-   간격: 2.0초
-   출력: metrics_data/wheel_odom_tuning/drift_long_20260515_114332/drift_imu015_odom6000
-------------------------------------------------------------
-[  0.0%] 반복 #  1 - 수집된 항목: 41[  1.3%] 반복 #  2 - 수집된 항목: 41[  2.7%] 반복 #  3 - 수집된 항목: 41[  4.0%] 반복 #  4 - 수집된 항목: 56[  5.4%] 반복 #  5 - 수집된 항목: 56[  6.7%] 반복 #  6 - 수집된 항목: 61[  8.1%] 반복 #  7 - 수집된 항목: 61[  9.5%] 반복 #  8 - 수집된 항목: 66[ 10.8%] 반복 #  9 - 수집된 항목: 66[ 12.2%] 반복 # 10 - 수집된 항목: 66[ 13.6%] 반복 # 11 - 수집된 항목: 66[ 14.9%] 반복 # 12 - 수집된 항목: 66[ 16.3%] 반복 # 13 - 수집된 항목: 66[ 17.7%] 반복 # 14 - 수집된 항목: 66[ 19.1%] 반복 # 15 - 수집된 항목: 66[ 20.4%] 반복 # 16 - 수집된 항목: 66[ 21.8%] 반복 # 17 - 수집된 항목: 66[ 23.1%] 반복 # 18 - 수집된 항목: 66[ 24.5%] 반복 # 19 - 수집된 항목: 66[ 25.8%] 반복 # 20 - 수집된 항목: 66[ 27.2%] 반복 # 21 - 수집된 항목: 66[ 28.6%] 반복 # 22 - 수집된 항목: 66[ 29.9%] 반복 # 23 - 수집된 항목: 66[ 31.3%] 반복 # 24 - 수집된 항목: 66[ 32.6%] 반복 # 25 - 수집된 항목: 66[ 34.0%] 반복 # 26 - 수집된 항목: 66[ 35.4%] 반복 # 27 - 수집된 항목: 66[ 36.7%] 반복 # 28 - 수집된 항목: 66[ 38.1%] 반복 # 29 - 수집된 항목: 66[ 39.5%] 반복 # 30 - 수집된 항목: 66[ 40.8%] 반복 # 31 - 수집된 항목: 66[ 42.2%] 반복 # 32 - 수집된 항목: 66[ 43.5%] 반복 # 33 - 수집된 항목: 66[ 44.9%] 반복 # 34 - 수집된 항목: 66[ 46.3%] 반복 # 35 - 수집된 항목: 66[ 47.6%] 반복 # 36 - 수집된 항목: 66[ 49.0%] 반복 # 37 - 수집된 항목: 66[ 50.3%] 반복 # 38 - 수집된 항목: 66[ 51.7%] 반복 # 39 - 수집된 항목: 66[ 53.1%] 반복 # 40 - 수집된 항목: 66[ 54.5%] 반복 # 41 - 수집된 항목: 66[ 55.8%] 반복 # 42 - 수집된 항목: 66[ 57.1%] 반복 # 43 - 수집된 항목: 66[ 58.5%] 반복 # 44 - 수집된 항목: 66[ 59.9%] 반복 # 45 - 수집된 항목: 66[ 61.3%] 반복 # 46 - 수집된 항목: 66[ 62.6%] 반복 # 47 - 수집된 항목: 66[ 64.0%] 반복 # 48 - 수집된 항목: 66[ 65.3%] 반복 # 49 - 수집된 항목: 66[ 66.7%] 반복 # 50 - 수집된 항목: 66[ 68.1%] 반복 # 51 - 수집된 항목: 66[ 69.4%] 반복 # 52 - 수집된 항목: 66[ 70.8%] 반복 # 53 - 수집된 항목: 66[ 72.2%] 반복 # 54 - 수집된 항목: 66[ 73.5%] 반복 # 55 - 수집된 항목: 66[ 74.9%] 반복 # 56 - 수집된 항목: 66[ 76.3%] 반복 # 57 - 수집된 항목: 66[ 77.6%] 반복 # 58 - 수집된 항목: 66[ 79.0%] 반복 # 59 - 수집된 항목: 66[ 80.4%] 반복 # 60 - 수집된 항목: 66[ 81.7%] 반복 # 61 - 수집된 항목: 66[ 83.1%] 반복 # 62 - 수집된 항목: 66[ 84.4%] 반복 # 63 - 수집된 항목: 66[ 85.8%] 반복 # 64 - 수집된 항목: 66[ 87.2%] 반복 # 65 - 수집된 항목: 66[ 88.5%] 반복 # 66 - 수집된 항목: 66[ 89.9%] 반복 # 67 - 수집된 항목: 66[ 91.2%] 반복 # 68 - 수집된 항목: 66[ 92.6%] 반복 # 69 - 수집된 항목: 66[ 94.0%] 반복 # 70 - 수집된 항목: 66[ 95.3%] 반복 # 71 - 수집된 항목: 66[ 96.7%] 반복 # 72 - 수집된 항목: 66Traceback (most recent call last):
-  File "/home/symoon/Desktop/F1/Local_SLAM_Complete/local_SLAM_imu_wheel_ver4/collect_metrics.py", line 260, in main
-    collector.collect()
-  File "/home/symoon/Desktop/F1/Local_SLAM_Complete/local_SLAM_imu_wheel_ver4/collect_metrics.py", line 129, in collect
-    response = self.read_metrics()
-  File "/home/symoon/Desktop/F1/Local_SLAM_Complete/local_SLAM_imu_wheel_ver4/collect_metrics.py", line 57, in read_metrics
-    rclpy.spin_until_future_complete(self, future)
-  File "/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/__init__.py", line 256, in spin_until_future_complete
-    executor.spin_until_future_complete(future, timeout_sec)
-  File "/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/executors.py", line 312, in spin_until_future_complete
-    self.spin_once_until_future_complete(future, timeout_sec)
-  File "/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/executors.py", line 780, in spin_once_until_future_complete
-    self._spin_once_impl(timeout_sec)
-  File "/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/executors.py", line 762, in _spin_once_impl
-    handler, entity, node = self.wait_for_ready_callbacks(timeout_sec=timeout_sec)
-  File "/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/executors.py", line 745, in wait_for_ready_callbacks
-    return next(self._cb_iter)
-  File "/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/executors.py", line 646, in _wait_for_ready_callbacks
-    raise ExternalShutdownException()
-rclpy.executors.ExternalShutdownException
-
-During handling of the above exception, another exception occurred:
-
-Traceback (most recent call last):
-  File "/home/symoon/Desktop/F1/Local_SLAM_Complete/local_SLAM_imu_wheel_ver4/collect_metrics.py", line 286, in <module>
-    main()
-  File "/home/symoon/Desktop/F1/Local_SLAM_Complete/local_SLAM_imu_wheel_ver4/collect_metrics.py", line 282, in main
-    rclpy.shutdown()
-  File "/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/__init__.py", line 130, in shutdown
-    _shutdown(context=context)
-  File "/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/utilities.py", line 58, in shutdown
-    return context.shutdown()
-  File "/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/context.py", line 102, in shutdown
-    self.__context.shutdown()
-rclpy._rclpy_pybind11.RCLError: failed to shutdown: rcl_shutdown already called on the given context, at ./src/rcl/init.c:241

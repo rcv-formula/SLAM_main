@@ -110,6 +110,37 @@ proto::PoseGraphOptions CreatePoseGraphOptions(
   options.set_global_constraint_search_after_n_seconds(
       parameter_dictionary->GetDouble(
           "global_constraint_search_after_n_seconds"));
+  options.set_initial_global_sampling_ratio(
+      parameter_dictionary->HasKey("initial_global_sampling_ratio")
+          ? parameter_dictionary->GetDouble("initial_global_sampling_ratio")
+          : options.global_sampling_ratio());
+  options.set_initial_global_constraint_search_after_n_seconds(
+      parameter_dictionary->HasKey(
+          "initial_global_constraint_search_after_n_seconds")
+          ? parameter_dictionary->GetDouble(
+                "initial_global_constraint_search_after_n_seconds")
+          : options.global_constraint_search_after_n_seconds());
+  const auto& constraint_builder_options = options.constraint_builder_options();
+  options.set_initial_global_localization_min_score(
+      parameter_dictionary->HasKey("initial_global_localization_min_score")
+          ? parameter_dictionary->GetDouble(
+                "initial_global_localization_min_score")
+          : constraint_builder_options.global_localization_min_score());
+  options.set_relocalization_trigger_sec(
+      parameter_dictionary->HasKey("relocalization_trigger_sec")
+          ? parameter_dictionary->GetDouble("relocalization_trigger_sec")
+          : 0.0);
+  options.set_relocalization_recovery_required_successes(
+      parameter_dictionary->HasKey(
+          "relocalization_recovery_required_successes")
+          ? parameter_dictionary->GetInt(
+                "relocalization_recovery_required_successes")
+          : 2);
+  options.set_relocalization_recovery_grace_sec(
+      parameter_dictionary->HasKey("relocalization_recovery_grace_sec")
+          ? parameter_dictionary->GetDouble(
+                "relocalization_recovery_grace_sec")
+          : 0.0);
   PopulateOverlappingSubmapsTrimmerOptions2D(&options, parameter_dictionary);
   return options;
 }

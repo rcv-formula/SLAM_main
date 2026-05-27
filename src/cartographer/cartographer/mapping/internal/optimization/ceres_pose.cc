@@ -29,8 +29,8 @@ CeresPose::Data FromPose(const transform::Rigid3d& pose) {
 
 CeresPose::CeresPose(
     const transform::Rigid3d& pose,
-    std::unique_ptr<ceres::LocalParameterization> translation_parametrization,
-    std::unique_ptr<ceres::LocalParameterization> rotation_parametrization,
+    std::unique_ptr<ceres::Manifold> translation_parametrization,
+    std::unique_ptr<ceres::Manifold> rotation_parametrization,
     ceres::Problem* problem)
     : data_(std::make_shared<CeresPose::Data>(FromPose(pose))) {
   problem->AddParameterBlock(data_->translation.data(), 3,

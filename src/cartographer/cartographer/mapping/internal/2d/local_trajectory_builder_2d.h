@@ -18,11 +18,13 @@
 #define CARTOGRAPHER_MAPPING_INTERNAL_2D_LOCAL_TRAJECTORY_BUILDER_2D_H_
 
 #include <chrono>
+#include <deque>
 #include <fstream>
 #include <limits>
 #include <memory>
 #include <string>
 
+#include "absl/types/optional.h"
 #include "cartographer/common/time.h"
 #include "cartographer/mapping/2d/submap_2d.h"
 #include "cartographer/mapping/internal/2d/scan_matching/ceres_scan_matcher_2d.h"
@@ -41,6 +43,16 @@
 namespace cartographer {
 namespace mapping {
 
+struct LocalSlamCommandDebugData {
+  common::Time time;
+  double speed = std::numeric_limits<double>::quiet_NaN();
+  double steering_angle = std::numeric_limits<double>::quiet_NaN();
+};
+
+void SetLocalSlamCommandDebugData(common::Time time, double speed,
+                                  double steering_angle);
+absl::optional<LocalSlamCommandDebugData> GetLocalSlamCommandDebugData();
+
 // Wires up the local SLAM stack (i.e. pose extrapolator, scan matching, etc.)
 // without loop closure.
 // TODO(gaschler): Add test for this class similar to the 3D test.
@@ -56,6 +68,98 @@ class LocalTrajectoryBuilder2D {
     int num_filtered_points = 0;
     bool was_outlier = false;
     int medium_outlier_streak = 0;
+    double longitudinal_residual =
+        std::numeric_limits<double>::quiet_NaN();
+    double lateral_residual = std::numeric_limits<double>::quiet_NaN();
+    double yaw_residual = std::numeric_limits<double>::quiet_NaN();
+    double wheel_forward_velocity =
+        std::numeric_limits<double>::quiet_NaN();
+    double scan_forward_velocity =
+        std::numeric_limits<double>::quiet_NaN();
+    double scan_match_yaw_rate =
+        std::numeric_limits<double>::quiet_NaN();
+    double scan_match_delta_forward =
+        std::numeric_limits<double>::quiet_NaN();
+    double scan_match_delta_lateral =
+        std::numeric_limits<double>::quiet_NaN();
+    double scan_match_delta_translation =
+        std::numeric_limits<double>::quiet_NaN();
+    double scan_match_delta_yaw =
+        std::numeric_limits<double>::quiet_NaN();
+    double prediction_delta_dt =
+        std::numeric_limits<double>::quiet_NaN();
+    double prediction_delta_forward =
+        std::numeric_limits<double>::quiet_NaN();
+    double prediction_delta_lateral =
+        std::numeric_limits<double>::quiet_NaN();
+    double prediction_delta_x =
+        std::numeric_limits<double>::quiet_NaN();
+    double prediction_delta_y =
+        std::numeric_limits<double>::quiet_NaN();
+    double prediction_delta_forward_velocity =
+        std::numeric_limits<double>::quiet_NaN();
+    double prediction_delta_translation =
+        std::numeric_limits<double>::quiet_NaN();
+    double prediction_delta_yaw =
+        std::numeric_limits<double>::quiet_NaN();
+    double adaptive_odometry_weight =
+        std::numeric_limits<double>::quiet_NaN();
+    double wheel_twist_expected_delta =
+        std::numeric_limits<double>::quiet_NaN();
+    double odom_pose_delta_dt =
+        std::numeric_limits<double>::quiet_NaN();
+    double odom_pose_delta_forward =
+        std::numeric_limits<double>::quiet_NaN();
+    double odom_pose_delta_lateral =
+        std::numeric_limits<double>::quiet_NaN();
+    double odom_pose_delta_local_x =
+        std::numeric_limits<double>::quiet_NaN();
+    double odom_pose_delta_local_y =
+        std::numeric_limits<double>::quiet_NaN();
+    double odom_pose_delta_forward_velocity =
+        std::numeric_limits<double>::quiet_NaN();
+    double odom_pose_delta_translation =
+        std::numeric_limits<double>::quiet_NaN();
+    double odom_pose_delta_yaw =
+        std::numeric_limits<double>::quiet_NaN();
+    double odom_latest_age =
+        std::numeric_limits<double>::quiet_NaN();
+    int odom_history_size = 0;
+    int front_point_count = 0;
+    double front_point_fraction =
+        std::numeric_limits<double>::quiet_NaN();
+    bool front_weak = false;
+    bool longitudinal_prior_active = false;
+    bool longitudinal_replacement_active = false;
+    bool longitudinal_motion_loss = false;
+    bool straight_longitudinal_mismatch = false;
+    int straight_longitudinal_mismatch_streak = 0;
+    int motion_loss_prior_hold_count = 0;
+    double longitudinal_blend_weight = 0.;
+    double longitudinal_prior_weight = 0.;
+    double ceres_occupied_space_weight_scale = 1.;
+    double ceres_rotation_weight =
+        std::numeric_limits<double>::quiet_NaN();
+    double longitudinal_prior_target_delta =
+        std::numeric_limits<double>::quiet_NaN();
+    double longitudinal_prior_wheel_delta_scale =
+        std::numeric_limits<double>::quiet_NaN();
+    double trigger_scan_forward_delta =
+        std::numeric_limits<double>::quiet_NaN();
+    double odom_prior_translation =
+        std::numeric_limits<double>::quiet_NaN();
+    double odom_prior_yaw_rate =
+        std::numeric_limits<double>::quiet_NaN();
+    double imu_delta_dt = std::numeric_limits<double>::quiet_NaN();
+    double imu_delta_yaw = std::numeric_limits<double>::quiet_NaN();
+    double imu_delta_yaw_rate = std::numeric_limits<double>::quiet_NaN();
+    double command_latest_age =
+        std::numeric_limits<double>::quiet_NaN();
+    double command_speed = std::numeric_limits<double>::quiet_NaN();
+    double command_steering_angle =
+        std::numeric_limits<double>::quiet_NaN();
+    double command_expected_delta =
+        std::numeric_limits<double>::quiet_NaN();
   };
 
   struct InsertionResult {
@@ -116,6 +220,10 @@ class LocalTrajectoryBuilder2D {
       const sensor::PointCloud& filtered_gravity_aligned_point_cloud,
       LocalSlamQualityMetrics* quality_metrics);
   bool IsLocalSlamOutlier(LocalSlamQualityMetrics* quality_metrics);
+  absl::optional<transform::Rigid2d> InterpolateOdometry2D(
+      common::Time time) const;
+  absl::optional<transform::Rigid2d> InterpolateOrLatestOdometry2D(
+      common::Time time) const;
 
   bool InitializeQualityMetricsCsvWriter();
   void MaybeWriteQualityMetricsCsv(
@@ -150,6 +258,15 @@ class LocalTrajectoryBuilder2D {
   std::ofstream quality_metrics_csv_;
   bool quality_metrics_csv_enabled_ = false;
   int consecutive_medium_outlier_count_ = 0;
+  double latest_imu_angular_velocity_z_ = 0.;
+  double integrated_imu_yaw_ = 0.;
+  double last_pose_integrated_imu_yaw_ = 0.;
+  absl::optional<common::Time> last_imu_time_;
+  absl::optional<common::Time> last_pose_estimate_time_;
+  absl::optional<transform::Rigid2d> last_pose_estimate_2d_;
+  int longitudinal_motion_loss_prior_hold_count_ = 0;
+  int straight_longitudinal_mismatch_streak_ = 0;
+  std::deque<sensor::OdometryData> odometry_history_;
 };
 
 }  // namespace mapping

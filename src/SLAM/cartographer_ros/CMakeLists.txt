@@ -18,6 +18,7 @@ cmake_minimum_required(VERSION 3.5)
 project(cartographer_ros)
 
 find_package(ament_cmake REQUIRED)
+find_package(ackermann_msgs REQUIRED)
 
 # Default to C++17
 set(CMAKE_CXX_STANDARD 17)
@@ -86,6 +87,7 @@ add_library(${PROJECT_NAME}
 
 set(dependencies
   builtin_interfaces
+  ackermann_msgs
   cartographer
   cartographer_ros_msgs
   geometry_msgs
@@ -169,7 +171,7 @@ install(DIRECTORY include/
   DESTINATION include/
 )
 
-install(DIRECTORY configuration_files urdf launch pbstream
+install(DIRECTORY configuration_files urdf launch pbstream scripts
   DESTINATION share/${PROJECT_NAME}/
 )
 

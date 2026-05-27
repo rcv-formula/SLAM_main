@@ -26,7 +26,7 @@ namespace mapping {
 
 struct YawOnlyQuaternionPlus {
   template <typename T>
-  bool operator()(const T* x, const T* delta, T* x_plus_delta) const {
+  bool Plus(const T* x, const T* delta, T* x_plus_delta) const {
     const T clamped_delta = common::Clamp(delta[0], T(-0.5), T(0.5));
     T q_delta[4];
     q_delta[0] = ceres::sqrt(1. - clamped_delta * clamped_delta);
@@ -36,11 +36,25 @@ struct YawOnlyQuaternionPlus {
     ceres::QuaternionProduct(q_delta, x, x_plus_delta);
     return true;
   }
+
+  template <typename T>
+  bool Minus(const T* y, const T* x, T* y_minus_x) const {
+    T inverse_x[4] = {x[0], -x[1], -x[2], -x[3]};
+    T ambient_y_minus_x[4];
+    ceres::QuaternionProduct(y, inverse_x, ambient_y_minus_x);
+    y_minus_x[0] = ambient_y_minus_x[3];
+    return true;
+  }
+
+  template <typename T>
+  bool operator()(const T* x, const T* delta, T* x_plus_delta) const {
+    return Plus(x, delta, x_plus_delta);
+  }
 };
 
 struct ConstantYawQuaternionPlus {
   template <typename T>
-  bool operator()(const T* x, const T* delta, T* x_plus_delta) const {
+  bool Plus(const T* x, const T* delta, T* x_plus_delta) const {
     const T delta_norm =
         ceres::sqrt(common::Pow2(delta[0]) + common::Pow2(delta[1]));
     const T sin_delta_over_delta =
@@ -58,6 +72,29 @@ struct ConstantYawQuaternionPlus {
     // just changing "yaw" of the complete map).
     ceres::QuaternionProduct(x, q_delta, x_plus_delta);
     return true;
+  }
+
+  template <typename T>
+  bool Minus(const T* y, const T* x, T* y_minus_x) const {
+    T inverse_x[4] = {x[0], -x[1], -x[2], -x[3]};
+    T ambient_y_minus_x[4];
+    ceres::QuaternionProduct(inverse_x, y, ambient_y_minus_x);
+    const T u_norm = ceres::sqrt(common::Pow2(ambient_y_minus_x[1]) +
+                                 common::Pow2(ambient_y_minus_x[2]));
+    if (u_norm > T(0.)) {
+      const T theta = ceres::atan2(u_norm, ambient_y_minus_x[0]);
+      y_minus_x[0] = theta * ambient_y_minus_x[1] / u_norm;
+      y_minus_x[1] = theta * ambient_y_minus_x[2] / u_norm;
+    } else {
+      y_minus_x[0] = ambient_y_minus_x[1];
+      y_minus_x[1] = ambient_y_minus_x[2];
+    }
+    return true;
+  }
+
+  template <typename T>
+  bool operator()(const T* x, const T* delta, T* x_plus_delta) const {
+    return Plus(x, delta, x_plus_delta);
   }
 };
 

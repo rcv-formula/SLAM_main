@@ -83,9 +83,14 @@ class PoseGraphInterface {
 
   enum class TrajectoryState { ACTIVE, FINISHED, FROZEN, DELETED };
 
+  enum class LocalizationStatus { kGood, kLost };
+
   using GlobalSlamOptimizationCallback =
       std::function<void(const std::map<int /* trajectory_id */, SubmapId>&,
                          const std::map<int /* trajectory_id */, NodeId>&)>;
+
+  using LocalizationStatusCallback =
+      std::function<void(LocalizationStatus)>;
 
   PoseGraphInterface() {}
   virtual ~PoseGraphInterface() {}
@@ -157,6 +162,11 @@ class PoseGraphInterface {
   // problem is solved.
   virtual void SetGlobalSlamOptimizationCallback(
       GlobalSlamOptimizationCallback callback) = 0;
+
+  // Sets callback invoked on kGood ↔ kLost transitions.
+  // Only meaningful in pure localization mode.
+  virtual void SetLocalizationStatusCallback(
+      LocalizationStatusCallback callback) {}
 };
 
 }  // namespace mapping

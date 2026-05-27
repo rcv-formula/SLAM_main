@@ -1,0 +1,54 @@
+# Mapping profile for wheel odom translation assistance.
+# Keep wheel yaw disabled, but make wheel translation visible enough to help.
+
+imu_weight: 0.2
+imu_delta_min: 0.3
+
+# Local extrapolator: normally keep wheel translation weak so it does not
+# disturb corners.
+wheelodom_weight: 0.05
+
+# If wheel says the robot is moving but scan-derived longitudinal velocity is
+# near zero or opposite, blend wheel forward velocity into prediction. This does
+# not suppress scan updates or submap insertion.
+wheelodom_low_scan_weight: 0.85
+wheelodom_scan_velocity_min: 0.03
+wheelodom_mismatch_min_speed: 0.05
+wheelodom_mismatch_scan_velocity_ratio: 0.35
+wheelodom_forward_prediction_weight: 1.0
+wheelodom_use_rotation: 0
+
+# Yaw-rate gate for the mismatch correction (rad/s). Keep this below real
+# turning speed so rotation sections are not pulled by wheel translation.
+straight_yaw_speed_threshold: 0.25
+
+# Keep the local Ceres scan matcher conservative. Raising this too much can
+# break corners and fold the map when wheel/IMU prediction is imperfect.
+ceres_occupied_space_weight: 50.0
+ceres_translation_weight: 20.0
+ceres_rotation_weight: 20.0
+
+# Optional one-dimensional Ceres prior along the EKF/wheel odom delta direction.
+# Keep it off by default when testing the odometry pose extrapolator path.
+longitudinal_translation_weight: 0.0
+longitudinal_translation_min_speed: 0.05
+longitudinal_translation_max_yaw_rate: 0.60
+longitudinal_prior_wheel_delta_scale: 1.0
+
+# Local SLAM outlier filter. This is intentionally conservative: it only drops
+# large scan-matcher jumps, or two consecutive medium jumps.
+skip_submap_insertion_for_outliers: 1
+outlier_min_correlative_score: 0.0
+outlier_max_translation_residual: 0.08
+outlier_max_rotation_residual: 0.035
+outlier_min_num_filtered_points: 0
+outlier_required_failures: 1
+outlier_medium_translation_residual: 0.04
+outlier_medium_rotation_residual: 0.026
+outlier_medium_required_consecutive: 2
+
+# Pose graph odometry is disabled here because the recorded /odom_wheel pose
+# curves during corridor motion. Wheel translation is used locally from
+# twist.linear.x only.
+odometry_translation_weight: 30.0
+odometry_rotation_weight: 0.0

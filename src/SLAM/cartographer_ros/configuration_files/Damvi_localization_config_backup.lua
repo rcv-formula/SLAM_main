@@ -86,7 +86,7 @@ TRAJECTORY_BUILDER_2D.ceres_scan_matcher.rotation_weight = 30.0
   -- 급격한 steering이 있을 경우에는 time_constant와 rotation_weight 증가 고려
 TRAJECTORY_BUILDER_2D.imu_gravity_time_constant = 12.0
 
-MAP_BUILDER.num_background_threads = 1
+MAP_BUILDER.num_background_threads = 8
 
 -- ◆ 기타 posegraph 관련
   --n개의 노드(스캔)이 쌓일 때마다 전역 최적화(Loop Closure 등) 실행. 적을수록 빠르게 최적화가 일어남. 1개가 적절

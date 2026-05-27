@@ -1,4 +1,0 @@
-config=/home/symoon/Desktop/F1/Local_SLAM_Complete/local_SLAM_imu_wheel_ver5/parameter_trials/field_moderate.yaml
-pbstream=/home/symoon/Desktop/bag/0501/0501.pbstream
-bag=/home/symoon/Desktop/bag/0501/0501_DATA.bag
-domain=82

@@ -42,6 +42,7 @@ MapBuilderContext<SubmapType>::GetLocalSlamResultCallbackForSubscriptions() {
   return [this](int trajectory_id, common::Time time,
                 transform::Rigid3d local_pose, sensor::RangeData range_data,
                 double scan_match_score, bool scan_match_score_valid,
+                mapping::TrajectoryBuilderInterface::LocalSlamDebugData,
                 std::unique_ptr<
                     const mapping::TrajectoryBuilderInterface::InsertionResult>
                     insertion_result) {

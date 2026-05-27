@@ -56,6 +56,21 @@ message PoseGraphOptions {
   // globally rather than in a smaller search window.
   double global_constraint_search_after_n_seconds = 10;
 
+  // Initial global localization settings used before a trajectory is
+  // connected to any other trajectory. If unset in Lua, Cartographer falls
+  // back to the corresponding steady-state values above.
+  double initial_global_sampling_ratio = 12;
+  double initial_global_constraint_search_after_n_seconds = 13;
+  double initial_global_localization_min_score = 14;
+
+  // If positive, declares localization LOST when no cross-trajectory (frozen
+  // map) constraint forms for this many seconds, and forces global
+  // relocalization search until recovery.  Set to 0 to disable (default).
+  // Only meaningful in pure localization mode.
+  double relocalization_trigger_sec = 15;
+  int32 relocalization_recovery_required_successes = 16;
+  double relocalization_recovery_grace_sec = 17;
+
   message OverlappingSubmapsTrimmerOptions2D {
     int32 fresh_submaps_count = 1;
     double min_covered_area = 2;

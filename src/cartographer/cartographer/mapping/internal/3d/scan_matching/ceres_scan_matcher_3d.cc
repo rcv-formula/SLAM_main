@@ -98,11 +98,11 @@ void CeresScanMatcher3D::Match(
   optimization::CeresPose ceres_pose(
       initial_pose_estimate, nullptr /* translation_parameterization */,
       options_.only_optimize_yaw()
-          ? std::unique_ptr<ceres::LocalParameterization>(
-                absl::make_unique<ceres::AutoDiffLocalParameterization<
+          ? std::unique_ptr<ceres::Manifold>(
+                absl::make_unique<ceres::AutoDiffManifold<
                     YawOnlyQuaternionPlus, 4, 1>>())
-          : std::unique_ptr<ceres::LocalParameterization>(
-                absl::make_unique<ceres::QuaternionParameterization>()),
+          : std::unique_ptr<ceres::Manifold>(
+                absl::make_unique<ceres::QuaternionManifold>()),
       &problem);
 
   CHECK_EQ(options_.occupied_space_weight_size(),
