@@ -239,13 +239,13 @@ POSE_GRAPH.optimize_every_n_nodes = 1
 POSE_GRAPH.constraint_builder.max_constraint_distance = 15.0
 POSE_GRAPH.relocalization_trigger_sec = 15.0
 POSE_GRAPH.relocalization_recovery_required_successes = 2
-POSE_GRAPH.relocalization_recovery_grace_sec = 12.0
+POSE_GRAPH.relocalization_recovery_grace_sec = 6.0
 
 -- Loop clousre 관련 변수
 POSE_GRAPH.constraint_builder.loop_closure_translation_weight = 2e4
 POSE_GRAPH.constraint_builder.loop_closure_rotation_weight = 3e4
 POSE_GRAPH.optimization_problem.odometry_translation_weight =
-    wheel_config_or_default("odometry_translation_weight", 30.0
+    wheel_config_or_default("odometry_translation_weight", 30.0)
 POSE_GRAPH.optimization_problem.odometry_rotation_weight =
     wheel_config_or_default("odometry_rotation_weight", 0.0)
 
