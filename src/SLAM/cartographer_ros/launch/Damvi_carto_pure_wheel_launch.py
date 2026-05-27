@@ -44,7 +44,7 @@ def generate_launch_description():
         ),
         DeclareLaunchArgument(
             'use_occupancy_grid',
-            default_value='false',
+            default_value='true',
             description='Publish occupancy grid map for visualization',
         ),
         DeclareLaunchArgument(
