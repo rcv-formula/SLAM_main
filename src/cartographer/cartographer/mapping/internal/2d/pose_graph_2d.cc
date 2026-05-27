@@ -19,6 +19,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdio>
+#include <cstdlib>
 #include <functional>
 #include <iomanip>
 #include <iostream>
@@ -48,6 +49,25 @@ static auto* kConstraintsDifferentTrajectoryMetric = metrics::Gauge::Null();
 static auto* kActiveSubmapsMetric = metrics::Gauge::Null();
 static auto* kFrozenSubmapsMetric = metrics::Gauge::Null();
 static auto* kDeletedSubmapsMetric = metrics::Gauge::Null();
+
+namespace {
+
+bool EnvBool(const char* name, const bool default_value) {
+  const char* value = std::getenv(name);
+  if (value == nullptr) {
+    return default_value;
+  }
+  const std::string text(value);
+  if (text == "1" || text == "true" || text == "TRUE" || text == "on") {
+    return true;
+  }
+  if (text == "0" || text == "false" || text == "FALSE" || text == "off") {
+    return false;
+  }
+  return default_value;
+}
+
+}  // namespace
 
 PoseGraph2D::PoseGraph2D(
     const proto::PoseGraphOptions& options,
@@ -294,7 +314,9 @@ void PoseGraph2D::ComputeConstraint(const NodeId& node_id,
         (IsTrajectoryFrozen(node_id.trajectory_id) ||
          IsTrajectoryFrozen(submap_id.trajectory_id)) &&
         localization_status_ == LocalizationStatus::kLost &&
-        options_.relocalization_trigger_sec() > 0.;
+        options_.relocalization_trigger_sec() > 0. &&
+        !(EnvBool("POSE_GRAPH_DISABLE_RELOCALIZATION_AFTER_INITIAL", false) &&
+          last_frozen_constraint_time_ != common::Time::min());
     if (relocalizing_against_frozen_map &&
         last_frozen_constraint_time_ == common::Time::min()) {
       use_initial_global_min_score = true;
@@ -302,8 +324,11 @@ void PoseGraph2D::ComputeConstraint(const NodeId& node_id,
     if (relocalizing_against_frozen_map) {
       use_initial_global_localization = true;
       global_constraint_search_mode =
-          constraints::ConstraintBuilder2D::GlobalConstraintSearchMode::
-              kRecovery;
+          last_frozen_constraint_time_ == common::Time::min()
+              ? constraints::ConstraintBuilder2D::GlobalConstraintSearchMode::
+                    kInitial
+              : constraints::ConstraintBuilder2D::GlobalConstraintSearchMode::
+                    kRecovery;
     } else if (use_initial_global_localization) {
       global_constraint_search_mode =
           constraints::ConstraintBuilder2D::GlobalConstraintSearchMode::
@@ -589,7 +614,9 @@ void PoseGraph2D::HandleWorkQueue(
           }
         } else if (localization_status_ == LocalizationStatus::kLost) {
           relocalization_recovery_success_count_ = 0;
-        } else if (localization_status_ == LocalizationStatus::kGood &&
+        } else if (!EnvBool("POSE_GRAPH_DISABLE_RELOCALIZATION_AFTER_INITIAL",
+                            false) &&
+                   localization_status_ == LocalizationStatus::kGood &&
                    last_frozen_constraint_time_ != common::Time::min() &&
                    latest_node_time > relocalization_recovery_grace_until_) {
           const double elapsed = common::ToSeconds(

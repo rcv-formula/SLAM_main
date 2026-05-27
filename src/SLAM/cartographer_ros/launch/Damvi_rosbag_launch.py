@@ -77,7 +77,7 @@ def generate_launch_description():
     return LaunchDescription([
         DeclareLaunchArgument(
             'bagfiles',
-            default_value=os.path.join(slam_main_dir, '0518_2'),
+            default_value=os.path.join(slam_main_dir, '0518_2_humble'),
             description='Path to the rosbag directory or db3 file.',
         ),
         DeclareLaunchArgument(
