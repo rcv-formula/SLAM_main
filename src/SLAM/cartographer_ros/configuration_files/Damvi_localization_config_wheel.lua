@@ -101,11 +101,11 @@ TRAJECTORY_BUILDER_2D.submaps.num_range_data = 45
 
 -- Pure Localization 모드 관련 설정
   -- ◆ [1]전역 매칭(루프 클로저) 최소 점수
-POSE_GRAPH.constraint_builder.global_localization_min_score = 0.75
+POSE_GRAPH.constraint_builder.global_localization_min_score = 0.7
   -- ◆ [1]로컬 매칭(일반 스캔 매칭) 최소 점수
-POSE_GRAPH.constraint_builder.min_score = 0.87
+POSE_GRAPH.constraint_builder.min_score = 0.6
 
-POSE_GRAPH.global_constraint_search_after_n_seconds = 2.0
+POSE_GRAPH.global_constraint_search_after_n_seconds = 0.3
 TRAJECTORY_BUILDER.pure_localization_trimmer = {
   max_submaps_to_keep = 5,
 }
@@ -191,7 +191,7 @@ POSE_GRAPH.optimize_every_n_nodes = 1
 POSE_GRAPH.constraint_builder.max_constraint_distance = 15.0
 POSE_GRAPH.relocalization_trigger_sec = 6.0
 POSE_GRAPH.relocalization_recovery_required_successes = 1
-POSE_GRAPH.relocalization_recovery_grace_sec = 4.0
+POSE_GRAPH.relocalization_recovery_grace_sec = 2.0
 
 -- Loop clousre 관련 변수
 POSE_GRAPH.constraint_builder.loop_closure_translation_weight = 2e4
