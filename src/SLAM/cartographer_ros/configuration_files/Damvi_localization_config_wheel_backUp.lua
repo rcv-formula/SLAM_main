@@ -112,10 +112,10 @@ options.damvi_runtime_options = {
   pose_graph_ambiguous_full_submap_min_near_top_count = 80.0,
 
   pose_graph_bound_relocalization_to_prior = true,
-  pose_graph_relocalization_prior_min_score = 0.35,
+  pose_graph_relocalization_prior_min_score = 0.45,
   pose_graph_relocalization_max_translation_correction = 0.45,
   pose_graph_relocalization_max_yaw_correction = 0.30,
-  pose_graph_recovery_constraint_weight_scale = 0.2,
+  pose_graph_recovery_constraint_weight_scale = 0.15,
 
   adaptive_odometry_blend = true,
   adaptive_odometry_full_weight_yaw_rate =
@@ -151,11 +151,11 @@ TRAJECTORY_BUILDER_2D.submaps.num_range_data = 45
 
 -- Pure Localization 모드 관련 설정
   -- ◆ [1]전역 매칭(루프 클로저) 최소 점수
-POSE_GRAPH.constraint_builder.global_localization_min_score = 0.6 --0.75
+POSE_GRAPH.constraint_builder.global_localization_min_score = 0.75 --0.75
   -- ◆ [1]로컬 매칭(일반 스캔 매칭) 최소 점수
-POSE_GRAPH.constraint_builder.min_score = 0.7
+POSE_GRAPH.constraint_builder.min_score = 0.82
 
-POSE_GRAPH.global_constraint_search_after_n_seconds = 0.2
+POSE_GRAPH.global_constraint_search_after_n_seconds = 1.2
 TRAJECTORY_BUILDER.pure_localization_trimmer = {
   max_submaps_to_keep = 5,
 }
@@ -182,7 +182,7 @@ TRAJECTORY_BUILDER_2D.outlier_min_num_filtered_points =
   -- [2]global Fast Correlative 매칭에서 x-y 평면상 탐색 범위 (m), 고정. 작을수록 좋음
 POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher.linear_search_window = 5.0
   -- [2]global Fast Correlative 매칭에서 회전(각도) 탐색 범위 (라디안), 고정. 작을수록 좋음
-POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher.angular_search_window = math.rad(18.0)
+POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher.angular_search_window = math.rad(15.0)
 POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher.log_score_distribution_to_csv =
     fast_correlative_score_distribution_csv_path ~= ""
 POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher.score_distribution_csv_path =
@@ -192,7 +192,7 @@ POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher.min_score_distributi
 POSE_GRAPH.global_sampling_ratio = 1.0
 POSE_GRAPH.initial_global_sampling_ratio = 0.9
 POSE_GRAPH.initial_global_constraint_search_after_n_seconds = 0.0
-POSE_GRAPH.initial_global_localization_min_score = 0.42
+POSE_GRAPH.initial_global_localization_min_score = 0.35
 
 -- ◆ [LOCAL]
 -- real time 변수 설정
@@ -243,12 +243,12 @@ POSE_GRAPH.relocalization_recovery_grace_sec = 12.0
 
 -- Loop clousre 관련 변수
 POSE_GRAPH.constraint_builder.loop_closure_translation_weight = 2e4
-POSE_GRAPH.constraint_builder.loop_closure_rotation_weight = 3e4
+POSE_GRAPH.constraint_builder.loop_closure_rotation_weight = 2e4
 POSE_GRAPH.optimization_problem.odometry_translation_weight =
-    wheel_config_or_default("odometry_translation_weight", 30.0
+    wheel_config_or_default("odometry_translation_weight", 30.0)
 POSE_GRAPH.optimization_problem.odometry_rotation_weight =
     wheel_config_or_default("odometry_rotation_weight", 0.0)
 
-POSE_GRAPH.constraint_builder.sampling_ratio = 0.8
+POSE_GRAPH.constraint_builder.sampling_ratio = 0.78
 
 return options

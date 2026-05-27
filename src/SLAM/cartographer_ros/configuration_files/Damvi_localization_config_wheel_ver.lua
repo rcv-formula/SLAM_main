@@ -245,7 +245,7 @@ POSE_GRAPH.relocalization_recovery_grace_sec = 12.0
 POSE_GRAPH.constraint_builder.loop_closure_translation_weight = 2e4
 POSE_GRAPH.constraint_builder.loop_closure_rotation_weight = 3e4
 POSE_GRAPH.optimization_problem.odometry_translation_weight =
-    wheel_config_or_default("odometry_translation_weight", 30.0
+    wheel_config_or_default("odometry_translation_weight", 30.0)
 POSE_GRAPH.optimization_problem.odometry_rotation_weight =
     wheel_config_or_default("odometry_rotation_weight", 0.0)
 

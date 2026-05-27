@@ -112,7 +112,7 @@ options.damvi_runtime_options = {
   pose_graph_ambiguous_full_submap_min_near_top_count = 80.0,
 
   pose_graph_bound_relocalization_to_prior = true,
-  pose_graph_relocalization_prior_min_score = 0.35,
+  pose_graph_relocalization_prior_min_score = 0.32,
   pose_graph_relocalization_max_translation_correction = 0.45,
   pose_graph_relocalization_max_yaw_correction = 0.30,
   pose_graph_recovery_constraint_weight_scale = 0.2,
@@ -151,11 +151,11 @@ TRAJECTORY_BUILDER_2D.submaps.num_range_data = 45
 
 -- Pure Localization 모드 관련 설정
   -- ◆ [1]전역 매칭(루프 클로저) 최소 점수
-POSE_GRAPH.constraint_builder.global_localization_min_score = 0.6 --0.75
+POSE_GRAPH.constraint_builder.global_localization_min_score = 0.63 --0.75
   -- ◆ [1]로컬 매칭(일반 스캔 매칭) 최소 점수
-POSE_GRAPH.constraint_builder.min_score = 0.7
+POSE_GRAPH.constraint_builder.min_score = 0.6
 
-POSE_GRAPH.global_constraint_search_after_n_seconds = 0.2
+POSE_GRAPH.global_constraint_search_after_n_seconds = 0.1
 TRAJECTORY_BUILDER.pure_localization_trimmer = {
   max_submaps_to_keep = 5,
 }
@@ -192,7 +192,7 @@ POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher.min_score_distributi
 POSE_GRAPH.global_sampling_ratio = 1.0
 POSE_GRAPH.initial_global_sampling_ratio = 0.9
 POSE_GRAPH.initial_global_constraint_search_after_n_seconds = 0.0
-POSE_GRAPH.initial_global_localization_min_score = 0.42
+POSE_GRAPH.initial_global_localization_min_score = 0.5
 
 -- ◆ [LOCAL]
 -- real time 변수 설정
@@ -237,15 +237,15 @@ POSE_GRAPH.optimize_every_n_nodes = 1
 
 -- [대회장 길이에 맞추어 조절] 전역 매칭을 위한 Submap 간 최대 거리
 POSE_GRAPH.constraint_builder.max_constraint_distance = 15.0
-POSE_GRAPH.relocalization_trigger_sec = 15.0
-POSE_GRAPH.relocalization_recovery_required_successes = 2
-POSE_GRAPH.relocalization_recovery_grace_sec = 12.0
+POSE_GRAPH.relocalization_trigger_sec = 2.0
+POSE_GRAPH.relocalization_recovery_required_successes = 1
+POSE_GRAPH.relocalization_recovery_grace_sec = 0.9
 
 -- Loop clousre 관련 변수
 POSE_GRAPH.constraint_builder.loop_closure_translation_weight = 2e4
-POSE_GRAPH.constraint_builder.loop_closure_rotation_weight = 3e4
+POSE_GRAPH.constraint_builder.loop_closure_rotation_weight = 2e5
 POSE_GRAPH.optimization_problem.odometry_translation_weight =
-    wheel_config_or_default("odometry_translation_weight", 30.0
+    wheel_config_or_default("odometry_translation_weight", 30.0)
 POSE_GRAPH.optimization_problem.odometry_rotation_weight =
     wheel_config_or_default("odometry_rotation_weight", 0.0)
 
