@@ -1,0 +1,12 @@
+{
+  "bag": "/home/rcv/SLAM_main-SLAM_IMU_WHEEL_tun/0518_2_humble",
+  "bag_returncode": 0,
+  "duration": 60.0,
+  "label": "tun_pure_wheel_60",
+  "launch_returncode": 0,
+  "ros_domain_id": 143,
+  "run_dir": "/home/rcv/SLAM_main-SLAM_IMU_WHEEL_tun_upg/latency_results/odom_latency/tun_pure_wheel_60_20260527_235705",
+  "sampler_returncode": 0,
+  "trace_provenance": false,
+  "workspace": "/home/rcv/SLAM_main-SLAM_IMU_WHEEL_tun"
+}

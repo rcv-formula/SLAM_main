@@ -1,0 +1,7 @@
+[WARN] [1779890688.866597061] [rcl]: ROS_LOCALHOST_ONLY is deprecated but still honored if it is enabled. Use ROS_AUTOMATIC_DISCOVERY_RANGE and ROS_STATIC_PEERS instead.
+[WARN] [1779890688.866635303] [rcl]: 'localhost_only' is enabled, 'automatic_discovery_range' and 'static_peers' will be ignored.
+{
+  "metrics": {},
+  "rows": 40,
+  "successful_reads": 40
+}

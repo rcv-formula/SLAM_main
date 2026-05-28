@@ -1,0 +1,14 @@
+{
+  "bag": "/home/rcv/SLAM_main-SLAM_IMU_WHEEL_tun_upg/0518_2_humble",
+  "config": "/home/rcv/SLAM_main-SLAM_IMU_WHEEL_tun_upg/config_mapping_wheel.yaml",
+  "duration": 20.0,
+  "label": "upg_default20",
+  "launch_returncode": 0,
+  "online_correlative": false,
+  "pose_returncode": 0,
+  "ros_domain_id": 122,
+  "run_dir": "/home/rcv/SLAM_main-SLAM_IMU_WHEEL_tun_upg/latency_results/vulkan_compare/upg_default20_20260527_230448",
+  "sampler_returncode": 0,
+  "vulkan": false,
+  "workspace": "/home/rcv/SLAM_main-SLAM_IMU_WHEEL_tun_upg"
+}

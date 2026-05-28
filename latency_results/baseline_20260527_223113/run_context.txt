@@ -1,0 +1,5 @@
+ROS_DOMAIN_ID=96
+bag=0518_2_humble
+config=/home/rcv/SLAM_main-SLAM_IMU_WHEEL_tun_upg/install/cartographer_ros/share/cartographer_ros/configuration_files/Damvi_carto_config_wheel.lua
+qos=/home/rcv/SLAM_main-SLAM_IMU_WHEEL_tun_upg/install/cartographer_ros/share/cartographer_ros/configuration_files/rosbag_play_qos_overrides.yaml
+bag_status=0

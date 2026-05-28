@@ -16,6 +16,7 @@
 
 #include "cartographer/mapping/internal/2d/scan_matching/real_time_correlative_scan_matcher_2d.h"
 
+#include <cstdlib>
 #include <cmath>
 #include <memory>
 
@@ -26,6 +27,7 @@
 #include "cartographer/mapping/2d/probability_grid_range_data_inserter_2d.h"
 #include "cartographer/mapping/internal/2d/tsdf_2d.h"
 #include "cartographer/mapping/internal/2d/tsdf_range_data_inserter_2d.h"
+#include "cartographer/mapping/internal/2d/scan_matching/vulkan_correlative_scan_matcher_2d.h"
 #include "cartographer/mapping/internal/scan_matching/real_time_correlative_scan_matcher.h"
 #include "cartographer/sensor/point_cloud.h"
 #include "cartographer/transform/transform.h"
@@ -47,6 +49,38 @@ CreateRealTimeCorrelativeScanMatcherTestOptions2D() {
       "}");
   return CreateRealTimeCorrelativeScanMatcherOptions(
       parameter_dictionary.get());
+}
+
+proto::RealTimeCorrelativeScanMatcherOptions
+CreateWeightedRealTimeCorrelativeScanMatcherTestOptions2D() {
+  auto parameter_dictionary = common::MakeDictionary(
+      "return {"
+      "linear_search_window = 0.6, "
+      "angular_search_window = 0.16, "
+      "translation_delta_cost_weight = 5., "
+      "rotation_delta_cost_weight = 3., "
+      "}");
+  return CreateRealTimeCorrelativeScanMatcherOptions(
+      parameter_dictionary.get());
+}
+
+std::vector<Candidate2D> GenerateTestCandidates(
+    const SearchParameters& search_parameters) {
+  std::vector<Candidate2D> candidates;
+  for (int scan_index = 0; scan_index != search_parameters.num_scans;
+       ++scan_index) {
+    const SearchParameters::LinearBounds& linear_bounds =
+        search_parameters.linear_bounds[scan_index];
+    for (int x_index_offset = linear_bounds.min_x;
+         x_index_offset <= linear_bounds.max_x; ++x_index_offset) {
+      for (int y_index_offset = linear_bounds.min_y;
+           y_index_offset <= linear_bounds.max_y; ++y_index_offset) {
+        candidates.emplace_back(scan_index, x_index_offset, y_index_offset,
+                                search_parameters);
+      }
+    }
+  }
+  return candidates;
 }
 
 class RealTimeCorrelativeScanMatcherTest : public ::testing::Test {
@@ -176,6 +210,47 @@ TEST_F(RealTimeCorrelativeScanMatcherTest,
   // 3 points should align perfectly.
   EXPECT_LT(0.7 * 3. / 7., candidates[0].score);
   EXPECT_GT(0.7, candidates[0].score);
+}
+
+TEST_F(RealTimeCorrelativeScanMatcherTest,
+       VulkanScoresMatchCpuProbabilityGrid) {
+  SetUpProbabilityGrid();
+  const SearchParameters search_parameters(1, 1, 0.05, 0.05);
+  const std::vector<sensor::PointCloud> scans =
+      GenerateRotatedScans(point_cloud_, search_parameters);
+  const std::vector<DiscreteScan2D> discrete_scans =
+      DiscretizeScans(grid_->limits(), scans, Eigen::Translation2f::Identity());
+  const std::vector<Candidate2D> candidates =
+      GenerateTestCandidates(search_parameters);
+
+  RealTimeCorrelativeScanMatcher2D weighted_matcher(
+      CreateWeightedRealTimeCorrelativeScanMatcherTestOptions2D());
+  std::vector<Candidate2D> cpu_candidates = candidates;
+  unsetenv("CARTOGRAPHER_VULKAN_CORRELATIVE_SCAN_MATCHER");
+  weighted_matcher.ScoreCandidates(*grid_, discrete_scans, search_parameters,
+                                   &cpu_candidates);
+
+  std::vector<Candidate2D> vulkan_candidates = candidates;
+  setenv("CARTOGRAPHER_VULKAN_CORRELATIVE_SCAN_MATCHER", "true", 1);
+  const bool vulkan_available = ScoreCandidatesWithVulkan(
+      static_cast<const ProbabilityGrid&>(*grid_), discrete_scans,
+      /*translation_delta_cost_weight=*/5.,
+      /*rotation_delta_cost_weight=*/3., &vulkan_candidates);
+  unsetenv("CARTOGRAPHER_VULKAN_CORRELATIVE_SCAN_MATCHER");
+  if (!vulkan_available) {
+    GTEST_SKIP() << "Vulkan compute device is not available.";
+  }
+
+  ASSERT_EQ(cpu_candidates.size(), vulkan_candidates.size());
+  for (size_t i = 0; i < cpu_candidates.size(); ++i) {
+    EXPECT_EQ(cpu_candidates[i].scan_index, vulkan_candidates[i].scan_index);
+    EXPECT_EQ(cpu_candidates[i].x_index_offset,
+              vulkan_candidates[i].x_index_offset);
+    EXPECT_EQ(cpu_candidates[i].y_index_offset,
+              vulkan_candidates[i].y_index_offset);
+    EXPECT_NEAR(cpu_candidates[i].score, vulkan_candidates[i].score, 1e-4)
+        << "candidate " << i;
+  }
 }
 
 TEST_F(RealTimeCorrelativeScanMatcherTest,

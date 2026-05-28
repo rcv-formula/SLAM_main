@@ -1,0 +1,12 @@
+{
+  "bag": "/home/rcv/SLAM_main-SLAM_IMU_WHEEL_tun_upg/0518_2_humble",
+  "bag_returncode": 0,
+  "duration": 20.0,
+  "label": "upg_provenance_probe20",
+  "launch_returncode": 0,
+  "ros_domain_id": 141,
+  "run_dir": "/home/rcv/SLAM_main-SLAM_IMU_WHEEL_tun_upg/latency_results/odom_latency/upg_provenance_probe20_20260527_233144",
+  "sampler_returncode": 0,
+  "trace_provenance": true,
+  "workspace": "/home/rcv/SLAM_main-SLAM_IMU_WHEEL_tun_upg"
+}

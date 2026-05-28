@@ -1,0 +1,8 @@
+[WARN] [1779888291.271775640] [cartographer logger]: W20260527 22:24:51.-2147483648 430990 node.cpp:1245] Localization status: LOST
+[WARN] [1779888297.427128769] [cartographer logger]: W20260527 22:24:57.-2147483648 430990 tf_bridge.cpp:53] Lookup would require extrapolation at time 1779099286.291817, but only time 1779099286.299675 is in the buffer, when looking up transform from frame [base_link] to frame [imu]
+[WARN] [1779888298.678368896] [cartographer logger]: W20260527 22:24:58.-2147483648 430990 tf_bridge.cpp:53] Lookup would require extrapolation into the past.  Requested time 1779099287.342768 but the earliest data is at time 1779099287.349569, when looking up transform from frame [laser] to frame [imu]
+[INFO] [1779888360.862684542] [rclcpp]: signal_handler(SIGINT/SIGTERM)
+[INFO] [1779888360.863569744] [rclcpp]: signal_handler(SIGINT/SIGTERM)
+[WARN] [1779888360.868134476] [cartographer logger]: W20260527 22:26:00.-2147483648 430990 tf_bridge.cpp:53] Lookup would require extrapolation into the future.  Requested time 1779099295.783054 but the latest data is at time 1779099295.779720, when looking up transform from frame [laser] to frame [imu]
+[KOptimizing: Done.     
+[KOptimizing: Done.     

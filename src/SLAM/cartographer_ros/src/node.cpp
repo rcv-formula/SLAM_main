@@ -19,6 +19,7 @@
 #include <chrono>
 #include <cmath>
 #include <cstdlib>
+#include <iomanip>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -91,6 +92,30 @@ double StampToSeconds(const builtin_interfaces::msg::Time& stamp) {
   return static_cast<double>(stamp.sec) + 1e-9 * stamp.nanosec;
 }
 
+std::string DoubleToCsv(const double value) {
+  std::ostringstream stream;
+  stream << std::fixed << std::setprecision(9) << value;
+  return stream.str();
+}
+
+std::string RosTimeToCsv(const builtin_interfaces::msg::Time& stamp) {
+  return DoubleToCsv(StampToSeconds(stamp));
+}
+
+std::string CartographerTimeToCsv(const carto::common::Time time) {
+  if (time == carto::common::Time::min()) {
+    return "";
+  }
+  return DoubleToCsv(ToRos(time).seconds());
+}
+
+std::string BoolToCsv(const bool value) { return value ? "1" : "0"; }
+
+double YawFromQuaternion(const geometry_msgs::msg::Quaternion& q) {
+  return std::atan2(2. * (q.w * q.z + q.x * q.y),
+                    1. - 2. * (q.y * q.y + q.z * q.z));
+}
+
 // Subscribes to the 'topic' for 'trajectory_id' using the 'node_handle' and
 // calls 'handler' on the 'node' to handle messages. Returns the subscriber.
 template <typename MessageType>
@@ -127,13 +152,52 @@ Node::Node(
     std::unique_ptr<cartographer::mapping::MapBuilderInterface> map_builder,
     std::shared_ptr<tf2_ros::Buffer> tf_buffer,
     rclcpp::Node::SharedPtr node,
-    const bool collect_metrics)
-    : node_options_(node_options)
+    const bool collect_metrics,
+    const bool publish_odom)
+    : node_options_(node_options),
+      publish_odom_(publish_odom)
 {
   node_ = node;
   tf_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(node_) ;
   stamped_transforms_.reserve(2);
   map_builder_bridge_.reset(new cartographer_ros::MapBuilderBridge(node_options_, std::move(map_builder), tf_buffer.get()));
+  const char* odom_provenance_csv_path =
+      std::getenv("CARTOGRAPHER_ODOM_PROVENANCE_CSV_PATH");
+  if (odom_provenance_csv_path != nullptr &&
+      std::string(odom_provenance_csv_path) != "") {
+    odom_provenance_csv_.open(odom_provenance_csv_path);
+    if (odom_provenance_csv_.is_open()) {
+      odom_provenance_csv_
+          << "wall_time_sec,trajectory_id,publish_target_time,"
+          << "local_slam_reference_time,imu_integration_start_time,"
+          << "latest_imu_time,has_imu_data,reference_odom_request_time,"
+          << "reference_odom_before_time,reference_odom_after_time,"
+          << "reference_odom_latest_time,reference_odom_extrapolated,"
+          << "reference_odom_clamped_to_earliest,current_odom_request_time,"
+          << "current_odom_before_time,current_odom_after_time,"
+          << "current_odom_latest_time,current_odom_extrapolated,"
+          << "current_odom_clamped_to_earliest,tracked_pose_stamp,"
+          << "tracked_pose_x,tracked_pose_y,tracked_pose_yaw,"
+          << "adaptive_odometry_weight\n";
+    } else {
+      LOG(WARNING) << "Could not open CARTOGRAPHER_ODOM_PROVENANCE_CSV_PATH: "
+                   << odom_provenance_csv_path;
+    }
+  }
+  const char* odom_output_trace_csv_path =
+      std::getenv("CARTOGRAPHER_ODOM_OUTPUT_TRACE_CSV_PATH");
+  if (publish_odom_ && odom_output_trace_csv_path != nullptr &&
+      std::string(odom_output_trace_csv_path) != "") {
+    odom_output_trace_csv_.open(odom_output_trace_csv_path);
+    if (odom_output_trace_csv_.is_open()) {
+      odom_output_trace_csv_
+          << "now_sec,tracked_pose_stamp,odom_stamp,"
+          << "stamp_delta_sec,x,y,yaw,use_sim_time\n";
+    } else {
+      LOG(WARNING) << "Could not open CARTOGRAPHER_ODOM_OUTPUT_TRACE_CSV_PATH: "
+                   << odom_output_trace_csv_path;
+    }
+  }
 
   absl::MutexLock lock(&mutex_);
   if (collect_metrics) {
@@ -157,6 +221,10 @@ Node::Node(
     tracked_pose_publisher_ =
         node_->create_publisher<::geometry_msgs::msg::PoseStamped>(
             kTrackedPoseTopic, 10);
+  }
+  if (publish_odom_) {
+    odom_publisher_ =
+        node_->create_publisher<::nav_msgs::msg::Odometry>("/odom", 20);
   }
 
   scan_matched_point_cloud_publisher_ =
@@ -287,6 +355,8 @@ void Node::AddExtrapolator(const int trajectory_id,
       std::forward_as_tuple(
           ::cartographer::common::FromSeconds(kExtrapolationEstimationTimeSec),
           gravity_time_constant));
+  extrapolators_.at(trajectory_id)
+      .SetExtrapolationDebugEnabled(odom_provenance_csv_.is_open());
 }
 
 void Node::AddSensorSamplers(const int trajectory_id,
@@ -377,26 +447,26 @@ void Node::PublishLocalTrajectoryData() {
         trajectory_data.local_to_map * tracking_to_local;
 
     if (trajectory_data.published_to_tracking != nullptr) {
-	      if (node_options_.publish_to_tf) {
-	        if (trajectory_data.trajectory_options.provide_odom_frame) {
-	          stamped_transforms_.clear();
+      if (node_options_.publish_to_tf) {
+        if (trajectory_data.trajectory_options.provide_odom_frame) {
+          stamped_transforms_.clear();
 
-	          stamped_transform.header.frame_id = node_options_.map_frame;
-	          stamped_transform.child_frame_id =
-	              trajectory_data.trajectory_options.odom_frame;
-	          stamped_transform.transform =
-	              ToGeometryMsgTransform(trajectory_data.local_to_map);
-	          stamped_transforms_.push_back(stamped_transform);
+          stamped_transform.header.frame_id = node_options_.map_frame;
+          stamped_transform.child_frame_id =
+              trajectory_data.trajectory_options.odom_frame;
+          stamped_transform.transform =
+              ToGeometryMsgTransform(trajectory_data.local_to_map);
+          stamped_transforms_.push_back(stamped_transform);
 
-	          stamped_transform.header.frame_id =
-	              trajectory_data.trajectory_options.odom_frame;
-	          stamped_transform.child_frame_id =
-	              trajectory_data.trajectory_options.published_frame;
-	          stamped_transform.transform = ToGeometryMsgTransform(
-	              tracking_to_local * (*trajectory_data.published_to_tracking));
-	          stamped_transforms_.push_back(stamped_transform);
+          stamped_transform.header.frame_id =
+              trajectory_data.trajectory_options.odom_frame;
+          stamped_transform.child_frame_id =
+              trajectory_data.trajectory_options.published_frame;
+          stamped_transform.transform = ToGeometryMsgTransform(
+              tracking_to_local * (*trajectory_data.published_to_tracking));
+          stamped_transforms_.push_back(stamped_transform);
 
-	          tf_broadcaster_->sendTransform(stamped_transforms_);
+          tf_broadcaster_->sendTransform(stamped_transforms_);
         } else {
           stamped_transform.header.frame_id = node_options_.map_frame;
           stamped_transform.child_frame_id =
@@ -406,21 +476,87 @@ void Node::PublishLocalTrajectoryData() {
           tf_broadcaster_->sendTransform(stamped_transform);
         }
       }
-      if (node_options_.publish_tracked_pose) {
-        ::geometry_msgs::msg::PoseStamped pose_msg;
-        pose_msg.header.frame_id = node_options_.map_frame;
-        pose_msg.header.stamp = stamped_transform.header.stamp;
-        pose_msg.pose = ToGeometryMsgPose(tracking_to_map);
-        tracked_pose_publisher_->publish(pose_msg);
+      if (node_options_.publish_tracked_pose || publish_odom_) {
+        const auto tracking_pose = ToGeometryMsgPose(tracking_to_map);
+        if (node_options_.publish_tracked_pose) {
+          ::geometry_msgs::msg::PoseStamped pose_msg;
+          pose_msg.header.frame_id = node_options_.map_frame;
+          pose_msg.header.stamp = stamped_transform.header.stamp;
+          pose_msg.pose = tracking_pose;
+          tracked_pose_publisher_->publish(pose_msg);
+          if (odom_provenance_csv_.is_open()) {
+            const auto& debug = extrapolator.GetLastExtrapolationDebugInfo();
+            odom_provenance_csv_
+                << DoubleToCsv(node_->now().seconds()) << ','
+                << entry.first << ','
+                << CartographerTimeToCsv(debug.target_time) << ','
+                << CartographerTimeToCsv(trajectory_data.local_slam_data->time)
+                << ','
+                << CartographerTimeToCsv(debug.imu_integration_start_time)
+                << ',' << CartographerTimeToCsv(debug.latest_imu_time) << ','
+                << BoolToCsv(debug.has_imu_data) << ','
+                << CartographerTimeToCsv(debug.reference_odom.requested_time)
+                << ','
+                << CartographerTimeToCsv(debug.reference_odom.before_time) << ','
+                << CartographerTimeToCsv(debug.reference_odom.after_time) << ','
+                << CartographerTimeToCsv(debug.reference_odom.latest_time)
+                << ','
+                << BoolToCsv(debug.reference_odom.extrapolated_from_latest)
+                << ','
+                << BoolToCsv(debug.reference_odom.clamped_to_earliest) << ','
+                << CartographerTimeToCsv(debug.current_odom.requested_time)
+                << ','
+                << CartographerTimeToCsv(debug.current_odom.before_time) << ','
+                << CartographerTimeToCsv(debug.current_odom.after_time) << ','
+                << CartographerTimeToCsv(debug.current_odom.latest_time) << ','
+                << BoolToCsv(debug.current_odom.extrapolated_from_latest)
+                << ','
+                << BoolToCsv(debug.current_odom.clamped_to_earliest) << ','
+                << RosTimeToCsv(pose_msg.header.stamp) << ','
+                << DoubleToCsv(pose_msg.pose.position.x) << ','
+                << DoubleToCsv(pose_msg.pose.position.y) << ','
+                << DoubleToCsv(YawFromQuaternion(pose_msg.pose.orientation))
+                << ',' << DoubleToCsv(debug.adaptive_odometry_weight) << '\n';
+          }
+        }
+        if (publish_odom_) {
+          auto published_pose = ToGeometryMsgPose(
+              tracking_to_map * (*trajectory_data.published_to_tracking));
+          nav_msgs::msg::Odometry odom_msg;
+          odom_msg.header.frame_id = node_options_.map_frame;
+          odom_msg.header.stamp = stamped_transform.header.stamp;
+          odom_msg.child_frame_id =
+              trajectory_data.trajectory_options.published_frame;
+          odom_msg.pose.pose = published_pose;
+          odom_msg.pose.pose.position.z = 0.;
+          odom_publisher_->publish(odom_msg);
+          if (odom_output_trace_csv_.is_open()) {
+            odom_output_trace_csv_
+                << DoubleToCsv(node_->now().seconds()) << ','
+                << RosTimeToCsv(stamped_transform.header.stamp) << ','
+                << RosTimeToCsv(odom_msg.header.stamp) << ','
+                << DoubleToCsv(StampToSeconds(odom_msg.header.stamp) -
+                               StampToSeconds(stamped_transform.header.stamp))
+                << ','
+                << DoubleToCsv(odom_msg.pose.pose.position.x) << ','
+                << DoubleToCsv(odom_msg.pose.pose.position.y) << ','
+                << DoubleToCsv(YawFromQuaternion(odom_msg.pose.pose.orientation))
+                << ',' << BoolToCsv(node_->get_clock()->get_clock_type() ==
+                                     RCL_ROS_TIME)
+                << '\n';
+          }
+        }
       }
-      MaybePublishMotionMismatchMarker(entry.first, stamped_transform.header.stamp,
-                                       tracking_to_map);
-      MaybePublishDeltaMismatchMarker(
-          entry.first, stamped_transform.header.stamp, tracking_to_map,
-          trajectory_data.local_slam_data->debug_data);
-      MaybePublishFrontWeakMarker(
-          entry.first, stamped_transform.header.stamp, tracking_to_map,
-          trajectory_data.local_slam_data->debug_data);
+      if (motion_mismatch_marker_publisher_->get_subscription_count() > 0) {
+        MaybePublishMotionMismatchMarker(
+            entry.first, stamped_transform.header.stamp, tracking_to_map);
+        MaybePublishDeltaMismatchMarker(
+            entry.first, stamped_transform.header.stamp, tracking_to_map,
+            trajectory_data.local_slam_data->debug_data);
+        MaybePublishFrontWeakMarker(
+            entry.first, stamped_transform.header.stamp, tracking_to_map,
+            trajectory_data.local_slam_data->debug_data);
+      }
     }
   }
 }

@@ -15,9 +15,7 @@
  */
 
 #include "absl/memory/memory.h"
-#include "cartographer/common/time.h"
 #include "cartographer/mapping/map_builder.h"
-#include "cartographer/transform/transform.h"
 #include "cartographer_ros/node.h"
 #include "cartographer_ros/node_options.h"
 #include "cartographer_ros/ros_log_sink.h"
@@ -42,28 +40,27 @@ DEFINE_bool(load_frozen_state, true,
 DEFINE_bool(
     start_trajectory_with_default_topics, true,
     "Enable to immediately start the first trajectory with default topics.");
-DEFINE_bool(use_initial_pose, false,
-            "Start the default trajectory with an explicit initial pose "
-            "relative to initial_pose_relative_to_trajectory_id.");
-DEFINE_double(initial_pose_x, 0.,
-              "Initial trajectory pose x in the relative trajectory frame.");
-DEFINE_double(initial_pose_y, 0.,
-              "Initial trajectory pose y in the relative trajectory frame.");
-DEFINE_double(initial_pose_yaw, 0.,
-              "Initial trajectory pose yaw in radians in the relative "
-              "trajectory frame.");
-DEFINE_int32(initial_pose_relative_to_trajectory_id, 0,
-             "Trajectory ID that the initial pose is relative to. For normal "
-             "single-map localization this is the frozen pbstream trajectory.");
 DEFINE_string(
     save_state_filename, "",
     "If non-empty, serialize state and write it to disk before shutting down.");
+DEFINE_bool(publish_odom, false,
+            "Publish /odom directly from cartographer_node using the same pose "
+            "and timestamp as /tracked_pose.");
 
 namespace cartographer_ros {
 namespace {
 
 void Run() {
-  rclcpp::Node::SharedPtr cartographer_node = rclcpp::Node::make_shared("cartographer_node");
+  NodeOptions node_options;
+  TrajectoryOptions trajectory_options;
+  std::tie(node_options, trajectory_options) =
+      LoadOptions(FLAGS_configuration_directory, FLAGS_configuration_basename);
+
+  auto ros_node_options = rclcpp::NodeOptions();
+  ros_node_options.parameter_overrides(
+      {rclcpp::Parameter("use_sim_time", node_options.use_sim_time)});
+  rclcpp::Node::SharedPtr cartographer_node =
+      rclcpp::Node::make_shared("cartographer_node", ros_node_options);
   constexpr double kTfBufferCacheTimeInSeconds = 10.;
 
   std::shared_ptr<tf2_ros::Buffer> tf_buffer =
@@ -75,41 +72,17 @@ void Run() {
   std::shared_ptr<tf2_ros::TransformListener> tf_listener =
       std::make_shared<tf2_ros::TransformListener>(*tf_buffer);
 
-  NodeOptions node_options;
-  TrajectoryOptions trajectory_options;
-  std::tie(node_options, trajectory_options) =
-      LoadOptions(FLAGS_configuration_directory, FLAGS_configuration_basename);
-
   auto map_builder =
     cartographer::mapping::CreateMapBuilder(node_options.map_builder_options);
   auto node = std::make_shared<cartographer_ros::Node>(
     node_options, std::move(map_builder), tf_buffer, cartographer_node,
-    FLAGS_collect_metrics);
-  if (!FLAGS_load_state_filename.empty()) {
-    node->LoadState(FLAGS_load_state_filename, FLAGS_load_frozen_state);
+    node_options.collect_metrics, node_options.publish_odom);
+  if (!node_options.load_state_filename.empty()) {
+    node->LoadState(node_options.load_state_filename,
+                    node_options.load_frozen_state);
   }
 
-  if (FLAGS_start_trajectory_with_default_topics) {
-    if (FLAGS_use_initial_pose) {
-      ::cartographer::mapping::proto::InitialTrajectoryPose
-          initial_trajectory_pose;
-      initial_trajectory_pose.set_to_trajectory_id(
-          FLAGS_initial_pose_relative_to_trajectory_id);
-      const ::cartographer::transform::Rigid3d initial_pose(
-          Eigen::Vector3d(FLAGS_initial_pose_x, FLAGS_initial_pose_y, 0.),
-          Eigen::AngleAxisd(FLAGS_initial_pose_yaw, Eigen::Vector3d::UnitZ()));
-      *initial_trajectory_pose.mutable_relative_pose() =
-          ::cartographer::transform::ToProto(initial_pose);
-      initial_trajectory_pose.set_timestamp(
-          ::cartographer::common::ToUniversal(
-              ::cartographer::common::FromUniversal(0)));
-      *trajectory_options.trajectory_builder_options
-           .mutable_initial_trajectory_pose() = initial_trajectory_pose;
-      LOG(INFO) << "Starting trajectory with initial pose relative to "
-                << FLAGS_initial_pose_relative_to_trajectory_id << ": x="
-                << FLAGS_initial_pose_x << " y=" << FLAGS_initial_pose_y
-                << " yaw=" << FLAGS_initial_pose_yaw;
-    }
+  if (node_options.start_trajectory_with_default_topics) {
     node->StartTrajectoryWithDefaultTopics(trajectory_options);
   }
 

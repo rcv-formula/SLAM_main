@@ -1,0 +1,73 @@
+[WARN] [1779890662.463195314] [rcl]: ROS_LOCALHOST_ONLY is deprecated but still honored if it is enabled. Use ROS_AUTOMATIC_DISCOVERY_RANGE and ROS_STATIC_PEERS instead.
+[WARN] [1779890662.463232758] [rcl]: 'localhost_only' is enabled, 'automatic_discovery_range' and 'static_peers' will be ignored.
+{
+  "metrics": {
+    "mapping_2d_local_trajectory_builder_cpu_real_time_ratio": {
+      "max": 26.75179806190318,
+      "mean": 5.398293498298791,
+      "min": 2.047173326140015,
+      "p50": 2.6093625389862543,
+      "p90": 13.92479251264327,
+      "p95": 17.58751114004492,
+      "samples": 38
+    },
+    "mapping_2d_local_trajectory_builder_latency": {
+      "max": 0.054998683,
+      "mean": 0.02213218939473684,
+      "min": 0.001124404,
+      "p50": 0.0275682345,
+      "p90": 0.043997205,
+      "p95": 0.044958263,
+      "samples": 38
+    },
+    "mapping_2d_local_trajectory_builder_real_time_ratio": {
+      "max": 26.741900598005696,
+      "mean": 4.112919375245736,
+      "min": 0.5458348884463288,
+      "p50": 1.0447647956563948,
+      "p90": 13.918501864290803,
+      "p95": 17.587730090102756,
+      "samples": 38
+    },
+    "mapping_2d_pose_graph_work_queue_delay": {
+      "max": 9.607e-06,
+      "mean": 1.6487999999999998e-06,
+      "min": 0.0,
+      "p50": 0.0,
+      "p90": 2.766e-06,
+      "p95": 8.096e-06,
+      "samples": 40
+    },
+    "mapping_2d_pose_graph_work_queue_size": {
+      "max": 0.0,
+      "mean": 0.0,
+      "min": 0.0,
+      "p50": 0.0,
+      "p90": 0.0,
+      "p95": 0.0,
+      "samples": 40
+    },
+    "mapping_global_trajectory_builder_local_slam_results[type=InsertionResult]": {
+      "final": 160.0,
+      "max": 160.0,
+      "mean": 49.9,
+      "min": 0.0,
+      "p50": 38.0,
+      "p90": 126.0,
+      "p95": 148.0,
+      "samples": 40
+    },
+    "mapping_global_trajectory_builder_local_slam_results[type=MatchingResult]": {
+      "final": 751.0,
+      "max": 751.0,
+      "mean": 363.15,
+      "min": 0.0,
+      "p50": 362.0,
+      "p90": 671.0,
+      "p95": 711.0,
+      "samples": 40
+    }
+  },
+  "rows": 40,
+  "successful_reads": 40
+}

@@ -1,0 +1,10 @@
+stdin is not a terminal device. Keyboard handling disabled.[INFO] [1779888167.231331027] [rosbag2_storage]: Opened database '0518_2_humble/latest_0.db3' for READ_ONLY.
+[INFO] [1779888167.231465940] [rosbag2_player]: Set rate to 1
+[INFO] [1779888167.237148856] [rosbag2_player]: Overriding QoS profile for topic /tf_static
+[INFO] [1779888167.582314082] [rosbag2_player]: Adding keyboard callbacks.
+[INFO] [1779888167.582364637] [rosbag2_player]: Press SPACE for Pause/Resume
+[INFO] [1779888167.582372935] [rosbag2_player]: Press CURSOR_RIGHT for Play Next Message
+[INFO] [1779888167.582378319] [rosbag2_player]: Press CURSOR_UP for Increase Rate 10%
+[INFO] [1779888167.582382741] [rosbag2_player]: Press CURSOR_DOWN for Decrease Rate 10%
+[INFO] [1779888167.583622865] [rosbag2_player]: Playback until timestamp: -1
+[INFO] [1779888230.145039541] [rosbag2_player]: Stopping playback.

@@ -17,6 +17,7 @@
 #ifndef CARTOGRAPHER_ROS_CARTOGRAPHER_ROS_NODE_H
 #define CARTOGRAPHER_ROS_CARTOGRAPHER_ROS_NODE_H
 
+#include <fstream>
 #include <map>
 #include <memory>
 #include <set>
@@ -68,7 +69,8 @@ class Node {
        std::unique_ptr<cartographer::mapping::MapBuilderInterface> map_builder,
        std::shared_ptr<tf2_ros::Buffer> tf_buffer,
        rclcpp::Node::SharedPtr node,
-       bool collect_metrics);
+       bool collect_metrics,
+       bool publish_odom);
   ~Node();
 
   Node(const Node&) = delete;
@@ -205,6 +207,9 @@ class Node {
 
   std::shared_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
   std::vector<geometry_msgs::msg::TransformStamped> stamped_transforms_;
+  std::ofstream odom_provenance_csv_;
+  std::ofstream odom_output_trace_csv_;
+  bool publish_odom_ = false;
 
   absl::Mutex mutex_;
   std::unique_ptr<cartographer_ros::metrics::FamilyFactory> metrics_registry_;
@@ -216,6 +221,7 @@ class Node {
   ::rclcpp::Publisher<::visualization_msgs::msg::MarkerArray>::SharedPtr landmark_poses_list_publisher_;
   ::rclcpp::Publisher<::visualization_msgs::msg::MarkerArray>::SharedPtr constraint_list_publisher_;
   ::rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr tracked_pose_publisher_;
+  ::rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr odom_publisher_;
   ::rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr scan_matched_point_cloud_publisher_;
   ::rclcpp::Publisher<::cartographer_ros_msgs::msg::ScanMatchScore>::SharedPtr scan_match_score_publisher_;
   ::rclcpp::Publisher<::std_msgs::msg::Bool>::SharedPtr localization_status_publisher_;

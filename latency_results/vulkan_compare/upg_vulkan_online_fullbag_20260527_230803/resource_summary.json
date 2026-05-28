@@ -1,0 +1,21 @@
+{
+  "cartographer_cpu_percent_max": 50.4,
+  "cartographer_cpu_percent_mean": 40.950900900900905,
+  "cartographer_rss_mb_max": 223.046875,
+  "cartographer_rss_mb_mean": 193.09915188626127,
+  "drm_counter_deltas": {
+    "drm-engine-capacity-video": 2,
+    "drm-engine-compute": 0,
+    "drm-engine-copy": 0,
+    "drm-engine-render": 8563640020,
+    "drm-engine-video": 0,
+    "drm-engine-video-enhance": 0,
+    "drm-total-stolen-local0": 0,
+    "drm-total-system0": 35364
+  },
+  "samples": 222,
+  "total_cpu_percent_max": 176.6,
+  "total_cpu_percent_mean": 48.68108108108108,
+  "total_rss_mb_max": 360.53125,
+  "total_rss_mb_mean": 327.08437148085585
+}

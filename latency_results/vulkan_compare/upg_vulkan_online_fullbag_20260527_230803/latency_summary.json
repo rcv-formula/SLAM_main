@@ -1,0 +1,71 @@
+{
+  "metrics": {
+    "mapping_2d_local_trajectory_builder_cpu_real_time_ratio": {
+      "max": 5.890747000043864,
+      "mean": 2.4542172417428487,
+      "min": 1.2536769561838668,
+      "p50": 2.315835097914134,
+      "p90": 3.5700600662339532,
+      "p95": 4.128950280670816,
+      "samples": 219
+    },
+    "mapping_2d_local_trajectory_builder_latency": {
+      "max": 0.065145636,
+      "mean": 0.024914464127853884,
+      "min": 0.006376656,
+      "p50": 0.022807735,
+      "p90": 0.045893654,
+      "p95": 0.051282573,
+      "samples": 219
+    },
+    "mapping_2d_local_trajectory_builder_real_time_ratio": {
+      "max": 4.6941218092994195,
+      "mean": 1.1812522167648132,
+      "min": 0.46142461484296504,
+      "p50": 0.9311268888092199,
+      "p90": 2.0002120668420362,
+      "p95": 2.3223759369559653,
+      "samples": 219
+    },
+    "mapping_2d_pose_graph_work_queue_delay": {
+      "max": 0.085827758,
+      "mean": 0.00039653232579185525,
+      "min": 0.0,
+      "p50": 2.457e-06,
+      "p90": 1.0643e-05,
+      "p95": 1.5212e-05,
+      "samples": 221
+    },
+    "mapping_2d_pose_graph_work_queue_size": {
+      "max": 11.0,
+      "mean": 0.22624434389140272,
+      "min": 0.0,
+      "p50": 0.0,
+      "p90": 1.0,
+      "p95": 1.0,
+      "samples": 221
+    },
+    "mapping_global_trajectory_builder_local_slam_results[type=InsertionResult]": {
+      "final": 1303.0,
+      "max": 1303.0,
+      "mean": 623.4705882352941,
+      "min": 0.0,
+      "p50": 620.0,
+      "p90": 1168.0,
+      "p95": 1264.0,
+      "samples": 221
+    },
+    "mapping_global_trajectory_builder_local_slam_results[type=MatchingResult]": {
+      "final": 4362.0,
+      "max": 4362.0,
+      "mean": 2166.7420814479638,
+      "min": 0.0,
+      "p50": 2167.0,
+      "p90": 3923.0,
+      "p95": 4141.0,
+      "samples": 221
+    }
+  },
+  "rows": 230,
+  "successful_reads": 221
+}

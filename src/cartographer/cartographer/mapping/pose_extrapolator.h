@@ -76,6 +76,35 @@ class PoseExtrapolator : public PoseExtrapolatorInterface {
     return adaptive_odometry_blend_;
   }
   double GetAdaptiveOdometryWeight() const;
+  void SetExtrapolationDebugEnabled(bool enabled) {
+    extrapolation_debug_enabled_ = enabled;
+  }
+
+  struct OdometrySourceInfo {
+    bool has_data = false;
+    bool extrapolated_from_latest = false;
+    bool clamped_to_earliest = false;
+    common::Time requested_time = common::Time::min();
+    common::Time before_time = common::Time::min();
+    common::Time after_time = common::Time::min();
+    common::Time latest_time = common::Time::min();
+  };
+
+  struct ExtrapolationDebugInfo {
+    bool valid = false;
+    bool has_imu_data = false;
+    common::Time target_time = common::Time::min();
+    common::Time reference_pose_time = common::Time::min();
+    common::Time imu_integration_start_time = common::Time::min();
+    common::Time latest_imu_time = common::Time::min();
+    OdometrySourceInfo reference_odom;
+    OdometrySourceInfo current_odom;
+    double adaptive_odometry_weight = 1.;
+  };
+
+  const ExtrapolationDebugInfo& GetLastExtrapolationDebugInfo() const {
+    return last_extrapolation_debug_info_;
+  }
 
  private:
   struct TimedPose {
@@ -113,8 +142,11 @@ class PoseExtrapolator : public PoseExtrapolatorInterface {
   double adaptive_odometry_mismatch_ratio_ = 0.35;
   double adaptive_odometry_min_forward_delta_ = 0.005;
   double adaptive_odometry_mismatch_force_weight_ = 1.;
+  double imu_yaw_weight_ = 1.;
   double last_adaptive_odometry_weight_ = 1.;
+  bool extrapolation_debug_enabled_ = false;
   boost::circular_buffer<sensor::OdometryData> odometry_data_;
+  ExtrapolationDebugInfo last_extrapolation_debug_info_;
 };
 
 }  // namespace mapping

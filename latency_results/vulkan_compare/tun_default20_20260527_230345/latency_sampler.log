@@ -1,0 +1,2 @@
+bash: line 1: /home/rcv/SLAM_main-SLAM_IMU_WHEEL_tun_upg/tools/sample_cartographer_latency.py: Permission denied
+bash: line 1: exec: /home/rcv/SLAM_main-SLAM_IMU_WHEEL_tun_upg/tools/sample_cartographer_latency.py: cannot execute: Permission denied

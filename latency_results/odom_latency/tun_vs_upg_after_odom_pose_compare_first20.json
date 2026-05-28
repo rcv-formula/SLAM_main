@@ -1,0 +1,16 @@
+{
+  "candidate_duration": 19.975027322769165,
+  "candidate_samples": 397,
+  "final_xy_delta": 0.4501775313591546,
+  "final_yaw_delta": 0.01497826171892358,
+  "matched_samples": 396,
+  "max_match_dt": 0.02512526512145996,
+  "mean_match_dt": 0.011250226184575244,
+  "reference_duration": 19.950076580047607,
+  "reference_samples": 396,
+  "xy_max": 8.837394981098035,
+  "xy_mean": 0.5233808620062185,
+  "xy_rmse": 0.8043834283034317,
+  "yaw_max": 2.957287779415544,
+  "yaw_mean": 0.0488241901317338
+}

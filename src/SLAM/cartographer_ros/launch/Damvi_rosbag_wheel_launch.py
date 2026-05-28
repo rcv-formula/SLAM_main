@@ -20,9 +20,6 @@ def generate_launch_description():
     rosbag_file = LaunchConfiguration('bagfiles')
     use_sim_time = LaunchConfiguration('use_sim_time')
     fusion_extrapolator = LaunchConfiguration('fusion_extrapolator')
-    pose_extrapolator_config = LaunchConfiguration('pose_extrapolator_config')
-    wheel_odom_twist_only = LaunchConfiguration('wheel_odom_twist_only')
-    wheel_odom_linear_scale = LaunchConfiguration('wheel_odom_linear_scale')
 
     return LaunchDescription([
         DeclareLaunchArgument(
@@ -40,40 +37,9 @@ def generate_launch_description():
             default_value='true',
             description='Enable fusion-based extrapolator when true',
         ),
-        DeclareLaunchArgument(
-            'pose_extrapolator_config',
-            default_value=os.path.join(slam_main_dir, 'config_mapping_wheel.yaml'),
-            description='Path to wheel odom tuning YAML',
-        ),
-        DeclareLaunchArgument(
-            'wheel_odom_twist_only',
-            default_value='false',
-            description='Use /odom_wheel twist.linear.x as distance only, ignoring wheel odom pose/yaw',
-        ),
-        DeclareLaunchArgument(
-            'wheel_odom_linear_scale',
-            default_value='2.6',
-            description='Calibration scale applied to odometry twist.linear.x when wheel_odom_twist_only is true.',
-        ),
         SetEnvironmentVariable(
             name='FUSION_EXTRPOLATOR',
             value=fusion_extrapolator,
-        ),
-        SetEnvironmentVariable(
-            name='WHEEL_ODOM_CONFIG',
-            value=pose_extrapolator_config,
-        ),
-        SetEnvironmentVariable(
-            name='POSE_EXTRAPOLATOR_CONFIG',
-            value=pose_extrapolator_config,
-        ),
-        SetEnvironmentVariable(
-            name='WHEEL_ODOM_TWIST_ONLY',
-            value=wheel_odom_twist_only,
-        ),
-        SetEnvironmentVariable(
-            name='WHEEL_ODOM_LINEAR_SCALE',
-            value=wheel_odom_linear_scale,
         ),
         ExecuteProcess(
             cmd=[
@@ -99,6 +65,7 @@ def generate_launch_description():
                 {'publish_frame_projected_to_2d': True},
             ],
             arguments=[
+                '--collect_metrics',
                 '-minloglevel', '1',
                 '-configuration_directory', config_dir,
                 '-configuration_basename', 'Damvi_carto_config_wheel.lua',

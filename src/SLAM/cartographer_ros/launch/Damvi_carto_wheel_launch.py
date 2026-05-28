@@ -1,12 +1,9 @@
 import os
 
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, SetEnvironmentVariable
+from launch.actions import DeclareLaunchArgument
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
-
-
-WHEEL_ODOM_LINEAR_SCALE = '2.6'
 
 
 def generate_launch_description():
@@ -22,14 +19,6 @@ def generate_launch_description():
             'use_sim_time',
             default_value='false',
             description='Use simulation time if true',
-        ),
-        SetEnvironmentVariable(
-            name='WHEEL_ODOM_TWIST_ONLY',
-            value='true',
-        ),
-        SetEnvironmentVariable(
-            name='WHEEL_ODOM_LINEAR_SCALE',
-            value=WHEEL_ODOM_LINEAR_SCALE,
         ),
         Node(
             package='cartographer_ros',

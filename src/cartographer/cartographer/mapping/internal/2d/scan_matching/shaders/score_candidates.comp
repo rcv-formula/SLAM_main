@@ -1,0 +1,77 @@
+#version 450
+
+layout(local_size_x = 64) in;
+
+struct Candidate {
+  uint scan_start;
+  uint scan_count;
+  int x_index_offset;
+  int y_index_offset;
+  float x;
+  float y;
+  float orientation;
+};
+
+layout(std430, binding = 0) readonly buffer GridCells {
+  uint cells[];
+};
+
+layout(std430, binding = 1) readonly buffer Points {
+  ivec2 points[];
+};
+
+layout(std430, binding = 2) readonly buffer Candidates {
+  Candidate candidates[];
+};
+
+layout(std430, binding = 3) writeonly buffer Scores {
+  float scores[];
+};
+
+layout(std430, binding = 4) readonly buffer Params {
+  uint num_candidates;
+  uint grid_width;
+  uint grid_height;
+  float translation_delta_cost_weight;
+  float rotation_delta_cost_weight;
+};
+
+float probability_from_cell(uint raw_cell) {
+  uint cell = raw_cell;
+  if (cell >= 32768u) {
+    cell -= 32768u;
+  }
+  if (cell == 0u) {
+    return 0.1;
+  }
+  const float scale = 0.8 / 32766.0;
+  const float correspondence_cost = float(cell) * scale + (0.1 - scale);
+  return 1.0 - correspondence_cost;
+}
+
+void main() {
+  uint candidate_index = gl_GlobalInvocationID.x;
+  if (candidate_index >= num_candidates) {
+    return;
+  }
+
+  Candidate candidate = candidates[candidate_index];
+  float score_sum = 0.0;
+  for (uint i = 0u; i < candidate.scan_count; ++i) {
+    ivec2 xy_index = points[candidate.scan_start + i] +
+                     ivec2(candidate.x_index_offset, candidate.y_index_offset);
+    if (xy_index.x < 0 || xy_index.y < 0 ||
+        uint(xy_index.x) >= grid_width || uint(xy_index.y) >= grid_height) {
+      score_sum += 0.1;
+    } else {
+      uint flat_index = uint(xy_index.y) * grid_width + uint(xy_index.x);
+      score_sum += probability_from_cell(cells[flat_index]);
+    }
+  }
+
+  float score = score_sum / float(candidate.scan_count);
+  float penalty_arg =
+      length(vec2(candidate.x, candidate.y)) * translation_delta_cost_weight +
+      abs(candidate.orientation) * rotation_delta_cost_weight;
+  scores[candidate_index] = score * exp(-(penalty_arg * penalty_arg));
+}

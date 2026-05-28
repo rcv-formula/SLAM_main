@@ -121,6 +121,11 @@ class MapBuilderBridge {
                              LocalSlamDebugData debug_data)
       LOCKS_EXCLUDED(mutex_);
 
+  struct PublishedToTrackingCache {
+    ::cartographer::common::Time time = ::cartographer::common::Time::min();
+    std::unique_ptr<::cartographer::transform::Rigid3d> transform;
+  };
+
   absl::Mutex mutex_;
   const NodeOptions node_options_;
   std::unordered_map<int,
@@ -135,6 +140,7 @@ class MapBuilderBridge {
   std::unordered_map<int, TrajectoryOptions> trajectory_options_;
   std::unordered_map<int, std::unique_ptr<SensorBridge>> sensor_bridges_;
   std::unordered_map<int, size_t> trajectory_to_highest_marker_id_;
+  std::unordered_map<int, PublishedToTrackingCache> published_to_tracking_cache_;
 };
 
 }  // namespace cartographer_ros

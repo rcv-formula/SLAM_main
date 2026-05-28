@@ -81,7 +81,10 @@ SensorBridge::SensorBridge(
     carto::mapping::TrajectoryBuilderInterface* const trajectory_builder)
     : num_subdivisions_per_laser_scan_(num_subdivisions_per_laser_scan),
       tf_bridge_(tracking_frame, lookup_transform_timeout_sec, tf_buffer),
-      trajectory_builder_(trajectory_builder) {}
+      trajectory_builder_(trajectory_builder),
+      wheel_odom_twist_only_(EnvFlag("WHEEL_ODOM_TWIST_ONLY", true)),
+      wheel_odom_linear_scale_(EnvDouble("WHEEL_ODOM_LINEAR_SCALE", 2.6)),
+      wheel_odom_yaw_weight_(EnvDouble("WHEEL_ODOM_YAW_WEIGHT", 1.)) {}
 
 std::unique_ptr<carto::sensor::OdometryData> SensorBridge::ToOdometryData(
     const nav_msgs::msg::Odometry::ConstSharedPtr& msg) {
@@ -91,28 +94,25 @@ std::unique_ptr<carto::sensor::OdometryData> SensorBridge::ToOdometryData(
   if (sensor_to_tracking == nullptr) {
     return nullptr;
   }
-  const bool wheel_odom_twist_only = EnvFlag("WHEEL_ODOM_TWIST_ONLY", true);
   LOG_EVERY_N(INFO, 200)
       << "Wheel odom input mode: "
-      << (wheel_odom_twist_only ? "twist.linear.x integration"
+      << (wheel_odom_twist_only_ ? "twist.linear.x integration"
                                 : "nav_msgs/Odometry pose delta");
-  if (wheel_odom_twist_only) {
-    const double wheel_odom_linear_scale =
-        EnvDouble("WHEEL_ODOM_LINEAR_SCALE", 2.6);
+  if (wheel_odom_twist_only_) {
     if (wheel_twist_last_time_.has_value()) {
       const double dt = carto::common::ToSeconds(time - wheel_twist_last_time_.value());
       if (dt > 0.) {
         wheel_twist_distance_ +=
-            wheel_odom_linear_scale * msg->twist.twist.linear.x * dt;
+            wheel_odom_linear_scale_ * msg->twist.twist.linear.x * dt;
       }
     }
     wheel_twist_last_time_ = time;
     Eigen::Vector3d linear_velocity =
         sensor_to_tracking->rotation() * ToEigen(msg->twist.twist.linear);
-    linear_velocity.x() *= wheel_odom_linear_scale;
+    linear_velocity.x() *= wheel_odom_linear_scale_;
     Eigen::Vector3d angular_velocity =
         sensor_to_tracking->rotation() * ToEigen(msg->twist.twist.angular);
-    angular_velocity.z() *= EnvDouble("WHEEL_ODOM_YAW_WEIGHT", 1.);
+    angular_velocity.z() *= wheel_odom_yaw_weight_;
     return absl::make_unique<carto::sensor::OdometryData>(
         carto::sensor::OdometryData{
             time, Rigid3d::Translation(Eigen::Vector3d(wheel_twist_distance_, 0., 0.)) *
@@ -122,7 +122,7 @@ std::unique_ptr<carto::sensor::OdometryData> SensorBridge::ToOdometryData(
   }
   Eigen::Vector3d angular_velocity =
       sensor_to_tracking->rotation() * ToEigen(msg->twist.twist.angular);
-  angular_velocity.z() *= EnvDouble("WHEEL_ODOM_YAW_WEIGHT", 1.);
+  angular_velocity.z() *= wheel_odom_yaw_weight_;
   return absl::make_unique<carto::sensor::OdometryData>(
       carto::sensor::OdometryData{
           time,
