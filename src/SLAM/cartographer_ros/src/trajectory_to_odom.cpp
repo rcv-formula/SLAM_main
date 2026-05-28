@@ -11,6 +11,15 @@
 
 using std::placeholders::_1;
 
+namespace {
+
+bool IsZeroStamp(const builtin_interfaces::msg::Time& stamp)
+{
+    return stamp.sec == 0 && stamp.nanosec == 0;
+}
+
+}  // namespace
+
 class TrackedPoseToOdom : public rclcpp::Node
 {
 public:
@@ -19,12 +28,12 @@ public:
           tf_buffer_(this->get_clock()),
           tf_listener_(tf_buffer_)
     {
-        if (!this->get_parameter("tracking_frame", tracking_frame_)) {
-            tracking_frame_ = "imu";
-        }
-        if (!this->get_parameter("published_frame", published_frame_)) {
-            published_frame_ = "base_link";
-        }
+        tracking_frame_ =
+            this->declare_parameter<std::string>("tracking_frame", "imu");
+        published_frame_ =
+            this->declare_parameter<std::string>("published_frame", "base_link");
+        stamp_with_current_time_ =
+            this->declare_parameter<bool>("stamp_with_current_time", false);
 
         subscription_ = this->create_subscription<geometry_msgs::msg::PoseStamped>(
             "/tracked_pose", 20,
@@ -42,12 +51,10 @@ public:
         offset_publisher_ =
             this->create_publisher<nav_msgs::msg::Odometry>("/offset_odom", 20);
 
-        if (!this->get_parameter("use_sim_time", use_sim_time_)) {
-            RCLCPP_INFO(this->get_logger(), "\033[33muse_sim_time NOT SET. Defaulting to false.\033[0m");
-            use_sim_time_ = false;
-        }
-
-        RCLCPP_INFO(this->get_logger(), "TrackedPoseToOdom node initialized.");
+        RCLCPP_INFO(
+            this->get_logger(),
+            "TrackedPoseToOdom node initialized. stamp_with_current_time=%s",
+            stamp_with_current_time_ ? "true" : "false");
     }
 
 private:
@@ -86,11 +93,7 @@ private:
                 tracking_to_map_tf * published_to_tracking_tf;
 
             nav_msgs::msg::Odometry odom_msg;
-
-            builtin_interfaces::msg::Time current_time;
-            current_time.sec = this->get_clock()->now().seconds();
-            current_time.nanosec = this->get_clock()->now().nanoseconds() % 1000000000;
-            odom_msg.header.stamp = use_sim_time_ ? current_time : msg.header.stamp;
+            odom_msg.header.stamp = resolveStamp(msg);
 
             odom_msg.header.frame_id = msg.header.frame_id;
             odom_msg.child_frame_id = published_frame_;
@@ -110,6 +113,29 @@ private:
         }
     }
 
+    builtin_interfaces::msg::Time resolveStamp(
+        const geometry_msgs::msg::PoseStamped& msg)
+    {
+        if (!stamp_with_current_time_ && !IsZeroStamp(msg.header.stamp)) {
+            return msg.header.stamp;
+        }
+
+        builtin_interfaces::msg::Time stamp = this->get_clock()->now();
+        if (!IsZeroStamp(stamp)) {
+            return stamp;
+        }
+
+        stamp = rclcpp::Clock(RCL_SYSTEM_TIME).now();
+        if (!warned_zero_stamp_) {
+            RCLCPP_WARN(
+                this->get_logger(),
+                "Input pose stamp and node clock are zero; using system time "
+                "for odometry stamp. Check use_sim_time and /clock.");
+            warned_zero_stamp_ = true;
+        }
+        return stamp;
+    }
+
     rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr subscription_;
     rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr filtered_subscription_;
     rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr offset_subscription_;
@@ -120,7 +146,8 @@ private:
     tf2_ros::Buffer tf_buffer_;
     tf2_ros::TransformListener tf_listener_;
 
-    bool use_sim_time_ = false;
+    bool stamp_with_current_time_ = false;
+    bool warned_zero_stamp_ = false;
     std::string tracking_frame_;
     std::string published_frame_;
 };
