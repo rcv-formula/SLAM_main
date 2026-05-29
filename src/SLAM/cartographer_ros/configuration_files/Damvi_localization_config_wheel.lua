@@ -78,11 +78,11 @@ TRAJECTORY_BUILDER_2D.submaps.num_range_data = 45
 
 -- Pure Localization 모드 관련 설정
   -- ◆ [1]전역 매칭(루프 클로저) 최소 점수
-POSE_GRAPH.constraint_builder.global_localization_min_score = 0.5
+POSE_GRAPH.constraint_builder.global_localization_min_score = 0.7
 -- POSE_GRAPH.constraint_builder.global_localization_min_score = 0.7
 
   -- ◆ [1]로컬 매칭(일반 스캔 매칭) 최소 점수
-POSE_GRAPH.constraint_builder.min_score = 0.6
+POSE_GRAPH.constraint_builder.min_score = 0.7
 -- POSE_GRAPH.constraint_builder.min_score = 0.7
 
 
@@ -114,10 +114,10 @@ POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher.score_distribution_c
     fast_correlative_score_distribution_csv_path
 POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher.min_score_distribution_margin = 0.0
   -- [1] global 전역 매칭(큰 오프셋 수정 등) 시 스캔을 추출하여 매칭 시도할 확률 (0 ~ 1). 연산량 tradeoff가 존재. 0.0036-0.004 사이. 0.0001 단위로 조절
-POSE_GRAPH.global_sampling_ratio = 0.02
-POSE_GRAPH.initial_global_sampling_ratio = 0.2
-POSE_GRAPH.initial_global_constraint_search_after_n_seconds = 0.0
-POSE_GRAPH.initial_global_localization_min_score = 0.6
+POSE_GRAPH.global_sampling_ratio = 0.01 --0.02
+POSE_GRAPH.initial_global_sampling_ratio = 0.1
+POSE_GRAPH.initial_global_constraint_search_after_n_seconds = 0.1 --0.0
+POSE_GRAPH.initial_global_localization_min_score = 0.6 -- 0.45
 -- POSE_GRAPH.initial_global_localization_min_score = 0.45
 
 -- ◆ [LOCAL]
@@ -159,8 +159,8 @@ MAP_BUILDER.num_background_threads = 8
 POSE_GRAPH.optimize_every_n_nodes = 1
 
 -- [대회장 길이에 맞추어 조절] 전역 매칭을 위한 Submap 간 최대 거리
-POSE_GRAPH.constraint_builder.max_constraint_distance = 15.0  --15
-POSE_GRAPH.relocalization_trigger_sec = 3.0
+POSE_GRAPH.constraint_builder.max_constraint_distance = 15  --15
+POSE_GRAPH.relocalization_trigger_sec = 6.0
 POSE_GRAPH.relocalization_recovery_required_successes = 5
 POSE_GRAPH.relocalization_recovery_grace_sec = 6.0
 
