@@ -141,7 +141,7 @@ target_link_libraries(cartographer_rosbag_validate ${PROJECT_NAME})
 ament_target_dependencies(cartographer_rosbag_validate ${dependencies})
 
 add_executable(trajectory_to_odom src/trajectory_to_odom.cpp)
-ament_target_dependencies(trajectory_to_odom rclcpp visualization_msgs geometry_msgs std_msgs nav_msgs tf2 tf2_geometry_msgs)  # Ensure nav_msgs is listed
+ament_target_dependencies(trajectory_to_odom rclcpp visualization_msgs geometry_msgs std_msgs nav_msgs tf2 tf2_ros tf2_geometry_msgs)  # Ensure nav_msgs is listed
 install(TARGETS trajectory_to_odom DESTINATION lib/${PROJECT_NAME})
 
 if($ENV{ROS_DISTRO} MATCHES "humble" OR $ENV{ROS_DISTRO} MATCHES "iron")

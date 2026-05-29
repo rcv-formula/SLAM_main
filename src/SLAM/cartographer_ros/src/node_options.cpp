@@ -47,149 +47,66 @@ void SetDoubleEnvIfPresent(
   }
 }
 
-void SetStringEnvIfPresent(
+bool GetBoolOrDefault(
     ::cartographer::common::LuaParameterDictionary* const dictionary,
-    const std::string& lua_key, const std::string& env_key) {
-  if (dictionary->HasKey(lua_key)) {
-    SetEnv(env_key, dictionary->GetString(lua_key));
-  }
+    const std::string& key, const bool default_value) {
+  return dictionary->HasKey(key) ? dictionary->GetBool(key) : default_value;
 }
 
-void ApplyDamviRuntimeOptions(
+std::string GetStringOrDefault(
+    ::cartographer::common::LuaParameterDictionary* const dictionary,
+    const std::string& key, const std::string& default_value) {
+  return dictionary->HasKey(key) ? dictionary->GetString(key) : default_value;
+}
+
+void ApplyDamviLuaOptions(
     ::cartographer::common::LuaParameterDictionary* const
         lua_parameter_dictionary) {
-  if (!lua_parameter_dictionary->HasKey("damvi_runtime_options")) {
-    return;
-  }
-  auto runtime_options =
-      lua_parameter_dictionary->GetDictionary("damvi_runtime_options");
-
-  SetBoolEnvIfPresent(runtime_options.get(), "wheel_odom_twist_only",
+  SetBoolEnvIfPresent(lua_parameter_dictionary, "fusion_extrapolator",
+                      "FUSION_EXTRPOLATOR");
+  SetBoolEnvIfPresent(lua_parameter_dictionary, "wheel_odom_twist_only",
                       "WHEEL_ODOM_TWIST_ONLY");
-  SetDoubleEnvIfPresent(runtime_options.get(), "wheel_odom_linear_scale",
+  SetDoubleEnvIfPresent(lua_parameter_dictionary, "wheel_odom_linear_scale",
                         "WHEEL_ODOM_LINEAR_SCALE");
+  SetDoubleEnvIfPresent(lua_parameter_dictionary, "wheel_odom_yaw_weight",
+                        "WHEEL_ODOM_YAW_WEIGHT");
   SetDoubleEnvIfPresent(
-      runtime_options.get(), "longitudinal_prior_occupied_space_weight_scale",
+      lua_parameter_dictionary, "longitudinal_prior_occupied_space_weight_scale",
       "CARTOGRAPHER_LONGITUDINAL_PRIOR_OCCUPIED_SPACE_WEIGHT_SCALE");
 
-  SetBoolEnvIfPresent(runtime_options.get(), "adaptive_odometry_blend",
+  SetBoolEnvIfPresent(lua_parameter_dictionary, "adaptive_odometry_blend",
                       "CARTOGRAPHER_ADAPTIVE_ODOMETRY_BLEND");
   SetDoubleEnvIfPresent(
-      runtime_options.get(), "adaptive_odometry_full_weight_yaw_rate",
+      lua_parameter_dictionary, "adaptive_odometry_full_weight_yaw_rate",
       "CARTOGRAPHER_ADAPTIVE_ODOMETRY_FULL_WEIGHT_YAW_RATE");
   SetDoubleEnvIfPresent(
-      runtime_options.get(), "adaptive_odometry_zero_weight_yaw_rate",
+      lua_parameter_dictionary, "adaptive_odometry_zero_weight_yaw_rate",
       "CARTOGRAPHER_ADAPTIVE_ODOMETRY_ZERO_WEIGHT_YAW_RATE");
-  SetDoubleEnvIfPresent(runtime_options.get(), "adaptive_odometry_min_weight",
+  SetDoubleEnvIfPresent(lua_parameter_dictionary, "adaptive_odometry_min_weight",
                         "CARTOGRAPHER_ADAPTIVE_ODOMETRY_MIN_WEIGHT");
-  SetDoubleEnvIfPresent(runtime_options.get(), "adaptive_odometry_max_weight",
+  SetDoubleEnvIfPresent(lua_parameter_dictionary, "adaptive_odometry_max_weight",
                         "CARTOGRAPHER_ADAPTIVE_ODOMETRY_MAX_WEIGHT");
   SetBoolEnvIfPresent(
-      runtime_options.get(), "adaptive_odometry_mismatch_override",
+      lua_parameter_dictionary, "adaptive_odometry_mismatch_override",
       "CARTOGRAPHER_ADAPTIVE_ODOMETRY_MISMATCH_OVERRIDE");
-  SetDoubleEnvIfPresent(runtime_options.get(),
+  SetDoubleEnvIfPresent(lua_parameter_dictionary,
                         "adaptive_odometry_mismatch_ratio",
                         "CARTOGRAPHER_ADAPTIVE_ODOMETRY_MISMATCH_RATIO");
   SetDoubleEnvIfPresent(
-      runtime_options.get(), "adaptive_odometry_min_forward_delta",
+      lua_parameter_dictionary, "adaptive_odometry_min_forward_delta",
       "CARTOGRAPHER_ADAPTIVE_ODOMETRY_MIN_FORWARD_DELTA");
   SetDoubleEnvIfPresent(
-      runtime_options.get(), "adaptive_odometry_mismatch_force_weight",
+      lua_parameter_dictionary, "adaptive_odometry_mismatch_force_weight",
       "CARTOGRAPHER_ADAPTIVE_ODOMETRY_MISMATCH_FORCE_WEIGHT");
-  SetBoolEnvIfPresent(runtime_options.get(),
+  SetBoolEnvIfPresent(lua_parameter_dictionary,
                       "adaptive_odometry_longitudinal_only",
                       "CARTOGRAPHER_ADAPTIVE_ODOMETRY_LONGITUDINAL_ONLY");
-
-  SetBoolEnvIfPresent(runtime_options.get(), "clamp_local_lateral_residual",
+  SetBoolEnvIfPresent(lua_parameter_dictionary, "clamp_local_lateral_residual",
                       "CARTOGRAPHER_CLAMP_LOCAL_LATERAL_RESIDUAL");
-  SetDoubleEnvIfPresent(runtime_options.get(), "local_lateral_residual_max",
+  SetDoubleEnvIfPresent(lua_parameter_dictionary, "local_lateral_residual_max",
                         "CARTOGRAPHER_LOCAL_LATERAL_RESIDUAL_MAX");
-  SetBoolEnvIfPresent(runtime_options.get(), "reject_local_slam_outliers",
-                      "CARTOGRAPHER_REJECT_LOCAL_SLAM_OUTLIERS");
-  SetDoubleEnvIfPresent(runtime_options.get(), "imu_yaw_weight",
+  SetDoubleEnvIfPresent(lua_parameter_dictionary, "imu_yaw_weight",
                         "CARTOGRAPHER_IMU_YAW_WEIGHT");
-  SetDoubleEnvIfPresent(runtime_options.get(), "wheel_odom_yaw_weight",
-                        "WHEEL_ODOM_YAW_WEIGHT");
-
-  SetBoolEnvIfPresent(runtime_options.get(), "restart_on_lost",
-                      "CARTOGRAPHER_RESTART_ON_LOCALIZATION_LOST");
-  SetDoubleEnvIfPresent(runtime_options.get(), "restart_lost_after_sec",
-                        "CARTOGRAPHER_RESTART_LOST_AFTER_SEC");
-  SetDoubleEnvIfPresent(runtime_options.get(), "restart_cooldown_sec",
-                        "CARTOGRAPHER_RESTART_COOLDOWN_SEC");
-
-  SetStringEnvIfPresent(runtime_options.get(),
-                        "pose_graph_constraint_metrics_csv_path",
-                        "POSE_GRAPH_CONSTRAINT_METRICS_CSV_PATH");
-  SetBoolEnvIfPresent(runtime_options.get(),
-                      "pose_graph_ambiguous_constraint_downweight",
-                      "POSE_GRAPH_AMBIGUOUS_CONSTRAINT_DOWNWEIGHT");
-  SetBoolEnvIfPresent(runtime_options.get(),
-                      "pose_graph_ambiguous_constraint_reject",
-                      "POSE_GRAPH_AMBIGUOUS_CONSTRAINT_REJECT");
-  SetBoolEnvIfPresent(runtime_options.get(),
-                      "pose_graph_ambiguous_apply_to_tracking",
-                      "POSE_GRAPH_AMBIGUOUS_APPLY_TO_TRACKING");
-  SetBoolEnvIfPresent(runtime_options.get(),
-                      "pose_graph_ambiguous_apply_to_initial",
-                      "POSE_GRAPH_AMBIGUOUS_APPLY_TO_INITIAL");
-  SetBoolEnvIfPresent(runtime_options.get(),
-                      "pose_graph_ambiguous_apply_to_recovery",
-                      "POSE_GRAPH_AMBIGUOUS_APPLY_TO_RECOVERY");
-  SetDoubleEnvIfPresent(runtime_options.get(),
-                        "pose_graph_ambiguous_constraint_reject_min_score",
-                        "POSE_GRAPH_AMBIGUOUS_CONSTRAINT_REJECT_MIN_SCORE");
-  SetDoubleEnvIfPresent(runtime_options.get(),
-                        "pose_graph_ambiguous_constraint_min_translation",
-                        "POSE_GRAPH_AMBIGUOUS_CONSTRAINT_MIN_TRANSLATION");
-  SetDoubleEnvIfPresent(runtime_options.get(),
-                        "pose_graph_ambiguous_constraint_max_score_margin",
-                        "POSE_GRAPH_AMBIGUOUS_CONSTRAINT_MAX_SCORE_MARGIN");
-  SetDoubleEnvIfPresent(runtime_options.get(),
-                        "pose_graph_ambiguous_constraint_min_near_top_count",
-                        "POSE_GRAPH_AMBIGUOUS_CONSTRAINT_MIN_NEAR_TOP_COUNT");
-  SetBoolEnvIfPresent(runtime_options.get(),
-                      "pose_graph_reject_ambiguous_full_submap",
-                      "POSE_GRAPH_REJECT_AMBIGUOUS_FULL_SUBMAP");
-  SetDoubleEnvIfPresent(runtime_options.get(),
-                        "pose_graph_ambiguous_full_submap_max_score_margin",
-                        "POSE_GRAPH_AMBIGUOUS_FULL_SUBMAP_MAX_SCORE_MARGIN");
-  SetDoubleEnvIfPresent(
-      runtime_options.get(), "pose_graph_ambiguous_full_submap_reject_min_score",
-      "POSE_GRAPH_AMBIGUOUS_FULL_SUBMAP_REJECT_MIN_SCORE");
-  SetDoubleEnvIfPresent(
-      runtime_options.get(), "pose_graph_ambiguous_full_submap_min_near_top_count",
-      "POSE_GRAPH_AMBIGUOUS_FULL_SUBMAP_MIN_NEAR_TOP_COUNT");
-  SetBoolEnvIfPresent(runtime_options.get(),
-                      "pose_graph_bound_relocalization_to_prior",
-                      "POSE_GRAPH_BOUND_RELOCALIZATION_TO_PRIOR");
-  SetBoolEnvIfPresent(runtime_options.get(),
-                      "pose_graph_bound_tracking_global_to_prior",
-                      "POSE_GRAPH_BOUND_TRACKING_GLOBAL_TO_PRIOR");
-  SetDoubleEnvIfPresent(runtime_options.get(),
-                        "pose_graph_tracking_prior_min_score",
-                        "POSE_GRAPH_TRACKING_PRIOR_MIN_SCORE");
-  SetDoubleEnvIfPresent(runtime_options.get(),
-                        "pose_graph_tracking_max_translation_correction",
-                        "POSE_GRAPH_TRACKING_MAX_TRANSLATION_CORRECTION");
-  SetDoubleEnvIfPresent(runtime_options.get(),
-                        "pose_graph_tracking_max_yaw_correction",
-                        "POSE_GRAPH_TRACKING_MAX_YAW_CORRECTION");
-  SetDoubleEnvIfPresent(runtime_options.get(),
-                        "pose_graph_relocalization_prior_min_score",
-                        "POSE_GRAPH_RELOCALIZATION_PRIOR_MIN_SCORE");
-  SetDoubleEnvIfPresent(runtime_options.get(),
-                        "pose_graph_relocalization_max_translation_correction",
-                        "POSE_GRAPH_RELOCALIZATION_MAX_TRANSLATION_CORRECTION");
-  SetDoubleEnvIfPresent(runtime_options.get(),
-                        "pose_graph_relocalization_max_yaw_correction",
-                        "POSE_GRAPH_RELOCALIZATION_MAX_YAW_CORRECTION");
-  SetDoubleEnvIfPresent(runtime_options.get(),
-                        "pose_graph_recovery_constraint_weight_scale",
-                        "POSE_GRAPH_RECOVERY_CONSTRAINT_WEIGHT_SCALE");
-  SetBoolEnvIfPresent(runtime_options.get(),
-                      "pose_graph_disable_relocalization_after_initial",
-                      "POSE_GRAPH_DISABLE_RELOCALIZATION_AFTER_INITIAL");
 }
 
 }  // namespace
@@ -197,7 +114,7 @@ void ApplyDamviRuntimeOptions(
 NodeOptions CreateNodeOptions(
     ::cartographer::common::LuaParameterDictionary* const
         lua_parameter_dictionary) {
-  ApplyDamviRuntimeOptions(lua_parameter_dictionary);
+  ApplyDamviLuaOptions(lua_parameter_dictionary);
 
   NodeOptions options;
   options.map_builder_options =
@@ -224,6 +141,18 @@ NodeOptions CreateNodeOptions(
     options.use_pose_extrapolator =
         lua_parameter_dictionary->GetBool("use_pose_extrapolator");
   }
+  options.use_sim_time =
+      GetBoolOrDefault(lua_parameter_dictionary, "use_sim_time", false);
+  options.collect_metrics =
+      GetBoolOrDefault(lua_parameter_dictionary, "collect_metrics", false);
+  options.publish_odom =
+      GetBoolOrDefault(lua_parameter_dictionary, "publish_odom", false);
+  options.load_state_filename =
+      GetStringOrDefault(lua_parameter_dictionary, "load_state_filename", "");
+  options.load_frozen_state =
+      GetBoolOrDefault(lua_parameter_dictionary, "load_frozen_state", true);
+  options.start_trajectory_with_default_topics = GetBoolOrDefault(
+      lua_parameter_dictionary, "start_trajectory_with_default_topics", true);
   return options;
 }
 

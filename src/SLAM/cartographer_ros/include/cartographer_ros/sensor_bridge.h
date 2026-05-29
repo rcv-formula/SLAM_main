@@ -95,6 +95,9 @@ class SensorBridge {
   const TfBridge tf_bridge_;
   ::cartographer::mapping::TrajectoryBuilderInterface* const
       trajectory_builder_;
+  const bool wheel_odom_twist_only_;
+  const double wheel_odom_linear_scale_;
+  const double wheel_odom_yaw_weight_;
 
   absl::optional<::cartographer::transform::Rigid3d> ecef_to_local_frame_;
   absl::optional<::cartographer::common::Time> wheel_twist_last_time_;

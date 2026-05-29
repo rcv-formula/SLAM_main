@@ -1,0 +1,12 @@
+{
+  "cartographer_cpu_percent_max": 51.4,
+  "cartographer_cpu_percent_mean": 13.551282051282051,
+  "cartographer_rss_mb_max": 98.8125,
+  "cartographer_rss_mb_mean": 90.23938301282051,
+  "drm_counter_deltas": {},
+  "samples": 39,
+  "total_cpu_percent_max": 196.3,
+  "total_cpu_percent_mean": 33.97692307692307,
+  "total_rss_mb_max": 236.23828125,
+  "total_rss_mb_mean": 221.2322716346154
+}

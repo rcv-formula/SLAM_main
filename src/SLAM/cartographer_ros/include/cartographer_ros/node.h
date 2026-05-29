@@ -17,9 +17,9 @@
 #ifndef CARTOGRAPHER_ROS_CARTOGRAPHER_ROS_NODE_H
 #define CARTOGRAPHER_ROS_CARTOGRAPHER_ROS_NODE_H
 
+#include <fstream>
 #include <map>
 #include <memory>
-#include <mutex>
 #include <set>
 #include <unordered_map>
 #include <unordered_set>
@@ -69,7 +69,8 @@ class Node {
        std::unique_ptr<cartographer::mapping::MapBuilderInterface> map_builder,
        std::shared_ptr<tf2_ros::Buffer> tf_buffer,
        rclcpp::Node::SharedPtr node,
-       bool collect_metrics);
+       bool collect_metrics,
+       bool publish_odom);
   ~Node();
 
   Node(const Node&) = delete;
@@ -195,7 +196,6 @@ class Node {
   void MaybeWarnAboutTopicMismatch();
   void OnLocalizationStatusChanged(
       cartographer::mapping::PoseGraphInterface::LocalizationStatus status);
-  void MaybeRestartLocalization();
 
   // Helper function for service handlers that need to check trajectory states.
   cartographer_ros_msgs::msg::StatusResponse TrajectoryStateToStatus(
@@ -207,19 +207,21 @@ class Node {
 
   std::shared_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
   std::vector<geometry_msgs::msg::TransformStamped> stamped_transforms_;
+  std::ofstream odom_provenance_csv_;
+  std::ofstream odom_output_trace_csv_;
+  bool publish_odom_ = false;
 
   absl::Mutex mutex_;
   std::unique_ptr<cartographer_ros::metrics::FamilyFactory> metrics_registry_;
   std::shared_ptr<MapBuilderBridge> map_builder_bridge_ GUARDED_BY(mutex_);
 
   rclcpp::Node::SharedPtr node_;
-  rclcpp::CallbackGroup::SharedPtr sensor_callback_group_;
-  rclcpp::CallbackGroup::SharedPtr timer_callback_group_;
   ::rclcpp::Publisher<::cartographer_ros_msgs::msg::SubmapList>::SharedPtr submap_list_publisher_;
   ::rclcpp::Publisher<::visualization_msgs::msg::MarkerArray>::SharedPtr trajectory_node_list_publisher_;
   ::rclcpp::Publisher<::visualization_msgs::msg::MarkerArray>::SharedPtr landmark_poses_list_publisher_;
   ::rclcpp::Publisher<::visualization_msgs::msg::MarkerArray>::SharedPtr constraint_list_publisher_;
   ::rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr tracked_pose_publisher_;
+  ::rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr odom_publisher_;
   ::rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr scan_matched_point_cloud_publisher_;
   ::rclcpp::Publisher<::cartographer_ros_msgs::msg::ScanMatchScore>::SharedPtr scan_match_score_publisher_;
   ::rclcpp::Publisher<::std_msgs::msg::Bool>::SharedPtr localization_status_publisher_;
@@ -271,16 +273,6 @@ class Node {
   std::unordered_map<int, std::vector<Subscriber>> subscribers_;
   std::unordered_set<std::string> subscribed_topics_;
   std::unordered_set<int> trajectories_scheduled_for_finish_;
-  std::unique_ptr<TrajectoryOptions> default_trajectory_options_;
-  int active_default_trajectory_id_ = -1;
-  bool auto_restart_on_localization_lost_ = false;
-  double auto_restart_lost_after_sec_ = 3.;
-  double auto_restart_cooldown_sec_ = 8.;
-  std::mutex localization_restart_mutex_;
-  bool localization_currently_lost_ = false;
-  bool localization_has_been_good_ = false;
-  rclcpp::Time localization_lost_since_;
-  rclcpp::Time last_localization_restart_time_;
   int next_motion_mismatch_marker_id_ = 0;
 
   // The timer for publishing local trajectory data (i.e. pose transforms and
@@ -293,7 +285,6 @@ class Node {
   ::rclcpp::TimerBase::SharedPtr landmark_pose_list_timer_;
   ::rclcpp::TimerBase::SharedPtr constrain_list_timer_;
   ::rclcpp::TimerBase::SharedPtr maybe_warn_about_topic_mismatch_timer_;
-  ::rclcpp::TimerBase::SharedPtr localization_restart_timer_;
 };
 
 }  // namespace cartographer_ros

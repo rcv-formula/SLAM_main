@@ -1,114 +1,63 @@
 import os
+from datetime import datetime
 
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, ExecuteProcess
-from launch.conditions import IfCondition, UnlessCondition
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 
 
 def generate_launch_description():
     script_path = os.path.abspath(__file__)
-    launch_dir = os.path.dirname(script_path)
-    package_dir = os.path.dirname(launch_dir)
+    main_dir = os.path.dirname(script_path)
+    package_dir = os.path.dirname(main_dir)
     config_dir = os.path.join(package_dir, 'configuration_files')
     scripts_dir = os.path.join(package_dir, 'scripts')
-    qos_overrides_path = os.path.join(
-        config_dir, 'rosbag_play_qos_overrides.yaml')
-    default_pbstream_file = os.path.join(package_dir, 'pbstream/latest.pbstream')
+    score_distribution_dir = os.path.join(package_dir, 'global_constraint_score_distributions')
+    os.makedirs(score_distribution_dir, exist_ok=True)
+    score_distribution_csv_path = os.path.join(
+        score_distribution_dir,
+        f"fast_correlative_score_distribution_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+    )
 
-    pbstream_file = LaunchConfiguration('pbstream_file')
+    pbstream_file = '/home/cartographer/SLAM_local-loss/src/SLAM/cartographer_ros/pbstream/0508.pbstream'
     rosbag_file = LaunchConfiguration('bagfiles')
     use_sim_time = LaunchConfiguration('use_sim_time')
-    use_initial_pose = LaunchConfiguration('use_initial_pose')
-    initial_pose_x = LaunchConfiguration('initial_pose_x')
-    initial_pose_y = LaunchConfiguration('initial_pose_y')
-    initial_pose_yaw = LaunchConfiguration('initial_pose_yaw')
-    initial_pose_relative_to_trajectory_id = LaunchConfiguration(
-        'initial_pose_relative_to_trajectory_id')
     fault_start_sec = LaunchConfiguration('fault_start_sec')
     fault_duration_sec = LaunchConfiguration('fault_duration_sec')
     fault_mode = LaunchConfiguration('fault_mode')
     shift_fraction = LaunchConfiguration('shift_fraction')
-    occlusion_fraction = LaunchConfiguration('occlusion_fraction')
-    occlusion_distance = LaunchConfiguration('occlusion_distance')
-    enable_scan_fault = LaunchConfiguration('enable_scan_fault')
 
     return LaunchDescription([
         DeclareLaunchArgument(
             'bagfiles',
-            default_value='/home/rcv/Documents/SLAM_main/latest_sensor',
-            description='Path to the rosbag directory',
+            default_value='/home/cartographer/SLAM_local-loss/0507_sensor.bag_0.db3',
+            description='Path to the rosbag file'
         ),
         DeclareLaunchArgument(
             'use_sim_time',
             default_value='true',
-            description='Use simulation time if true',
-        ),
-        DeclareLaunchArgument(
-            'pbstream_file',
-            default_value=default_pbstream_file,
-            description='Path to the frozen pbstream map for localization',
-        ),
-        DeclareLaunchArgument(
-            'use_initial_pose',
-            default_value='false',
-            description='Start localization from an explicit map-frame pose',
-        ),
-        DeclareLaunchArgument(
-            'initial_pose_x',
-            default_value='0.0',
-            description='Initial pose x relative to the frozen trajectory',
-        ),
-        DeclareLaunchArgument(
-            'initial_pose_y',
-            default_value='0.0',
-            description='Initial pose y relative to the frozen trajectory',
-        ),
-        DeclareLaunchArgument(
-            'initial_pose_yaw',
-            default_value='0.0',
-            description='Initial pose yaw in radians relative to the frozen trajectory',
-        ),
-        DeclareLaunchArgument(
-            'initial_pose_relative_to_trajectory_id',
-            default_value='0',
-            description='Frozen trajectory ID used as the initial-pose reference',
-        ),
-        DeclareLaunchArgument(
-            'enable_scan_fault',
-            default_value='false',
-            description='Route /scan through the scan fault injector when true',
+            description='Use simulation time if true'
         ),
         DeclareLaunchArgument(
             'fault_start_sec',
             default_value='20.0',
-            description='Bag-relative time when scan corruption starts',
+            description='Bag-relative time when scan corruption starts'
         ),
         DeclareLaunchArgument(
             'fault_duration_sec',
-            default_value='0.0',
-            description='Duration of scan corruption',
+            default_value='8.0',
+            description='Duration of scan corruption'
         ),
         DeclareLaunchArgument(
             'fault_mode',
-            default_value='freeze',
-            description='One of: freeze, front_occlusion, drop, invalid, noise, sparse_noise, shift, reverse',
+            default_value='shift',
+            description='One of: shift, reverse, invalid, noise, sparse_noise, drop'
         ),
         DeclareLaunchArgument(
             'shift_fraction',
             default_value='0.5',
-            description='Fraction of ranges to rotate in shift mode',
-        ),
-        DeclareLaunchArgument(
-            'occlusion_fraction',
-            default_value='0.35',
-            description='Centered scan fraction clamped in front_occlusion mode',
-        ),
-        DeclareLaunchArgument(
-            'occlusion_distance',
-            default_value='0.35',
-            description='Synthetic obstacle distance in front_occlusion mode',
+            description='Fraction of ranges to rotate in shift mode'
         ),
 
         Node(
@@ -116,29 +65,25 @@ def generate_launch_description():
             executable='cartographer_node',
             name='cartographer_node',
             output='screen',
+            additional_env={
+                'FAST_CORRELATIVE_SCORE_DISTRIBUTION_CSV_PATH':
+                    score_distribution_csv_path,
+            },
             arguments=[
-                '--collect_metrics',
                 '-configuration_directory', config_dir,
-                '-configuration_basename', 'Damvi_localization_config_wheel.lua',
+                '-configuration_basename', 'Damvi_localization_config.lua',
                 '-load_state_filename', pbstream_file,
-                '-use_initial_pose', use_initial_pose,
-                '-initial_pose_x', initial_pose_x,
-                '-initial_pose_y', initial_pose_y,
-                '-initial_pose_yaw', initial_pose_yaw,
-                '-initial_pose_relative_to_trajectory_id',
-                initial_pose_relative_to_trajectory_id,
             ],
             remappings=[
                 ('scan', 'scan'),
                 ('imu', 'imu/data'),
-                ('odom_wheel', 'odom_wheel'),
                 ('tf', 'tf'),
                 ('tf_static', 'tf_static'),
             ],
             parameters=[
                 {'use_sim_time': use_sim_time},
                 {'provide_odom_frame': True},
-                {'use_odometry': True},
+                {'use_odometry': False},
                 {'publish_frame_projected_to_2d': True},
             ],
         ),
@@ -169,7 +114,6 @@ def generate_launch_description():
         ),
 
         ExecuteProcess(
-            condition=IfCondition(enable_scan_fault),
             cmd=[
                 'python3',
                 os.path.join(scripts_dir, 'relocalization_scan_fault_injector.py'),
@@ -180,31 +124,14 @@ def generate_launch_description():
                 '-p', ['fault_duration_sec:=', fault_duration_sec],
                 '-p', ['mode:=', fault_mode],
                 '-p', ['shift_fraction:=', shift_fraction],
-                '-p', ['occlusion_fraction:=', occlusion_fraction],
-                '-p', ['occlusion_distance:=', occlusion_distance],
             ],
             output='screen',
         ),
 
         ExecuteProcess(
-            condition=IfCondition(enable_scan_fault),
             cmd=[
                 'ros2', 'bag', 'play', rosbag_file, '--clock',
-                '--qos-profile-overrides-path', qos_overrides_path,
-                '--topics', '/scan', '/imu/data', '/odom_wheel', '/tf',
-                '/tf_static',
                 '--remap', '/scan:=/scan_fault_in',
-            ],
-            output='screen',
-        ),
-
-        ExecuteProcess(
-            condition=UnlessCondition(enable_scan_fault),
-            cmd=[
-                'ros2', 'bag', 'play', rosbag_file, '--clock',
-                '--qos-profile-overrides-path', qos_overrides_path,
-                '--topics', '/scan', '/imu/data', '/odom_wheel', '/tf',
-                '/tf_static',
             ],
             output='screen',
         ),

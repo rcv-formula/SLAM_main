@@ -35,26 +35,9 @@ local fast_correlative_score_distribution_csv_path =
     os.getenv("FAST_CORRELATIVE_SCORE_DISTRIBUTION_CSV_PATH") or
     "/home/rcv/SLAM_local-loss/global_constraint_score_distributions/fast_correlative_score_distribution.csv"
 
-local damvi_runtime_options = {
-  wheel_odom_twist_only = true,
-  wheel_odom_linear_scale = 2.6,
-  longitudinal_prior_occupied_space_weight_scale = 0.35,
-  adaptive_odometry_blend = true,
-  adaptive_odometry_full_weight_yaw_rate = 0.05,
-  adaptive_odometry_zero_weight_yaw_rate = 0.20,
-  adaptive_odometry_min_weight = 0.0,
-  adaptive_odometry_max_weight = 1.0,
-  adaptive_odometry_mismatch_override = true,
-  adaptive_odometry_mismatch_ratio = 0.35,
-  adaptive_odometry_min_forward_delta = 0.005,
-  adaptive_odometry_mismatch_force_weight = 1.0,
-  adaptive_odometry_longitudinal_only = true,
-}
-
 options = {
   map_builder = MAP_BUILDER,
   trajectory_builder = TRAJECTORY_BUILDER,
-  damvi_runtime_options = damvi_runtime_options,
   map_frame = "map",
   tracking_frame = "imu", -- Ensure imu frame is used as tracking frame
   published_frame = "base_link",
@@ -79,6 +62,19 @@ options = {
   imu_sampling_ratio = 1.0,
   fixed_frame_pose_sampling_ratio = 1.0,
   landmarks_sampling_ratio = 1.0,
+  wheel_odom_twist_only = true,
+  wheel_odom_linear_scale = 2.6,
+  longitudinal_prior_occupied_space_weight_scale = 0.35,
+  adaptive_odometry_blend = true,
+  adaptive_odometry_full_weight_yaw_rate = 0.05,
+  adaptive_odometry_zero_weight_yaw_rate = 0.20,
+  adaptive_odometry_min_weight = 0.0,
+  adaptive_odometry_max_weight = 1.0,
+  adaptive_odometry_mismatch_override = true,
+  adaptive_odometry_mismatch_ratio = 0.35,
+  adaptive_odometry_min_forward_delta = 0.005,
+  adaptive_odometry_mismatch_force_weight = 1.0,
+  adaptive_odometry_longitudinal_only = true,
 }
 
 MAP_BUILDER.use_trajectory_builder_2d = true

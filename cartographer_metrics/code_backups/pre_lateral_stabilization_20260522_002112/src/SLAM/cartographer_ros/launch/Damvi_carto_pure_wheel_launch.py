@@ -35,13 +35,13 @@ def generate_launch_description():
         'initial_pose_relative_to_trajectory_id')
 
     return LaunchDescription([
-        
+
         DeclareLaunchArgument(
             'use_sim_time',
             default_value='true',
             description='Use simulation time if true'
         ),
-        #true일 경우 scan imu fusion 사용, false일 경우 원본 
+        #true일 경우 scan imu fusion 사용, false일 경우 원본
         DeclareLaunchArgument(
             'fusion_extrapolator',
             default_value='true',

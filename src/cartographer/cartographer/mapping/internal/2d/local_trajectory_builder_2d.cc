@@ -814,25 +814,14 @@ LocalTrajectoryBuilder2D::AddAccumulatedRangeData(
   quality_metrics.longitudinal_motion_loss = longitudinal_motion_mismatch;
   quality_metrics.motion_loss_prior_hold_count =
       longitudinal_motion_loss_prior_hold_count_;
-  quality_metrics.was_outlier = IsLocalSlamOutlier(&quality_metrics);
-  transform::Rigid2d accepted_pose_2d = *pose_estimate_2d;
-  if (quality_metrics.was_outlier &&
-      EnvBool("CARTOGRAPHER_REJECT_LOCAL_SLAM_OUTLIERS", false)) {
-    accepted_pose_2d = pose_prediction;
-    LOG_EVERY_N(WARNING, 20)
-        << "Rejected local SLAM outlier pose and kept odom/IMU prediction. "
-        << "translation_residual=" << quality_metrics.translation_residual
-        << " rotation_residual=" << quality_metrics.rotation_residual
-        << " yaw_residual=" << quality_metrics.yaw_residual
-        << " medium_outlier_streak="
-        << quality_metrics.medium_outlier_streak;
-  }
+  const transform::Rigid2d accepted_pose_2d = *pose_estimate_2d;
   const transform::Rigid3d pose_estimate =
       transform::Embed3D(accepted_pose_2d) * gravity_alignment;
   extrapolator_->AddPose(time, pose_estimate);
   last_pose_estimate_time_ = time;
   last_pose_estimate_2d_ = accepted_pose_2d;
   last_pose_integrated_imu_yaw_ = integrated_imu_yaw_;
+  quality_metrics.was_outlier = IsLocalSlamOutlier(&quality_metrics);
 
   sensor::RangeData range_data_in_local =
       TransformRangeData(gravity_aligned_range_data,

@@ -26,8 +26,6 @@ class RelocalizationScanFaultInjector(Node):
         self.declare_parameter("fault_duration_sec", 8.0)
         self.declare_parameter("mode", "shift")
         self.declare_parameter("shift_fraction", 0.5)
-        self.declare_parameter("occlusion_fraction", 0.35)
-        self.declare_parameter("occlusion_distance", 0.35)
         self.declare_parameter("noise_seed", 17)
 
         input_topic = self.get_parameter("input_topic").value
@@ -37,14 +35,9 @@ class RelocalizationScanFaultInjector(Node):
             self.get_parameter("fault_duration_sec").value)
         self.mode = str(self.get_parameter("mode").value)
         self.shift_fraction = float(self.get_parameter("shift_fraction").value)
-        self.occlusion_fraction = float(
-            self.get_parameter("occlusion_fraction").value)
-        self.occlusion_distance = float(
-            self.get_parameter("occlusion_distance").value)
         self.noise_rng = random.Random(int(self.get_parameter("noise_seed").value))
         self.first_stamp_sec = None
         self.was_faulting = False
-        self.last_clean_scan = None
 
         self.publisher = self.create_publisher(LaserScan, output_topic, 10)
         self.subscription = self.create_subscription(
@@ -69,29 +62,10 @@ class RelocalizationScanFaultInjector(Node):
             self.was_faulting = faulting
 
         if not faulting:
-            self.last_clean_scan = msg
             self.publisher.publish(msg)
             return
 
         if self.mode == "drop":
-            return
-
-        if self.mode == "freeze":
-            if self.last_clean_scan is None:
-                self.publisher.publish(msg)
-                return
-            out = LaserScan()
-            out.header = msg.header
-            out.angle_min = self.last_clean_scan.angle_min
-            out.angle_max = self.last_clean_scan.angle_max
-            out.angle_increment = self.last_clean_scan.angle_increment
-            out.time_increment = self.last_clean_scan.time_increment
-            out.scan_time = self.last_clean_scan.scan_time
-            out.range_min = self.last_clean_scan.range_min
-            out.range_max = self.last_clean_scan.range_max
-            out.ranges = list(self.last_clean_scan.ranges)
-            out.intensities = list(self.last_clean_scan.intensities)
-            self.publisher.publish(out)
             return
 
         out = LaserScan()
@@ -132,18 +106,6 @@ class RelocalizationScanFaultInjector(Node):
             out.ranges = sparse_ranges
             if out.intensities:
                 out.intensities = [0.0] * len(out.intensities)
-        elif self.mode == "front_occlusion":
-            if out.ranges:
-                fraction = min(max(self.occlusion_fraction, 0.0), 1.0)
-                count = max(1, int(len(out.ranges) * fraction))
-                center = len(out.ranges) // 2
-                start = max(0, center - count // 2)
-                end = min(len(out.ranges), start + count)
-                distance = min(
-                    max(self.occlusion_distance, float(out.range_min)),
-                    float(out.range_max))
-                for index in range(start, end):
-                    out.ranges[index] = distance
         else:
             shift = int(len(out.ranges) * self.shift_fraction)
             if out.ranges:

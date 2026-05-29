@@ -55,6 +55,12 @@ class ProbabilityGrid : public Grid2D {
   // Returns the probability of the cell with 'cell_index'.
   float GetProbability(const Eigen::Array2i& cell_index) const;
 
+  // Exposes the compact row-major cell values for accelerated scan matching.
+  const std::vector<uint16>& correspondence_cost_cells_for_scan_matching()
+      const {
+    return correspondence_cost_cells();
+  }
+
   proto::Grid2D ToProto() const override;
   std::unique_ptr<Grid2D> ComputeCroppedGrid() const override;
   bool DrawToSubmapTexture(

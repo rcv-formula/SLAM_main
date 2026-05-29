@@ -1,0 +1,260 @@
+# Current Cartographer wheel-localization parameter snapshot.
+# Captured from the working tree on 2026-05-27 21:43:17 KST.
+#
+# Active runtime files remain:
+# - config_mapping_wheel.yaml
+# - src/SLAM/cartographer_ros/configuration_files/Damvi_localization_config_wheel.lua
+# - src/SLAM/cartographer_ros/launch/Damvi_carto_pure_wheel_launch.py
+
+snapshot:
+  captured_at: "2026-05-27 21:43:17 KST"
+  purpose: "Save current wheel localization parameters before further tuning"
+  launch_file: "src/SLAM/cartographer_ros/launch/Damvi_carto_pure_wheel_launch.py"
+  lua_file: "src/SLAM/cartographer_ros/configuration_files/Damvi_localization_config_wheel.lua"
+  pose_extrapolator_config_file: "config_mapping_wheel.yaml"
+  pbstream_file_default: "src/SLAM/cartographer_ros/pbstream/latest.pbstream"
+  note: "Includes uncommitted Lua threshold changes present at capture time."
+
+launch:
+  arguments:
+    use_sim_time:
+      default: false
+    fusion_extrapolator:
+      default: true
+    pbstream_file:
+      default: "src/SLAM/cartographer_ros/pbstream/latest.pbstream"
+    pose_extrapolator_config:
+      default: "config_mapping_wheel.yaml"
+    wheel_odom_twist_only:
+      default: true
+    wheel_odom_linear_scale:
+      default: 2.6
+    local_quality_metrics_csv_path:
+      default: "/tmp/cartographer_localization_quality_metrics.csv"
+    local_lateral_residual_max:
+      default: 0.03
+    imu_yaw_weight:
+      default: 0.35
+    wheel_odom_yaw_weight:
+      default: 0.0
+    use_initial_pose:
+      default: false
+    initial_pose_x:
+      default: 0.0
+    initial_pose_y:
+      default: 0.0
+    initial_pose_yaw:
+      default: 0.0
+    initial_pose_relative_to_trajectory_id:
+      default: 0
+  environment:
+    FUSION_EXTRPOLATOR: "fusion_extrapolator"
+    WHEEL_ODOM_CONFIG: "pose_extrapolator_config"
+    POSE_EXTRAPOLATOR_CONFIG: "pose_extrapolator_config"
+    WHEEL_ODOM_TWIST_ONLY: "wheel_odom_twist_only"
+    WHEEL_ODOM_LINEAR_SCALE: "wheel_odom_linear_scale"
+    LOCAL_QUALITY_METRICS_CSV_PATH: "local_quality_metrics_csv_path"
+    POSE_GRAPH_CONSTRAINT_METRICS_CSV_PATH: "pose_graph_constraint_metrics_csv_path"
+    CARTOGRAPHER_CLAMP_LOCAL_LATERAL_RESIDUAL: true
+    CARTOGRAPHER_LOCAL_LATERAL_RESIDUAL_MAX: "local_lateral_residual_max"
+    CARTOGRAPHER_IMU_YAW_WEIGHT: "imu_yaw_weight"
+    WHEEL_ODOM_YAW_WEIGHT: "wheel_odom_yaw_weight"
+  cartographer_node:
+    package: "cartographer_ros"
+    executable: "cartographer_node"
+    name: "cartographer_node"
+    output: "screen"
+    arguments:
+      collect_metrics: true
+      configuration_directory: "src/SLAM/cartographer_ros/configuration_files"
+      configuration_basename: "Damvi_localization_config_wheel.lua"
+      load_state_filename: "src/SLAM/cartographer_ros/pbstream/latest.pbstream"
+    remappings:
+      scan: "scan"
+      imu: "imu/data"
+      odom_wheel: "odom_wheel"
+      tf: "tf"
+      tf_static: "tf_static"
+    ros_parameters:
+      use_sim_time: false
+      provide_odom_frame: true
+      use_odometry: true
+      publish_frame_projected_to_2d: true
+  occupancy_grid_node:
+    package: "cartographer_ros"
+    executable: "cartographer_occupancy_grid_node"
+    name: "occupancy_grid_node"
+    output: "screen"
+    parameters:
+      resolution: 0.05
+      use_sim_time: false
+  trajectory_to_odom_node:
+    package: "cartographer_ros"
+    executable: "trajectory_to_odom"
+    name: "trajectory_to_odom_node"
+    output: "screen"
+    parameters:
+      use_sim_time: false
+
+cartographer_lua:
+  includes:
+    - "map_builder.lua"
+    - "trajectory_builder.lua"
+  options:
+    map_frame: "map"
+    tracking_frame: "imu"
+    published_frame: "base_link"
+    odom_frame: "odom"
+    provide_odom_frame: true
+    use_odometry: true
+    use_nav_sat: false
+    use_landmarks: false
+    publish_frame_projected_to_2d: true
+    use_pose_extrapolator: true
+    publish_to_tf: true
+    lookup_transform_timeout_sec: 0.2
+    submap_publish_period_sec: 0.1
+    pose_publish_period_sec: 0.05
+    trajectory_publish_period_sec: 0.1
+    num_laser_scans: 1
+    num_multi_echo_laser_scans: 0
+    num_subdivisions_per_laser_scan: 1
+    num_point_clouds: 0
+    rangefinder_sampling_ratio: 1.0
+    odometry_sampling_ratio: 1.0
+    imu_sampling_ratio: 1.0
+    fixed_frame_pose_sampling_ratio: 1.0
+    landmarks_sampling_ratio: 1.0
+
+  damvi_runtime_options:
+    wheel_odom_twist_only: true
+    wheel_odom_linear_scale: 2.6
+    adaptive_odometry_blend: true
+    adaptive_odometry_full_weight_yaw_rate: 0.05
+    adaptive_odometry_zero_weight_yaw_rate: 0.20
+    adaptive_odometry_min_weight: 0.0
+    adaptive_odometry_max_weight: 1.0
+    adaptive_odometry_mismatch_override: true
+    adaptive_odometry_mismatch_ratio: 0.35
+    adaptive_odometry_min_forward_delta: 0.005
+    adaptive_odometry_mismatch_force_weight: 1.0
+    adaptive_odometry_longitudinal_only: true
+
+  map_builder:
+    use_trajectory_builder_2d: true
+    num_background_threads: 4
+
+  trajectory_builder:
+    pure_localization_trimmer:
+      max_submaps_to_keep: 5
+
+  trajectory_builder_2d:
+    use_imu_data: true
+    log_local_quality_metrics_to_csv: true
+    local_quality_metrics_csv_path: "/tmp/cartographer_localization_quality_metrics.csv"
+    num_accumulated_range_data: 1
+    submaps:
+      grid_options_2d:
+        resolution: 0.05
+      num_range_data: 45
+    use_online_correlative_scan_matching: true
+    skip_submap_insertion_for_outliers: true
+    outlier_max_translation_residual: 0.08
+    outlier_max_rotation_residual: 0.035
+    outlier_required_failures: 1
+    outlier_medium_translation_residual: 0.04
+    outlier_medium_rotation_residual: 0.026
+    outlier_medium_required_consecutive: 2
+    outlier_min_correlative_score: 0.0
+    outlier_min_num_filtered_points: 0
+    real_time_correlative_scan_matcher:
+      linear_search_window: 0.08
+      angular_search_window_deg: 2.8
+      translation_delta_cost_weight: 25.0
+      rotation_delta_cost_weight: 12.0
+    min_range: 0.1
+    max_range: 20.0
+    missing_data_ray_length: 5.0
+    adaptive_voxel_filter:
+      max_length: 5.0
+      min_num_points: 350
+    voxel_filter_size: 0.05
+    ceres_scan_matcher:
+      occupied_space_weight: 20.0
+      translation_weight: 45.0
+      rotation_weight: 30.0
+      longitudinal_translation_weight: 0.0
+      longitudinal_translation_min_speed: 0.05
+      longitudinal_translation_max_yaw_rate: 0.60
+      longitudinal_prior_wheel_delta_scale: 1.0
+    imu_gravity_time_constant: 12.0
+
+  pose_graph:
+    optimize_every_n_nodes: 1
+    global_constraint_search_after_n_seconds: 0.3
+    global_sampling_ratio: 0.02
+    initial_global_sampling_ratio: 0.9
+    initial_global_constraint_search_after_n_seconds: 0.0
+    initial_global_localization_min_score: 0.45
+    relocalization_trigger_sec: 6.0
+    relocalization_recovery_required_successes: 1
+    relocalization_recovery_grace_sec: 2.0
+    constraint_builder:
+      global_localization_min_score: 0.7
+      min_score: 0.6
+      fast_correlative_scan_matcher:
+        linear_search_window: 5.0
+        angular_search_window_deg: 20.0
+        log_score_distribution_to_csv: true
+        min_score_distribution_margin: 0.0
+      max_constraint_distance: 15.0
+      loop_closure_translation_weight: 20000.0
+      loop_closure_rotation_weight: 10000.0
+      sampling_ratio: 0.78
+    optimization_problem:
+      odometry_translation_weight: 30.0
+      odometry_rotation_weight: 0.0
+
+pose_extrapolator_effective_config:
+  imu_weight: 0.2
+  imu_delta_min: 0.3
+  wheelodom_weight: 0.05
+  wheelodom_low_scan_weight: 0.85
+  wheelodom_scan_velocity_min: 0.03
+  wheelodom_mismatch_min_speed: 0.05
+  wheelodom_mismatch_scan_velocity_ratio: 0.35
+  wheelodom_forward_prediction_weight: 1.0
+  wheelodom_use_rotation: 0
+  straight_yaw_speed_threshold: 0.25
+  ceres_occupied_space_weight: 50.0
+  ceres_translation_weight: 20.0
+  ceres_rotation_weight: 20.0
+  longitudinal_translation_weight: 0.0
+  longitudinal_translation_min_speed: 0.05
+  longitudinal_translation_max_yaw_rate: 0.60
+  longitudinal_prior_wheel_delta_scale: 1.0
+  skip_submap_insertion_for_outliers: 1
+  outlier_min_correlative_score: 0.0
+  outlier_max_translation_residual: 0.08
+  outlier_max_rotation_residual: 0.035
+  outlier_min_num_filtered_points: 0
+  outlier_required_failures: 1
+  outlier_medium_translation_residual: 0.04
+  outlier_medium_rotation_residual: 0.026
+  outlier_medium_required_consecutive: 2
+  odometry_translation_weight: 30.0
+  odometry_rotation_weight: 0.0
+
+current_uncommitted_lua_delta:
+  POSE_GRAPH.constraint_builder.global_localization_min_score:
+    from_head: 0.75
+    saved_value: 0.7
+  POSE_GRAPH.constraint_builder.min_score:
+    from_head: 0.87
+    saved_value: 0.6
+  POSE_GRAPH.global_constraint_search_after_n_seconds:
+    from_head: 2.0
+    saved_value: 0.3
+  POSE_GRAPH.relocalization_recovery_grace_sec:
+    from_head: 4.0
+    saved_value: 2.0

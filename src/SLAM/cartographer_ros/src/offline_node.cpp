@@ -169,7 +169,7 @@ void RunOfflineNode(const MapBuilderFactory& map_builder_factory,
   tf_buffer->setUsingDedicatedThread(true);
 
   Node node(node_options, std::move(map_builder), tf_buffer, cartographer_offline_node,
-            FLAGS_collect_metrics);
+            FLAGS_collect_metrics, false);
   if (!FLAGS_load_state_filename.empty()) {
     node.LoadState(FLAGS_load_state_filename, FLAGS_load_frozen_state);
   }

@@ -19,6 +19,7 @@
 #include <chrono>
 #include <cmath>
 #include <cstdlib>
+#include <iomanip>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -79,16 +80,6 @@ bool EnvBool(const char* name, const bool default_value) {
          std::string(value) == "TRUE";
 }
 
-double EnvDouble(const char* name, const double default_value) {
-  const char* value = std::getenv(name);
-  if (value == nullptr) {
-    return default_value;
-  }
-  char* end = nullptr;
-  const double parsed = std::strtod(value, &end);
-  return end != value ? parsed : default_value;
-}
-
 builtin_interfaces::msg::Duration MarkerLifetime() {
   builtin_interfaces::msg::Duration duration;
   duration.sec = static_cast<int32_t>(kDiagnosticMarkerLifetimeSeconds);
@@ -101,6 +92,30 @@ double StampToSeconds(const builtin_interfaces::msg::Time& stamp) {
   return static_cast<double>(stamp.sec) + 1e-9 * stamp.nanosec;
 }
 
+std::string DoubleToCsv(const double value) {
+  std::ostringstream stream;
+  stream << std::fixed << std::setprecision(9) << value;
+  return stream.str();
+}
+
+std::string RosTimeToCsv(const builtin_interfaces::msg::Time& stamp) {
+  return DoubleToCsv(StampToSeconds(stamp));
+}
+
+std::string CartographerTimeToCsv(const carto::common::Time time) {
+  if (time == carto::common::Time::min()) {
+    return "";
+  }
+  return DoubleToCsv(ToRos(time).seconds());
+}
+
+std::string BoolToCsv(const bool value) { return value ? "1" : "0"; }
+
+double YawFromQuaternion(const geometry_msgs::msg::Quaternion& q) {
+  return std::atan2(2. * (q.w * q.z + q.x * q.y),
+                    1. - 2. * (q.y * q.y + q.z * q.z));
+}
+
 // Subscribes to the 'topic' for 'trajectory_id' using the 'node_handle' and
 // calls 'handler' on the 'node' to handle messages. Returns the subscriber.
 template <typename MessageType>
@@ -108,16 +123,12 @@ template <typename MessageType>
     void (Node::*handler)(int, const std::string&,
                           const typename MessageType::ConstSharedPtr&),
     const int trajectory_id, const std::string& topic,
-    ::rclcpp::Node::SharedPtr node_handle, Node* const node,
-    const rclcpp::CallbackGroup::SharedPtr& callback_group) {
-  rclcpp::SubscriptionOptions subscription_options;
-  subscription_options.callback_group = callback_group;
+    ::rclcpp::Node::SharedPtr node_handle, Node* const node) {
   return node_handle->create_subscription<MessageType>(
       topic, rclcpp::SensorDataQoS(),
       [node, handler, trajectory_id, topic](const typename MessageType::ConstSharedPtr msg) {
             (node->*handler)(trajectory_id, topic, msg);
-          },
-      subscription_options);
+          });
 }
 
 std::string TrajectoryStateToString(const TrajectoryState trajectory_state) {
@@ -141,17 +152,52 @@ Node::Node(
     std::unique_ptr<cartographer::mapping::MapBuilderInterface> map_builder,
     std::shared_ptr<tf2_ros::Buffer> tf_buffer,
     rclcpp::Node::SharedPtr node,
-    const bool collect_metrics)
-    : node_options_(node_options)
+    const bool collect_metrics,
+    const bool publish_odom)
+    : node_options_(node_options),
+      publish_odom_(publish_odom)
 {
   node_ = node;
-  sensor_callback_group_ = node_->create_callback_group(
-      rclcpp::CallbackGroupType::MutuallyExclusive);
-  timer_callback_group_ = node_->create_callback_group(
-      rclcpp::CallbackGroupType::MutuallyExclusive);
   tf_broadcaster_ = std::make_shared<tf2_ros::TransformBroadcaster>(node_) ;
   stamped_transforms_.reserve(2);
   map_builder_bridge_.reset(new cartographer_ros::MapBuilderBridge(node_options_, std::move(map_builder), tf_buffer.get()));
+  const char* odom_provenance_csv_path =
+      std::getenv("CARTOGRAPHER_ODOM_PROVENANCE_CSV_PATH");
+  if (odom_provenance_csv_path != nullptr &&
+      std::string(odom_provenance_csv_path) != "") {
+    odom_provenance_csv_.open(odom_provenance_csv_path);
+    if (odom_provenance_csv_.is_open()) {
+      odom_provenance_csv_
+          << "wall_time_sec,trajectory_id,publish_target_time,"
+          << "local_slam_reference_time,imu_integration_start_time,"
+          << "latest_imu_time,has_imu_data,reference_odom_request_time,"
+          << "reference_odom_before_time,reference_odom_after_time,"
+          << "reference_odom_latest_time,reference_odom_extrapolated,"
+          << "reference_odom_clamped_to_earliest,current_odom_request_time,"
+          << "current_odom_before_time,current_odom_after_time,"
+          << "current_odom_latest_time,current_odom_extrapolated,"
+          << "current_odom_clamped_to_earliest,tracked_pose_stamp,"
+          << "tracked_pose_x,tracked_pose_y,tracked_pose_yaw,"
+          << "adaptive_odometry_weight\n";
+    } else {
+      LOG(WARNING) << "Could not open CARTOGRAPHER_ODOM_PROVENANCE_CSV_PATH: "
+                   << odom_provenance_csv_path;
+    }
+  }
+  const char* odom_output_trace_csv_path =
+      std::getenv("CARTOGRAPHER_ODOM_OUTPUT_TRACE_CSV_PATH");
+  if (publish_odom_ && odom_output_trace_csv_path != nullptr &&
+      std::string(odom_output_trace_csv_path) != "") {
+    odom_output_trace_csv_.open(odom_output_trace_csv_path);
+    if (odom_output_trace_csv_.is_open()) {
+      odom_output_trace_csv_
+          << "now_sec,tracked_pose_stamp,odom_stamp,"
+          << "stamp_delta_sec,x,y,yaw,use_sim_time\n";
+    } else {
+      LOG(WARNING) << "Could not open CARTOGRAPHER_ODOM_OUTPUT_TRACE_CSV_PATH: "
+                   << odom_output_trace_csv_path;
+    }
+  }
 
   absl::MutexLock lock(&mutex_);
   if (collect_metrics) {
@@ -176,6 +222,10 @@ Node::Node(
         node_->create_publisher<::geometry_msgs::msg::PoseStamped>(
             kTrackedPoseTopic, 10);
   }
+  if (publish_odom_) {
+    odom_publisher_ =
+        node_->create_publisher<::nav_msgs::msg::Odometry>("/odom", 20);
+  }
 
   scan_matched_point_cloud_publisher_ =
       node_->create_publisher<sensor_msgs::msg::PointCloud2>(
@@ -195,13 +245,6 @@ Node::Node(
       [this](carto::mapping::PoseGraphInterface::LocalizationStatus status) {
         OnLocalizationStatusChanged(status);
       });
-
-  auto_restart_on_localization_lost_ = EnvBool(
-      "CARTOGRAPHER_RESTART_ON_LOCALIZATION_LOST", false);
-  auto_restart_lost_after_sec_ = EnvDouble(
-      "CARTOGRAPHER_RESTART_LOST_AFTER_SEC", 3.);
-  auto_restart_cooldown_sec_ = EnvDouble(
-      "CARTOGRAPHER_RESTART_COOLDOWN_SEC", 8.);
 
   submap_query_server_ = node_->create_service<cartographer_ros_msgs::srv::SubmapQuery>(
       kSubmapQueryServiceName,
@@ -237,42 +280,29 @@ Node::Node(
     std::chrono::milliseconds(int(node_options_.submap_publish_period_sec * 1000)),
     [this]() {
       PublishSubmapList();
-    },
-    timer_callback_group_);
+    });
   if (node_options_.pose_publish_period_sec > 0) {
     local_trajectory_data_timer_ = node_->create_wall_timer(
       std::chrono::milliseconds(int(node_options_.pose_publish_period_sec * 1000)),
       [this]() {
         PublishLocalTrajectoryData();
-      },
-      timer_callback_group_);
+      });
   }
   trajectory_node_list_timer_ = node_->create_wall_timer(
     std::chrono::milliseconds(int(node_options_.trajectory_publish_period_sec * 1000)),
     [this]() {
       PublishTrajectoryNodeList();
-    },
-    timer_callback_group_);
+    });
   landmark_pose_list_timer_ = node_->create_wall_timer(
     std::chrono::milliseconds(int(node_options_.trajectory_publish_period_sec * 1000)),
     [this]() {
       PublishLandmarkPosesList();
-    },
-    timer_callback_group_);
+    });
   constrain_list_timer_ = node_->create_wall_timer(
     std::chrono::milliseconds(int(kConstraintPublishPeriodSec * 1000)),
     [this]() {
       PublishConstraintList();
-    },
-    timer_callback_group_);
-  if (auto_restart_on_localization_lost_) {
-    localization_restart_timer_ = node_->create_wall_timer(
-        std::chrono::milliseconds(250),
-        [this]() {
-          MaybeRestartLocalization();
-        },
-        timer_callback_group_);
-  }
+    });
 }
 
 Node::~Node() { FinishAllTrajectories(); }
@@ -325,6 +355,8 @@ void Node::AddExtrapolator(const int trajectory_id,
       std::forward_as_tuple(
           ::cartographer::common::FromSeconds(kExtrapolationEstimationTimeSec),
           gravity_time_constant));
+  extrapolators_.at(trajectory_id)
+      .SetExtrapolationDebugEnabled(odom_provenance_csv_.is_open());
 }
 
 void Node::AddSensorSamplers(const int trajectory_id,
@@ -384,10 +416,8 @@ void Node::PublishLocalTrajectoryData() {
     // published poses to advance. If we already know a newer pose, we use its
     // time instead. Since tf knows how to interpolate, providing newer
     // information is better.
-    const ::cartographer::common::Time now =
-        std::max(std::max(FromRos(node_->now()),
-                          extrapolator.GetLastExtrapolatedTime()),
-                 extrapolator.GetLastPoseTime());
+    const ::cartographer::common::Time now = std::max(
+        FromRos(node_->now()), extrapolator.GetLastExtrapolatedTime());
     stamped_transform.header.stamp =
         node_options_.use_pose_extrapolator
             ? ToRos(now)
@@ -446,21 +476,87 @@ void Node::PublishLocalTrajectoryData() {
           tf_broadcaster_->sendTransform(stamped_transform);
         }
       }
-      if (node_options_.publish_tracked_pose) {
-        ::geometry_msgs::msg::PoseStamped pose_msg;
-        pose_msg.header.frame_id = node_options_.map_frame;
-        pose_msg.header.stamp = stamped_transform.header.stamp;
-        pose_msg.pose = ToGeometryMsgPose(tracking_to_map);
-        tracked_pose_publisher_->publish(pose_msg);
+      if (node_options_.publish_tracked_pose || publish_odom_) {
+        const auto tracking_pose = ToGeometryMsgPose(tracking_to_map);
+        if (node_options_.publish_tracked_pose) {
+          ::geometry_msgs::msg::PoseStamped pose_msg;
+          pose_msg.header.frame_id = node_options_.map_frame;
+          pose_msg.header.stamp = stamped_transform.header.stamp;
+          pose_msg.pose = tracking_pose;
+          tracked_pose_publisher_->publish(pose_msg);
+          if (odom_provenance_csv_.is_open()) {
+            const auto& debug = extrapolator.GetLastExtrapolationDebugInfo();
+            odom_provenance_csv_
+                << DoubleToCsv(node_->now().seconds()) << ','
+                << entry.first << ','
+                << CartographerTimeToCsv(debug.target_time) << ','
+                << CartographerTimeToCsv(trajectory_data.local_slam_data->time)
+                << ','
+                << CartographerTimeToCsv(debug.imu_integration_start_time)
+                << ',' << CartographerTimeToCsv(debug.latest_imu_time) << ','
+                << BoolToCsv(debug.has_imu_data) << ','
+                << CartographerTimeToCsv(debug.reference_odom.requested_time)
+                << ','
+                << CartographerTimeToCsv(debug.reference_odom.before_time) << ','
+                << CartographerTimeToCsv(debug.reference_odom.after_time) << ','
+                << CartographerTimeToCsv(debug.reference_odom.latest_time)
+                << ','
+                << BoolToCsv(debug.reference_odom.extrapolated_from_latest)
+                << ','
+                << BoolToCsv(debug.reference_odom.clamped_to_earliest) << ','
+                << CartographerTimeToCsv(debug.current_odom.requested_time)
+                << ','
+                << CartographerTimeToCsv(debug.current_odom.before_time) << ','
+                << CartographerTimeToCsv(debug.current_odom.after_time) << ','
+                << CartographerTimeToCsv(debug.current_odom.latest_time) << ','
+                << BoolToCsv(debug.current_odom.extrapolated_from_latest)
+                << ','
+                << BoolToCsv(debug.current_odom.clamped_to_earliest) << ','
+                << RosTimeToCsv(pose_msg.header.stamp) << ','
+                << DoubleToCsv(pose_msg.pose.position.x) << ','
+                << DoubleToCsv(pose_msg.pose.position.y) << ','
+                << DoubleToCsv(YawFromQuaternion(pose_msg.pose.orientation))
+                << ',' << DoubleToCsv(debug.adaptive_odometry_weight) << '\n';
+          }
+        }
+        if (publish_odom_) {
+          auto published_pose = ToGeometryMsgPose(
+              tracking_to_map * (*trajectory_data.published_to_tracking));
+          nav_msgs::msg::Odometry odom_msg;
+          odom_msg.header.frame_id = node_options_.map_frame;
+          odom_msg.header.stamp = stamped_transform.header.stamp;
+          odom_msg.child_frame_id =
+              trajectory_data.trajectory_options.published_frame;
+          odom_msg.pose.pose = published_pose;
+          odom_msg.pose.pose.position.z = 0.;
+          odom_publisher_->publish(odom_msg);
+          if (odom_output_trace_csv_.is_open()) {
+            odom_output_trace_csv_
+                << DoubleToCsv(node_->now().seconds()) << ','
+                << RosTimeToCsv(stamped_transform.header.stamp) << ','
+                << RosTimeToCsv(odom_msg.header.stamp) << ','
+                << DoubleToCsv(StampToSeconds(odom_msg.header.stamp) -
+                               StampToSeconds(stamped_transform.header.stamp))
+                << ','
+                << DoubleToCsv(odom_msg.pose.pose.position.x) << ','
+                << DoubleToCsv(odom_msg.pose.pose.position.y) << ','
+                << DoubleToCsv(YawFromQuaternion(odom_msg.pose.pose.orientation))
+                << ',' << BoolToCsv(node_->get_clock()->get_clock_type() ==
+                                     RCL_ROS_TIME)
+                << '\n';
+          }
+        }
       }
-      MaybePublishMotionMismatchMarker(entry.first, stamped_transform.header.stamp,
-                                       tracking_to_map);
-      MaybePublishDeltaMismatchMarker(
-          entry.first, stamped_transform.header.stamp, tracking_to_map,
-          trajectory_data.local_slam_data->debug_data);
-      MaybePublishFrontWeakMarker(
-          entry.first, stamped_transform.header.stamp, tracking_to_map,
-          trajectory_data.local_slam_data->debug_data);
+      if (motion_mismatch_marker_publisher_->get_subscription_count() > 0) {
+        MaybePublishMotionMismatchMarker(
+            entry.first, stamped_transform.header.stamp, tracking_to_map);
+        MaybePublishDeltaMismatchMarker(
+            entry.first, stamped_transform.header.stamp, tracking_to_map,
+            trajectory_data.local_slam_data->debug_data);
+        MaybePublishFrontWeakMarker(
+            entry.first, stamped_transform.header.stamp, tracking_to_map,
+            trajectory_data.local_slam_data->debug_data);
+      }
     }
   }
 }
@@ -773,8 +869,7 @@ int Node::AddTrajectory(const TrajectoryOptions& options) {
     std::chrono::milliseconds(int(kTopicMismatchCheckDelaySec * 1000)),
     [this]() {
       MaybeWarnAboutTopicMismatch();
-    },
-    timer_callback_group_);
+    });
   for (const auto& sensor_id : expected_sensor_ids) {
     subscribed_topics_.insert(sensor_id.id);
   }
@@ -787,24 +882,21 @@ void Node::LaunchSubscribers(const TrajectoryOptions& options,
        ComputeRepeatedTopicNames(kLaserScanTopic, options.num_laser_scans)) {
     subscribers_[trajectory_id].push_back(
         {SubscribeWithHandler<sensor_msgs::msg::LaserScan>(
-             &Node::HandleLaserScanMessage, trajectory_id, topic, node_, this,
-             sensor_callback_group_),
+             &Node::HandleLaserScanMessage, trajectory_id, topic, node_, this),
          topic});
   }
   for (const std::string& topic : ComputeRepeatedTopicNames(
            kMultiEchoLaserScanTopic, options.num_multi_echo_laser_scans)) {
     subscribers_[trajectory_id].push_back(
         {SubscribeWithHandler<sensor_msgs::msg::MultiEchoLaserScan>(
-             &Node::HandleMultiEchoLaserScanMessage, trajectory_id, topic, node_,
-             this, sensor_callback_group_),
+             &Node::HandleMultiEchoLaserScanMessage, trajectory_id, topic, node_, this),
          topic});
   }
   for (const std::string& topic :
        ComputeRepeatedTopicNames(kPointCloud2Topic, options.num_point_clouds)) {
     subscribers_[trajectory_id].push_back(
         {SubscribeWithHandler<sensor_msgs::msg::PointCloud2>(
-             &Node::HandlePointCloud2Message, trajectory_id, topic, node_, this,
-             sensor_callback_group_),
+             &Node::HandlePointCloud2Message, trajectory_id, topic, node_, this),
          topic});
   }
 
@@ -816,37 +908,36 @@ void Node::LaunchSubscribers(const TrajectoryOptions& options,
            .use_imu_data())) {
     subscribers_[trajectory_id].push_back(
         {SubscribeWithHandler<sensor_msgs::msg::Imu>(&Node::HandleImuMessage,
-                                                     trajectory_id, kImuTopic,
-                                                     node_, this,
-                                                     sensor_callback_group_),
+                                                trajectory_id, kImuTopic,
+                                                node_, this),
          kImuTopic});
   }
 
   if (options.use_odometry) {
     subscribers_[trajectory_id].push_back(
-        {SubscribeWithHandler<nav_msgs::msg::Odometry>(
-             &Node::HandleOdometryMessage, trajectory_id, kOdometryTopic, node_,
-             this, sensor_callback_group_),
+        {SubscribeWithHandler<nav_msgs::msg::Odometry>(&Node::HandleOdometryMessage,
+                                                  trajectory_id, kOdometryTopic,
+                                                  node_, this),
          kOdometryTopic});
   }
   if (options.use_nav_sat) {
     subscribers_[trajectory_id].push_back(
         {SubscribeWithHandler<sensor_msgs::msg::NavSatFix>(
              &Node::HandleNavSatFixMessage, trajectory_id, kNavSatFixTopic,
-             node_, this, sensor_callback_group_),
+             node_, this),
          kNavSatFixTopic});
   }
   if (options.use_landmarks) {
     subscribers_[trajectory_id].push_back(
         {SubscribeWithHandler<cartographer_ros_msgs::msg::LandmarkList>(
              &Node::HandleLandmarkMessage, trajectory_id, kLandmarkTopic,
-             node_, this, sensor_callback_group_),
+             node_, this),
          kLandmarkTopic});
   }
   subscribers_[trajectory_id].push_back(
       {SubscribeWithHandler<ackermann_msgs::msg::AckermannDriveStamped>(
            &Node::HandleCommandMessage, trajectory_id, "ackermann_cmd",
-           node_, this, sensor_callback_group_),
+           node_, this),
        "ackermann_cmd"});
 }
 
@@ -991,8 +1082,7 @@ bool Node::handleStartTrajectory(
 void Node::StartTrajectoryWithDefaultTopics(const TrajectoryOptions& options) {
   absl::MutexLock lock(&mutex_);
   CHECK(ValidateTrajectoryOptions(options));
-  default_trajectory_options_ = absl::make_unique<TrajectoryOptions>(options);
-  active_default_trajectory_id_ = AddTrajectory(options);
+  AddTrajectory(options);
 }
 
 std::vector<
@@ -1289,81 +1379,9 @@ void Node::OnLocalizationStatusChanged(
   const bool lost =
       (status == carto::mapping::PoseGraphInterface::LocalizationStatus::kLost);
   LOG(WARNING) << "Localization status: " << (lost ? "LOST" : "GOOD");
-  {
-    std::lock_guard<std::mutex> lock(localization_restart_mutex_);
-    localization_currently_lost_ = lost;
-    if (lost) {
-      localization_lost_since_ = node_->now();
-    } else {
-      localization_has_been_good_ = true;
-      localization_lost_since_ = rclcpp::Time(0, 0, node_->get_clock()->get_clock_type());
-    }
-  }
   std_msgs::msg::Bool msg;
   msg.data = lost;
   localization_status_publisher_->publish(msg);
-}
-
-void Node::MaybeRestartLocalization() {
-  if (!auto_restart_on_localization_lost_) {
-    return;
-  }
-
-  const rclcpp::Time now = node_->now();
-  double lost_elapsed_sec = 0.;
-  {
-    std::lock_guard<std::mutex> lock(localization_restart_mutex_);
-    if (!localization_currently_lost_ || !localization_has_been_good_) {
-      return;
-    }
-    if (localization_lost_since_.nanoseconds() == 0) {
-      localization_lost_since_ = now;
-      return;
-    }
-    lost_elapsed_sec = (now - localization_lost_since_).seconds();
-    if (lost_elapsed_sec < auto_restart_lost_after_sec_) {
-      return;
-    }
-    if (last_localization_restart_time_.nanoseconds() != 0 &&
-        (now - last_localization_restart_time_).seconds() <
-            auto_restart_cooldown_sec_) {
-      return;
-    }
-  }
-
-  absl::MutexLock lock(&mutex_);
-  if (default_trajectory_options_ == nullptr) {
-    return;
-  }
-
-  LOG(WARNING) << "Localization stayed LOST for " << lost_elapsed_sec
-               << "s. Finishing active localization trajectory and starting "
-               << "a fresh trajectory.";
-
-  const auto trajectory_states = map_builder_bridge_->GetTrajectoryStates();
-  for (const auto& entry : trajectory_states) {
-    if (entry.second == TrajectoryState::ACTIVE) {
-      const auto status_response = FinishTrajectoryUnderLock(entry.first);
-      if (status_response.code !=
-          cartographer_ros_msgs::msg::StatusCode::OK) {
-        LOG(ERROR) << "Failed to finish trajectory " << entry.first
-                   << " during localization restart: "
-                   << status_response.message;
-      }
-    }
-  }
-
-  TrajectoryOptions restart_options = *default_trajectory_options_;
-  restart_options.trajectory_builder_options.clear_initial_trajectory_pose();
-  active_default_trajectory_id_ = AddTrajectory(restart_options);
-  {
-    std::lock_guard<std::mutex> lock(localization_restart_mutex_);
-    localization_lost_since_ = now;
-    last_localization_restart_time_ = now;
-  }
-  LOG(WARNING) << "Started fresh localization trajectory "
-               << active_default_trajectory_id_
-               << " without an explicit initial pose.";
 }
 
 }  // namespace cartographer_ros

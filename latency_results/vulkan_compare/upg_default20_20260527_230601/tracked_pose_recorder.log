@@ -1,0 +1,36 @@
+[WARN] [1779890761.644727457] [rcl]: ROS_LOCALHOST_ONLY is deprecated but still honored if it is enabled. Use ROS_AUTOMATIC_DISCOVERY_RANGE and ROS_STATIC_PEERS instead.
+[WARN] [1779890761.644761522] [rcl]: 'localhost_only' is enabled, 'automatic_discovery_range' and 'static_peers' will be ignored.
+{
+  "duration_stamp": 19.174896717071533,
+  "final_pose": {
+    "elapsed_wall": 20.020205609000186,
+    "frame_id": "map",
+    "qw": 0.9893353208771577,
+    "qx": 0.0,
+    "qy": 0.0,
+    "qz": -0.14565583704366775,
+    "stamp": 1779099305.70048,
+    "x": 4.751132945576932,
+    "y": -6.564988207664008,
+    "yaw": -0.29235169387694004,
+    "z": 0.0
+  },
+  "first_pose": {
+    "elapsed_wall": 0.8461020020001797,
+    "frame_id": "map",
+    "qw": 0.9999999957899369,
+    "qx": 0.0,
+    "qy": 0.0,
+    "qz": -9.17612462268495e-05,
+    "stamp": 1779099286.5255833,
+    "x": 5.4509737311416295e-06,
+    "y": 6.361353890418116e-06,
+    "yaw": -0.0001835224927112461,
+    "z": 0.0
+  },
+  "first_stamp": 1779099286.5255833,
+  "last_stamp": 1779099305.70048,
+  "path_length": 14.934425672334768,
+  "samples": 609,
+  "topic": "/tracked_pose"
+}

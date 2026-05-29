@@ -62,12 +62,6 @@ class ConstraintBuilder2D {
   using Constraint = PoseGraphInterface::Constraint;
   using Result = std::vector<Constraint>;
 
-  enum class GlobalConstraintSearchMode {
-    kInitial,
-    kTracking,
-    kRecovery,
-  };
-
   ConstraintBuilder2D(const proto::ConstraintBuilderOptions& options,
                       common::ThreadPoolInterface* thread_pool);
   ~ConstraintBuilder2D();
@@ -95,9 +89,7 @@ class ConstraintBuilder2D {
   void MaybeAddGlobalConstraint(
       const SubmapId& submap_id, const Submap2D* submap, const NodeId& node_id,
       const TrajectoryNode::Data* const constant_data,
-      double global_localization_min_score,
-      const transform::Rigid2d& initial_relative_pose,
-      GlobalConstraintSearchMode global_constraint_search_mode);
+      double global_localization_min_score);
 
   // Must be called after all computations related to one node have been added.
   void NotifyEndOfNode();
@@ -137,7 +129,6 @@ class ConstraintBuilder2D {
                          const TrajectoryNode::Data* const constant_data,
                          double global_localization_min_score,
                          const transform::Rigid2d& initial_relative_pose,
-                         GlobalConstraintSearchMode global_constraint_search_mode,
                          const SubmapScanMatcher& submap_scan_matcher,
                          std::unique_ptr<Constraint>* constraint)
       LOCKS_EXCLUDED(mutex_);

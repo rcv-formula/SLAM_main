@@ -80,19 +80,6 @@ double EnvDouble(const char* name, const double default_value) {
   return end == value ? default_value : parsed;
 }
 
-const char* GlobalConstraintModeName(
-    const ConstraintBuilder2D::GlobalConstraintSearchMode mode) {
-  switch (mode) {
-    case ConstraintBuilder2D::GlobalConstraintSearchMode::kInitial:
-      return "initial";
-    case ConstraintBuilder2D::GlobalConstraintSearchMode::kTracking:
-      return "tracking";
-    case ConstraintBuilder2D::GlobalConstraintSearchMode::kRecovery:
-      return "recovery";
-  }
-  return "unknown";
-}
-
 std::mutex* GetConstraintMetricsCsvMutex() {
   static auto* const mutex = new std::mutex;
   return mutex;
@@ -226,9 +213,7 @@ void ConstraintBuilder2D::MaybeAddConstraint(
     ComputeConstraint(submap_id, submap, node_id, false, /* match_full_submap */
                       constant_data,
                       options_.global_localization_min_score(),
-                      initial_relative_pose,
-                      GlobalConstraintSearchMode::kTracking, *scan_matcher,
-                      constraint);
+                      initial_relative_pose, *scan_matcher, constraint);
   });
   constraint_task->AddDependency(scan_matcher->creation_task_handle);
   auto constraint_task_handle =
@@ -239,9 +224,7 @@ void ConstraintBuilder2D::MaybeAddConstraint(
 void ConstraintBuilder2D::MaybeAddGlobalConstraint(
     const SubmapId& submap_id, const Submap2D* const submap,
     const NodeId& node_id, const TrajectoryNode::Data* const constant_data,
-    const double global_localization_min_score,
-    const transform::Rigid2d& initial_relative_pose,
-    const GlobalConstraintSearchMode global_constraint_search_mode) {
+    const double global_localization_min_score) {
   absl::MutexLock locker(&mutex_);
   if (when_done_) {
     LOG(WARNING)
@@ -256,8 +239,8 @@ void ConstraintBuilder2D::MaybeAddGlobalConstraint(
   constraint_task->SetWorkItem([=]() LOCKS_EXCLUDED(mutex_) {
     ComputeConstraint(submap_id, submap, node_id, true, /* match_full_submap */
                       constant_data, global_localization_min_score,
-                      initial_relative_pose, global_constraint_search_mode,
-                      *scan_matcher, constraint);
+                      transform::Rigid2d::Identity(), *scan_matcher,
+                      constraint);
   });
   constraint_task->AddDependency(scan_matcher->creation_task_handle);
   auto constraint_task_handle =
@@ -320,7 +303,6 @@ void ConstraintBuilder2D::ComputeConstraint(
     const TrajectoryNode::Data* const constant_data,
     const double global_localization_min_score,
     const transform::Rigid2d& initial_relative_pose,
-    const GlobalConstraintSearchMode global_constraint_search_mode,
     const SubmapScanMatcher& submap_scan_matcher,
     std::unique_ptr<ConstraintBuilder2D::Constraint>* constraint) {
   CHECK(submap_scan_matcher.fast_correlative_scan_matcher);
@@ -405,127 +387,18 @@ void ConstraintBuilder2D::ComputeConstraint(
       score_summary.candidate_count >= 2
           ? score_summary.top1_score - score_summary.top2_score
           : std::numeric_limits<double>::infinity();
-  bool bounded_global_candidate = false;
-  const bool is_tracking_global =
-      global_constraint_search_mode ==
-      GlobalConstraintSearchMode::kTracking;
-  const bool is_initial_global =
-      global_constraint_search_mode == GlobalConstraintSearchMode::kInitial;
-  const bool is_recovery_global =
-      global_constraint_search_mode ==
-      GlobalConstraintSearchMode::kRecovery;
-  const bool apply_ambiguous_guards =
-      (is_tracking_global &&
-       EnvBool("POSE_GRAPH_AMBIGUOUS_APPLY_TO_TRACKING", false)) ||
-      (is_initial_global &&
-       EnvBool("POSE_GRAPH_AMBIGUOUS_APPLY_TO_INITIAL", true)) ||
-      (is_recovery_global &&
-       EnvBool("POSE_GRAPH_AMBIGUOUS_APPLY_TO_RECOVERY", true));
-  double max_translation = 0.;
-  double max_yaw = 0.;
-  if (match_full_submap && is_tracking_global &&
-      EnvBool("POSE_GRAPH_BOUND_TRACKING_GLOBAL_TO_PRIOR", false) &&
-      global_localization_min_score >=
-          EnvDouble("POSE_GRAPH_TRACKING_PRIOR_MIN_SCORE", 0.70)) {
-    bounded_global_candidate = true;
-    max_translation =
-        EnvDouble("POSE_GRAPH_TRACKING_MAX_TRANSLATION_CORRECTION", 0.50);
-    max_yaw = EnvDouble("POSE_GRAPH_TRACKING_MAX_YAW_CORRECTION", 0.30);
-  } else if (match_full_submap && is_recovery_global &&
-             EnvBool("POSE_GRAPH_BOUND_RELOCALIZATION_TO_PRIOR", false) &&
-             global_localization_min_score >=
-                 EnvDouble("POSE_GRAPH_RELOCALIZATION_PRIOR_MIN_SCORE",
-                           0.70)) {
-    bounded_global_candidate = true;
-    max_translation =
-        EnvDouble("POSE_GRAPH_RELOCALIZATION_MAX_TRANSLATION_CORRECTION", 1.5);
-    max_yaw = EnvDouble("POSE_GRAPH_RELOCALIZATION_MAX_YAW_CORRECTION", 0.80);
-  }
-  if (bounded_global_candidate) {
-    const double correction_yaw = std::abs(initial_to_final.normalized_angle());
-    if (initial_to_final.translation().norm() > max_translation ||
-        correction_yaw > max_yaw) {
-      const std::string status =
-          std::string(GlobalConstraintModeName(global_constraint_search_mode)) +
-          "_prior_gate_rejected";
-      MaybeWriteConstraintMetricsCsv(
-          status.c_str(), match_full_submap, submap_id, node_id,
-          constant_data, score, global_localization_min_score, initial_pose,
-          fast_pose_estimate, pose_estimate, constraint_transform, 0., 0., 0.,
-          score_summary, false);
-      return;
-    }
-  }
-  // Normal tracking may need ambiguous-looking global constraints to correct
-  // small drift, so a candidate inside its prior gate is protected from the
-  // experimental ambiguity filters below.
-  const bool protected_by_prior_gate = bounded_global_candidate;
-  const double ambiguous_min_translation =
-      is_initial_global
-          ? EnvDouble("POSE_GRAPH_INITIAL_AMBIGUOUS_MIN_TRANSLATION", 5.0)
-          : EnvDouble("POSE_GRAPH_AMBIGUOUS_CONSTRAINT_MIN_TRANSLATION",
-                      0.30);
-  const bool initial_full_submap_ambiguity_allowed =
-      is_initial_global &&
-      initial_to_final.translation().norm() <=
-          EnvDouble("POSE_GRAPH_INITIAL_AMBIGUOUS_FULL_SUBMAP_MIN_TRANSLATION",
-                    5.0);
   const bool ambiguous_large_constraint =
-      match_full_submap &&
-      apply_ambiguous_guards &&
-      !protected_by_prior_gate &&
       EnvBool("POSE_GRAPH_AMBIGUOUS_CONSTRAINT_DOWNWEIGHT", false) &&
-      global_localization_min_score >=
-          EnvDouble("POSE_GRAPH_AMBIGUOUS_CONSTRAINT_REJECT_MIN_SCORE",
-                    0.70) &&
-      initial_to_final.translation().norm() > ambiguous_min_translation &&
+      initial_to_final.translation().norm() >
+          EnvDouble("POSE_GRAPH_AMBIGUOUS_CONSTRAINT_MIN_TRANSLATION", 0.30) &&
       top1_top2_margin <
           EnvDouble("POSE_GRAPH_AMBIGUOUS_CONSTRAINT_MAX_SCORE_MARGIN",
                     0.001) &&
       score_summary.near_top_count_0p02 >=
           EnvDouble("POSE_GRAPH_AMBIGUOUS_CONSTRAINT_MIN_NEAR_TOP_COUNT", 20.);
-  const bool ambiguous_full_submap_constraint =
-      match_full_submap &&
-      apply_ambiguous_guards &&
-      !protected_by_prior_gate &&
-      !initial_full_submap_ambiguity_allowed &&
-      EnvBool("POSE_GRAPH_REJECT_AMBIGUOUS_FULL_SUBMAP", false) &&
-      global_localization_min_score >=
-          EnvDouble("POSE_GRAPH_AMBIGUOUS_FULL_SUBMAP_REJECT_MIN_SCORE",
-                    0.70) &&
-      top1_top2_margin <
-          EnvDouble("POSE_GRAPH_AMBIGUOUS_FULL_SUBMAP_MAX_SCORE_MARGIN",
-                    0.001) &&
-      score_summary.near_top_count_0p02 >=
-          EnvDouble("POSE_GRAPH_AMBIGUOUS_FULL_SUBMAP_MIN_NEAR_TOP_COUNT",
-                    80.);
-  if (ambiguous_full_submap_constraint) {
-    MaybeWriteConstraintMetricsCsv(
-        "ambiguous_full_rejected", match_full_submap, submap_id, node_id,
-        constant_data, score, global_localization_min_score, initial_pose,
-        fast_pose_estimate, pose_estimate, constraint_transform, 0., 0., 0.,
-        score_summary, true);
-    return;
-  }
   if (ambiguous_large_constraint) {
-    if (EnvBool("POSE_GRAPH_AMBIGUOUS_CONSTRAINT_REJECT", false) &&
-        match_full_submap &&
-        global_localization_min_score >=
-            EnvDouble("POSE_GRAPH_AMBIGUOUS_CONSTRAINT_REJECT_MIN_SCORE",
-                      0.70)) {
-      MaybeWriteConstraintMetricsCsv(
-          "ambiguous_rejected", match_full_submap, submap_id, node_id,
-          constant_data, score, global_localization_min_score, initial_pose,
-          fast_pose_estimate, pose_estimate, constraint_transform, 0., 0., 0.,
-          score_summary, true);
-      return;
-    }
     weight_scale *=
         EnvDouble("POSE_GRAPH_AMBIGUOUS_CONSTRAINT_WEIGHT_SCALE", 0.2);
-  }
-  if (match_full_submap && is_recovery_global) {
-    weight_scale *= EnvDouble("POSE_GRAPH_RECOVERY_CONSTRAINT_WEIGHT_SCALE",
-                              0.25);
   }
   constraint->reset(new Constraint{submap_id,
                                    node_id,

@@ -1,0 +1,4 @@
+[WARN] [1779888398.699661384] [cartographer logger]: W20260527 22:26:38.-2147483648 452756 node.cpp:1245] Localization status: LOST
+[INFO] [1779888404.886023451] [rclcpp]: signal_handler(SIGINT/SIGTERM)
+[KOptimizing: Done.     
+[KOptimizing: Done.     

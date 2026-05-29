@@ -1,0 +1,13 @@
+[WARN] [1779892306.763557768] [rcl]: ROS_LOCALHOST_ONLY is deprecated but still honored if it is enabled. Use ROS_AUTOMATIC_DISCOVERY_RANGE and ROS_STATIC_PEERS instead.
+[WARN] [1779892306.763590144] [rcl]: 'localhost_only' is enabled, 'automatic_discovery_range' and 'static_peers' will be ignored.
+stdin is not a terminal device. Keyboard handling disabled.[INFO] [1779892306.861156040] [rosbag2_storage]: Opened database '/home/rcv/SLAM_main-SLAM_IMU_WHEEL_tun_upg/0518_2_humble/latest_0.db3' for READ_ONLY.
+[INFO] [1779892306.861283819] [rosbag2_player]: Set rate to 1
+[INFO] [1779892306.865953876] [rosbag2_player]: Overriding QoS profile for topic /tf_static
+[INFO] [1779892306.869064606] [rosbag2_player]: Adding keyboard callbacks.
+[INFO] [1779892306.869084312] [rosbag2_player]: Press SPACE for Pause/Resume
+[INFO] [1779892306.869088282] [rosbag2_player]: Press CURSOR_RIGHT for Play Next Message
+[INFO] [1779892306.869091481] [rosbag2_player]: Press CURSOR_UP for Increase Rate 10%
+[INFO] [1779892306.869094231] [rosbag2_player]: Press CURSOR_DOWN for Decrease Rate 10%
+[INFO] [1779892306.870377524] [rosbag2_player]: Playback until timestamp: -1
+[WARN] [1779892307.215088710] [rosbag2_player]: New subscription discovered on topic '/clock', requesting incompatible QoS. No messages will be sent to it. Last incompatible policy: RELIABILITY_QOS_POLICY
+[INFO] [1779892325.189755839] [rosbag2_player]: Stopping playback.

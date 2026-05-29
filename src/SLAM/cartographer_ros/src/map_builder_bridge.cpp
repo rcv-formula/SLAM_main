@@ -239,6 +239,7 @@ cartographer_ros_msgs::msg::SubmapList MapBuilderBridge::GetSubmapList(rclcpp::T
 std::unordered_map<int, MapBuilderBridge::LocalTrajectoryData>
 MapBuilderBridge::GetLocalTrajectoryData() {
   std::unordered_map<int, LocalTrajectoryData> local_trajectory_data;
+  local_trajectory_data.reserve(sensor_bridges_.size());
   for (const auto& entry : sensor_bridges_) {
     const int trajectory_id = entry.first;
     const SensorBridge& sensor_bridge = *entry.second;
@@ -254,12 +255,29 @@ MapBuilderBridge::GetLocalTrajectoryData() {
 
     // Make sure there is a trajectory with 'trajectory_id'.
     CHECK_EQ(trajectory_options_.count(trajectory_id), 1);
+    auto& published_to_tracking_cache =
+        published_to_tracking_cache_[trajectory_id];
+    if (published_to_tracking_cache.transform == nullptr ||
+        published_to_tracking_cache.time != local_slam_data->time) {
+      auto published_to_tracking = sensor_bridge.tf_bridge().LookupToTracking(
+          local_slam_data->time,
+          trajectory_options_[trajectory_id].published_frame);
+      if (published_to_tracking != nullptr) {
+        published_to_tracking_cache.time = local_slam_data->time;
+        published_to_tracking_cache.transform =
+            absl::make_unique<Rigid3d>(*published_to_tracking);
+      }
+    }
+    std::unique_ptr<Rigid3d> published_to_tracking;
+    if (published_to_tracking_cache.transform != nullptr &&
+        published_to_tracking_cache.time == local_slam_data->time) {
+      published_to_tracking =
+          absl::make_unique<Rigid3d>(*published_to_tracking_cache.transform);
+    }
     local_trajectory_data[trajectory_id] = {
         local_slam_data,
         map_builder_->pose_graph()->GetLocalToGlobalTransform(trajectory_id),
-        sensor_bridge.tf_bridge().LookupToTracking(
-            local_slam_data->time,
-            trajectory_options_[trajectory_id].published_frame),
+        std::move(published_to_tracking),
         trajectory_options_[trajectory_id]};
   }
   return local_trajectory_data;

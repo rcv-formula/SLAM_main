@@ -1,0 +1,12 @@
+[WARN] [1779893827.793473256] [rcl]: ROS_LOCALHOST_ONLY is deprecated but still honored if it is enabled. Use ROS_AUTOMATIC_DISCOVERY_RANGE and ROS_STATIC_PEERS instead.
+[WARN] [1779893827.793510022] [rcl]: 'localhost_only' is enabled, 'automatic_discovery_range' and 'static_peers' will be ignored.
+stdin is not a terminal device. Keyboard handling disabled.[INFO] [1779893827.890564544] [rosbag2_storage]: Opened database '/home/rcv/SLAM_main-SLAM_IMU_WHEEL_tun/0518_2_humble/latest_0.db3' for READ_ONLY.
+[INFO] [1779893827.890707853] [rosbag2_player]: Set rate to 1
+[INFO] [1779893827.895250912] [rosbag2_player]: Overriding QoS profile for topic /tf_static
+[INFO] [1779893827.898167862] [rosbag2_player]: Adding keyboard callbacks.
+[INFO] [1779893827.898190661] [rosbag2_player]: Press SPACE for Pause/Resume
+[INFO] [1779893827.898195995] [rosbag2_player]: Press CURSOR_RIGHT for Play Next Message
+[INFO] [1779893827.898200893] [rosbag2_player]: Press CURSOR_UP for Increase Rate 10%
+[INFO] [1779893827.898204090] [rosbag2_player]: Press CURSOR_DOWN for Decrease Rate 10%
+[INFO] [1779893827.899409453] [rosbag2_player]: Playback until timestamp: -1
+[INFO] [1779893886.158719188] [rosbag2_player]: Stopping playback.

@@ -1,0 +1,7 @@
+image: 0521_6.pgm
+mode: trinary
+resolution: 0.050
+origin: [-8.816, -9.920, 0]
+negate: 0
+occupied_thresh: 0.65
+free_thresh: 0.196

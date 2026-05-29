@@ -26,6 +26,7 @@
 #include "cartographer/common/math.h"
 #include "cartographer/mapping/2d/probability_grid.h"
 #include "cartographer/mapping/internal/2d/tsdf_2d.h"
+#include "cartographer/mapping/internal/2d/scan_matching/vulkan_correlative_scan_matcher_2d.h"
 #include "cartographer/sensor/point_cloud.h"
 #include "cartographer/transform/transform.h"
 #include "glog/logging.h"
@@ -152,6 +153,14 @@ void RealTimeCorrelativeScanMatcher2D::ScoreCandidates(
     const Grid2D& grid, const std::vector<DiscreteScan2D>& discrete_scans,
     const SearchParameters& search_parameters,
     std::vector<Candidate2D>* const candidates) const {
+  if (grid.GetGridType() == GridType::PROBABILITY_GRID &&
+      ScoreCandidatesWithVulkan(
+          static_cast<const ProbabilityGrid&>(grid), discrete_scans,
+          options_.translation_delta_cost_weight(),
+          options_.rotation_delta_cost_weight(), candidates)) {
+    return;
+  }
+
   for (Candidate2D& candidate : *candidates) {
     switch (grid.GetGridType()) {
       case GridType::PROBABILITY_GRID:

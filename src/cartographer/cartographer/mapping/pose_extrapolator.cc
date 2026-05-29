@@ -22,7 +22,6 @@
 #include <string>
 
 #include "absl/memory/memory.h"
-#include "cartographer/mapping/internal/eigen_quaterniond_from_two_vectors.h"
 #include "cartographer/transform/timestamped_transform.h"
 #include "cartographer/transform/transform.h"
 #include "glog/logging.h"
@@ -56,37 +55,76 @@ bool EnvBool(const char* name, const bool default_value) {
   return default_value;
 }
 
-Eigen::Quaterniond NearlyIdentityGravityOrientation() {
-  return Eigen::Quaterniond(
-      Eigen::AngleAxisd(1e-12, Eigen::Vector3d::UnitZ()));
-}
-
-Eigen::Quaterniond GravityOrientationFromAcceleration(
-    const Eigen::Vector3d& acceleration) {
-  if (acceleration.norm() == 0.) {
-    return NearlyIdentityGravityOrientation();
-  }
-  const Eigen::Quaterniond orientation =
-      FromTwoVectors(acceleration, Eigen::Vector3d::UnitZ());
-  return orientation.angularDistance(Eigen::Quaterniond::Identity()) < 1e-12
-             ? NearlyIdentityGravityOrientation()
-             : orientation;
-}
-
 transform::Rigid3d InterpolateOdometry(
     const boost::circular_buffer<sensor::OdometryData>& odometry_data,
-    const common::Time time) {
-  transform::Rigid3d odom;
-  auto it = odometry_data.begin();
-  while (it != odometry_data.end() && it->time < time) {
-    ++it;
+    const common::Time time,
+    PoseExtrapolator::OdometrySourceInfo* const source_info = nullptr) {
+  if (source_info != nullptr) {
+    *source_info = PoseExtrapolator::OdometrySourceInfo{};
+    source_info->has_data = !odometry_data.empty();
+    source_info->requested_time = time;
+    if (!odometry_data.empty()) {
+      source_info->latest_time = odometry_data.back().time;
+    }
   }
+  transform::Rigid3d odom;
+  if (time <= odometry_data.front().time) {
+    if (source_info != nullptr) {
+      source_info->clamped_to_earliest = true;
+      source_info->before_time = odometry_data.front().time;
+      source_info->after_time = odometry_data.front().time;
+    }
+    LOG(WARNING) << "No odometry data for time: " << time
+                 << " (earliest: " << odometry_data.front().time << ")";
+    return odometry_data.front().pose;
+  }
+  if (time >= odometry_data.back().time) {
+    if (time == odometry_data.back().time) {
+      if (source_info != nullptr) {
+        source_info->before_time = odometry_data.back().time;
+        source_info->after_time = odometry_data.back().time;
+      }
+      return odometry_data.back().pose;
+    }
+    auto prev_it = odometry_data.end() - 1;
+    if (source_info != nullptr) {
+      source_info->extrapolated_from_latest = true;
+      source_info->before_time = prev_it->time;
+    }
+    const double t_diff = common::ToSeconds(time - prev_it->time);
+    const Eigen::Quaterniond rot =
+        Eigen::AngleAxisd(t_diff * prev_it->angular_velocity.x(),
+                          Eigen::Vector3d::UnitX()) *
+        Eigen::AngleAxisd(t_diff * prev_it->angular_velocity.y(),
+                          Eigen::Vector3d::UnitY()) *
+        Eigen::AngleAxisd(t_diff * prev_it->angular_velocity.z(),
+                          Eigen::Vector3d::UnitZ());
+    const Eigen::Vector3d current_t =
+        prev_it->pose.translation() + rot * (prev_it->linear_velocity * t_diff);
+    const Eigen::Quaterniond current_r = rot * prev_it->pose.rotation();
+    return transform::Rigid3d(current_t, current_r);
+  }
+  auto it = std::lower_bound(
+      odometry_data.begin(), odometry_data.end(), time,
+      [](const sensor::OdometryData& odometry_data,
+         const common::Time target_time) {
+        return odometry_data.time < target_time;
+      });
   if (it == odometry_data.begin()) {
+    if (source_info != nullptr) {
+      source_info->clamped_to_earliest = true;
+      source_info->before_time = it->time;
+      source_info->after_time = it->time;
+    }
     LOG(WARNING) << "No odometry data for time: " << time
                  << " (earliest: " << odometry_data.front().time << ")";
     odom = it->pose;
   } else if (it == odometry_data.end()) {
     auto prev_it = it - 1;
+    if (source_info != nullptr) {
+      source_info->extrapolated_from_latest = true;
+      source_info->before_time = prev_it->time;
+    }
     const double t_diff = common::ToSeconds(time - prev_it->time);
     const Eigen::Quaterniond rot =
         Eigen::AngleAxisd(t_diff * prev_it->angular_velocity.x(),
@@ -101,6 +139,10 @@ transform::Rigid3d InterpolateOdometry(
     odom = transform::Rigid3d(current_t, current_r);
   } else {
     auto prev_it = it - 1;
+    if (source_info != nullptr) {
+      source_info->before_time = prev_it->time;
+      source_info->after_time = it->time;
+    }
     odom = transform::Interpolate(
                transform::TimestampedTransform{prev_it->time, prev_it->pose},
                transform::TimestampedTransform{it->time, it->pose}, time)
@@ -118,7 +160,6 @@ PoseExtrapolator::PoseExtrapolator(
       cached_extrapolated_pose_{common::Time::min(),
                                 transform::Rigid3d::Identity(),
                                 transform::Rigid3d::Identity()},
-      gravity_orientation_(NearlyIdentityGravityOrientation()),
       adaptive_odometry_blend_(
           EnvBool("CARTOGRAPHER_ADAPTIVE_ODOMETRY_BLEND", true)),
       adaptive_odometry_longitudinal_only_(EnvBool(
@@ -139,6 +180,8 @@ PoseExtrapolator::PoseExtrapolator(
           "CARTOGRAPHER_ADAPTIVE_ODOMETRY_MIN_FORWARD_DELTA", 0.005)),
       adaptive_odometry_mismatch_force_weight_(EnvDouble(
           "CARTOGRAPHER_ADAPTIVE_ODOMETRY_MISMATCH_FORCE_WEIGHT", 1.)),
+      imu_yaw_weight_(std::max(
+          0., std::min(1., EnvDouble("CARTOGRAPHER_IMU_YAW_WEIGHT", 1.)))),
       odometry_data_(2000) {}
 
 std::unique_ptr<PoseExtrapolator> PoseExtrapolator::InitializeWithImu(
@@ -147,7 +190,6 @@ std::unique_ptr<PoseExtrapolator> PoseExtrapolator::InitializeWithImu(
     const sensor::ImuData& imu_data) {
   auto extrapolator = absl::make_unique<PoseExtrapolator>(
       pose_queue_duration, imu_gravity_time_constant);
-  extrapolator->AddImuData(imu_data);
   extrapolator->AddPose(
       imu_data.time,
       transform::Rigid3d::Rotation(Eigen::Quaterniond::Identity()));
@@ -169,9 +211,6 @@ void PoseExtrapolator::AddPose(const common::Time time,
                                const transform::Rigid3d& pose) {
   reference_pose_ = absl::make_unique<TimedPose>(TimedPose{time, pose});
   last_pose_integrated_imu_yaw_ = integrated_imu_yaw_;
-  cached_extrapolated_pose_ = Extrapolation{
-      common::Time::min(), transform::Rigid3d::Identity(),
-      transform::Rigid3d::Identity()};
   pose_queue_.push_back(TimedPose{time, pose});
   while (pose_queue_.size() > 2 &&
          pose_queue_[1].time <= time - pose_queue_duration_) {
@@ -181,8 +220,6 @@ void PoseExtrapolator::AddPose(const common::Time time,
 }
 
 void PoseExtrapolator::AddImuData(const sensor::ImuData& imu_data) {
-  gravity_orientation_ =
-      GravityOrientationFromAcceleration(imu_data.linear_acceleration);
   if (last_imu_time_.has_value()) {
     const double dt = common::ToSeconds(imu_data.time - last_imu_time_.value());
     if (dt > 0. && dt < 1.) {
@@ -261,37 +298,57 @@ double PoseExtrapolator::ComputeAdaptiveOdometryWeight() const {
 
 transform::Rigid3d PoseExtrapolator::ExtrapolatePose(const common::Time time) {
   CHECK(reference_pose_);
-  const TimedPose& newest_timed_pose = *reference_pose_;
-  CHECK_GE(time, newest_timed_pose.time);
-  CHECK(cached_extrapolated_pose_.time == common::Time::min() ||
-        time >= cached_extrapolated_pose_.time);
-  const common::Time extrapolation_time = time;
-  if (cached_extrapolated_pose_.time != extrapolation_time) {
-    const double extrapolation_delta =
-        common::ToSeconds(extrapolation_time - newest_timed_pose.time);
-    transform::Rigid3d odom_diff = transform::Rigid3d::Identity();
-    Eigen::Vector3d translation_delta =
-        extrapolation_delta * linear_velocity_from_poses_;
-    if (!odometry_data_.empty()) {
-      const transform::Rigid3d reference_odom =
-          InterpolateOdometry(odometry_data_, newest_timed_pose.time);
-      const transform::Rigid3d current_odom =
-          InterpolateOdometry(odometry_data_, extrapolation_time);
-      odom_diff = reference_odom.inverse() * current_odom;
-      translation_delta = newest_timed_pose.pose.rotation() *
-                          odom_diff.translation();
+  if (extrapolation_debug_enabled_) {
+    last_extrapolation_debug_info_ = ExtrapolationDebugInfo{};
+    last_extrapolation_debug_info_.valid = true;
+    last_extrapolation_debug_info_.target_time = time;
+    last_extrapolation_debug_info_.reference_pose_time = reference_pose_->time;
+    last_extrapolation_debug_info_.imu_integration_start_time =
+        reference_pose_->time;
+    last_extrapolation_debug_info_.has_imu_data = has_imu_data_;
+    if (last_imu_time_.has_value()) {
+      last_extrapolation_debug_info_.latest_imu_time = last_imu_time_.value();
     }
+    last_extrapolation_debug_info_.adaptive_odometry_weight =
+        last_adaptive_odometry_weight_;
+  }
+  if (odometry_data_.empty()) {
+    cached_extrapolated_pose_ = Extrapolation{
+        time, reference_pose_->pose, transform::Rigid3d::Identity()};
+    return cached_extrapolated_pose_.pose;
+  }
+  if (cached_extrapolated_pose_.time != time) {
+    const TimedPose& newest_timed_pose = *reference_pose_;
+    CHECK_GE(time, newest_timed_pose.time);
+    CHECK(!odometry_data_.empty());
+    OdometrySourceInfo* const reference_odom_debug =
+        extrapolation_debug_enabled_
+            ? &last_extrapolation_debug_info_.reference_odom
+            : nullptr;
+    OdometrySourceInfo* const current_odom_debug =
+        extrapolation_debug_enabled_
+            ? &last_extrapolation_debug_info_.current_odom
+            : nullptr;
+    const transform::Rigid3d reference_odom =
+        InterpolateOdometry(odometry_data_, newest_timed_pose.time,
+                            reference_odom_debug);
+    const transform::Rigid3d current_odom =
+        InterpolateOdometry(odometry_data_, time, current_odom_debug);
+    const transform::Rigid3d odom_diff =
+        reference_odom.inverse() * current_odom;
+    const Eigen::Vector3d odom_translation_delta =
+        newest_timed_pose.pose.rotation() * odom_diff.translation();
     Eigen::Quaterniond predicted_rotation = newest_timed_pose.pose.rotation();
     if (has_imu_data_) {
       const double imu_delta_yaw =
           integrated_imu_yaw_ - last_pose_integrated_imu_yaw_;
-      const double imu_yaw_weight = std::max(
-          0., std::min(1., EnvDouble("CARTOGRAPHER_IMU_YAW_WEIGHT", 1.)));
       predicted_rotation =
           newest_timed_pose.pose.rotation() *
-          Eigen::AngleAxisd(imu_yaw_weight * imu_delta_yaw,
+          Eigen::AngleAxisd(imu_yaw_weight_ * imu_delta_yaw,
                             Eigen::Vector3d::UnitZ());
     } else if (pose_queue_.size() >= 2) {
+      const double extrapolation_delta =
+          common::ToSeconds(time - newest_timed_pose.time);
       const Eigen::Vector3d rotation_vector =
           extrapolation_delta * angular_velocity_from_poses_;
       predicted_rotation =
@@ -299,12 +356,12 @@ transform::Rigid3d PoseExtrapolator::ExtrapolatePose(const common::Time time) {
           transform::AngleAxisVectorToRotationQuaternion(rotation_vector);
     }
     transform::Rigid3d extrapolated(
-        newest_timed_pose.pose.translation() + translation_delta,
+        newest_timed_pose.pose.translation() + odom_translation_delta,
         predicted_rotation);
     if (adaptive_odometry_blend_ && pose_queue_.size() >= 2) {
       double odom_weight = ComputeAdaptiveOdometryWeight();
       const double extrapolation_delta =
-          common::ToSeconds(extrapolation_time - newest_timed_pose.time);
+          common::ToSeconds(time - newest_timed_pose.time);
       const Eigen::Vector3d scan_delta =
           extrapolation_delta * linear_velocity_from_poses_;
       const Eigen::Vector3d odom_delta =
@@ -341,17 +398,18 @@ transform::Rigid3d PoseExtrapolator::ExtrapolatePose(const common::Time time) {
           newest_timed_pose.pose.translation() + blended_delta,
           extrapolated.rotation());
     }
-    cached_extrapolated_pose_ =
-        Extrapolation{extrapolation_time, extrapolated, odom_diff};
+    cached_extrapolated_pose_ = Extrapolation{time, extrapolated, odom_diff};
+  }
+  if (extrapolation_debug_enabled_) {
+    last_extrapolation_debug_info_.adaptive_odometry_weight =
+        last_adaptive_odometry_weight_;
   }
   return cached_extrapolated_pose_.pose;
 }
 
 Eigen::Quaterniond PoseExtrapolator::EstimateGravityOrientation(
-    const common::Time time) {
-  CHECK(reference_pose_);
-  CHECK_GE(time, reference_pose_->time);
-  return gravity_orientation_;
+    const common::Time /*time*/) {
+  return Eigen::Quaterniond::Identity();
 }
 
 PoseExtrapolator::ExtrapolationResult

@@ -76,6 +76,35 @@ class PoseExtrapolator : public PoseExtrapolatorInterface {
     return adaptive_odometry_blend_;
   }
   double GetAdaptiveOdometryWeight() const;
+  void SetExtrapolationDebugEnabled(bool enabled) {
+    extrapolation_debug_enabled_ = enabled;
+  }
+
+  struct OdometrySourceInfo {
+    bool has_data = false;
+    bool extrapolated_from_latest = false;
+    bool clamped_to_earliest = false;
+    common::Time requested_time = common::Time::min();
+    common::Time before_time = common::Time::min();
+    common::Time after_time = common::Time::min();
+    common::Time latest_time = common::Time::min();
+  };
+
+  struct ExtrapolationDebugInfo {
+    bool valid = false;
+    bool has_imu_data = false;
+    common::Time target_time = common::Time::min();
+    common::Time reference_pose_time = common::Time::min();
+    common::Time imu_integration_start_time = common::Time::min();
+    common::Time latest_imu_time = common::Time::min();
+    OdometrySourceInfo reference_odom;
+    OdometrySourceInfo current_odom;
+    double adaptive_odometry_weight = 1.;
+  };
+
+  const ExtrapolationDebugInfo& GetLastExtrapolationDebugInfo() const {
+    return last_extrapolation_debug_info_;
+  }
 
  private:
   struct TimedPose {
@@ -98,7 +127,6 @@ class PoseExtrapolator : public PoseExtrapolatorInterface {
   std::deque<TimedPose> pose_queue_;
   Eigen::Vector3d linear_velocity_from_poses_ = Eigen::Vector3d::Zero();
   Eigen::Vector3d angular_velocity_from_poses_ = Eigen::Vector3d::Zero();
-  Eigen::Quaterniond gravity_orientation_ = Eigen::Quaterniond::Identity();
   double latest_imu_angular_velocity_z_ = 0.;
   double integrated_imu_yaw_ = 0.;
   double last_pose_integrated_imu_yaw_ = 0.;
@@ -114,8 +142,11 @@ class PoseExtrapolator : public PoseExtrapolatorInterface {
   double adaptive_odometry_mismatch_ratio_ = 0.35;
   double adaptive_odometry_min_forward_delta_ = 0.005;
   double adaptive_odometry_mismatch_force_weight_ = 1.;
+  double imu_yaw_weight_ = 1.;
   double last_adaptive_odometry_weight_ = 1.;
+  bool extrapolation_debug_enabled_ = false;
   boost::circular_buffer<sensor::OdometryData> odometry_data_;
+  ExtrapolationDebugInfo last_extrapolation_debug_info_;
 };
 
 }  // namespace mapping

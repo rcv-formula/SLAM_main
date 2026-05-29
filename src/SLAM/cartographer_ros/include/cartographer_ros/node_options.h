@@ -38,6 +38,12 @@ struct NodeOptions {
   bool publish_to_tf = true;
   bool publish_tracked_pose = true;
   bool use_pose_extrapolator = true;
+  bool use_sim_time = false;
+  bool collect_metrics = false;
+  bool publish_odom = false;
+  std::string load_state_filename;
+  bool load_frozen_state = true;
+  bool start_trajectory_with_default_topics = true;
 };
 
 NodeOptions CreateNodeOptions(
