@@ -2,12 +2,29 @@ include "map_builder.lua"
 include "trajectory_builder.lua"
 
 local slam_main_dir = "/home/rcv/SLAM_main-SLAM_IMU_WHEEL_tun_upg"
+local pbstream_dir =
+    slam_main_dir .. "/src/SLAM/cartographer_ros/pbstream"
+local default_pbstream_file = pbstream_dir .. "/latest.pbstream"
+local pbstream_filename = os.getenv("DAMVI_PBSTREAM_FILENAME") or ""
 local local_quality_metrics_csv_path =
     slam_main_dir .. "/cartographer_metrics/local_quality_metrics_" ..
     os.date("%Y%m%d_%H%M%S") .. ".csv"
-local pbstream_file =
-    slam_main_dir ..
-    "/src/SLAM/cartographer_ros/pbstream/latest.pbstream"
+local function resolve_pbstream_file(filename)
+  if filename == "" then
+    return default_pbstream_file
+  end
+  if string.sub(filename, 1, 2) == "~/" then
+    return (os.getenv("HOME") or "") .. string.sub(filename, 2)
+  end
+  if string.sub(filename, 1, 1) == "/" then
+    return filename
+  end
+  if string.find(filename, "/", 1, true) then
+    return slam_main_dir .. "/" .. filename
+  end
+  return pbstream_dir .. "/" .. filename
+end
+local pbstream_file = resolve_pbstream_file(pbstream_filename)
 local fast_correlative_score_distribution_csv_path =
     os.getenv("FAST_CORRELATIVE_SCORE_DISTRIBUTION_CSV_PATH") or ""
 
@@ -78,7 +95,7 @@ TRAJECTORY_BUILDER_2D.submaps.num_range_data = 45
 
 -- Pure Localization 모드 관련 설정
   -- ◆ [1]전역 매칭(루프 클로저) 최소 점수
-POSE_GRAPH.constraint_builder.global_localization_min_score = 0.7
+POSE_GRAPH.constraint_builder.global_localization_min_score = 0.6
 -- POSE_GRAPH.constraint_builder.global_localization_min_score = 0.7
 
   -- ◆ [1]로컬 매칭(일반 스캔 매칭) 최소 점수
@@ -107,7 +124,7 @@ TRAJECTORY_BUILDER_2D.outlier_min_num_filtered_points = 0
   -- [2]global Fast Correlative 매칭에서 x-y 평면상 탐색 범위 (m), 고정. 작을수록 좋음
 POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher.linear_search_window = 3.0 --0.07  --3.0
   -- [2]global Fast Correlative 매칭에서 회전(각도) 탐색 범위 (라디안), 고정. 작을수록 좋음
-POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher.angular_search_window = math.rad(20)--math.rad(2.5)
+POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher.angular_search_window = math.rad(20)--math.rad(20)
 POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher.log_score_distribution_to_csv =
     fast_correlative_score_distribution_csv_path ~= ""
 POSE_GRAPH.constraint_builder.fast_correlative_scan_matcher.score_distribution_csv_path =
@@ -160,7 +177,7 @@ POSE_GRAPH.optimize_every_n_nodes = 1
 
 -- [대회장 길이에 맞추어 조절] 전역 매칭을 위한 Submap 간 최대 거리
 POSE_GRAPH.constraint_builder.max_constraint_distance = 15  --15
-POSE_GRAPH.relocalization_trigger_sec = 6.0
+POSE_GRAPH.relocalization_trigger_sec = 4.0 --6.0
 POSE_GRAPH.relocalization_recovery_required_successes = 5
 POSE_GRAPH.relocalization_recovery_grace_sec = 6.0
 
